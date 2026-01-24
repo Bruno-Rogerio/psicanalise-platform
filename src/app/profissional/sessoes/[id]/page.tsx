@@ -190,16 +190,28 @@ export default function ProfissionalSessaoPage() {
         body: JSON.stringify({ appointmentId: room.id }),
       });
 
+      const json = await res.json().catch(() => ({}) as any);
+
       if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || `Erro ao criar/obter sala (HTTP ${res.status})`);
+        // tenta mostrar erro mais legível
+        const msg =
+          json?.error ||
+          json?.message ||
+          `Erro ao criar/obter sala (HTTP ${res.status})`;
+        throw new Error(msg);
       }
 
-      const json = (await res.json()) as { url?: string };
-      if (!json.url)
-        throw new Error("Resposta inválida do servidor (sem url).");
+      const url = json?.url as string | undefined;
+      const token = json?.token as string | undefined;
 
-      setDailyUrl(json.url);
+      if (!url) throw new Error("Resposta inválida do servidor (sem url).");
+      if (!token) throw new Error("Resposta inválida do servidor (sem token).");
+
+      // ✅ token na URL do iframe
+      const u = new URL(url);
+      u.searchParams.set("t", token);
+
+      setDailyUrl(u.toString());
     } catch (e: any) {
       console.error(e);
       setDailyError(e?.message ?? "Erro ao iniciar vídeo.");
