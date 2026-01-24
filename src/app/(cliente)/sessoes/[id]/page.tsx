@@ -6,11 +6,12 @@ import { useParams } from "next/navigation";
 
 import {
   getSessionRoomById,
-  isNowWithinSession,
+  isNowWithinSessionWithMargin,
   SessionRoom,
   fmtDate,
   fmtTime,
 } from "@/services/session-room";
+
 import { getNotes } from "@/services/session-notes";
 import {
   listChatMessages,
@@ -53,11 +54,20 @@ export default function ClienteSessaoPage() {
     return "cliente";
   }, [room]);
 
+  // libera 10 min antes do início
+  const canEnterSession = useMemo(() => {
+    if (!room) return false;
+    if (room.status !== "scheduled" && room.status !== "rescheduled")
+      return false;
+    return isNowWithinSessionWithMargin(room.start_at, room.end_at, 10);
+  }, [room]);
+
   const canChat = useMemo(() => {
     if (!room) return false;
     if (room.appointment_type !== "chat") return false;
-    return isNowWithinSession(room.start_at, room.end_at);
-  }, [room]);
+    if (!canEnterSession) return false;
+    return true;
+  }, [room, canEnterSession]);
 
   const pollRef = useRef<number | null>(null);
 
@@ -169,7 +179,7 @@ export default function ClienteSessaoPage() {
           </div>
 
           <Link
-            href="/agenda"
+            href="/minhas-sessoes"
             className="rounded-xl border border-[#D6DED9] bg-white px-4 py-2 text-sm font-semibold text-[#111111] hover:bg-white/80"
           >
             Voltar
@@ -185,31 +195,65 @@ export default function ClienteSessaoPage() {
             <InfoItem label="Status" value={statusLabel(room.status)} />
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
-            {room.appointment_type === "chat" ? (
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111111]">
-                Chat {canChat ? "liberado" : "bloqueado (fora do horário)"}
+                {room.appointment_type === "video" ? "Vídeo" : "Chat"}
               </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111111]">
-                Vídeo (em breve)
-              </span>
-            )}
+
+              {room.status === "cancelled" ? (
+                <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5F6B64]">
+                  Sessão cancelada
+                </span>
+              ) : canEnterSession ? (
+                <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111111]">
+                  Acesso liberado
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5F6B64]">
+                  Bloqueado (fora do horário)
+                </span>
+              )}
+            </div>
 
             <p className="text-xs text-[#5F6B64]">
               Sigilo e ética em todas as sessões.
             </p>
           </div>
+
+          {/* CTA de entrada */}
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-[#5F6B64]">
+              Acesso libera 10 min antes do início e bloqueia após o fim.
+            </p>
+
+            {room.status === "cancelled" ? null : canEnterSession ? (
+              <a
+                href="#chat"
+                className="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Entrar na sessão
+              </a>
+            ) : (
+              <button
+                disabled
+                className="inline-flex items-center justify-center rounded-xl border border-[#D6DED9] bg-white px-4 py-2 text-sm font-semibold text-[#5F6B64] opacity-70"
+              >
+                Entrar na sessão
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* painel de orientação (sem prontuário) */}
+        {/* orientações */}
         <section className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
           <p className="text-sm font-semibold text-[#111111]">Orientações</p>
           <div className="mt-3 space-y-2 text-sm text-[#5F6B64]">
             <p>
-              Se for chat, ele só fica disponível durante o horário da sessão.
+              A sessão só fica acessível durante o horário (com tolerância de 10
+              min antes).
             </p>
             <p>
               Cancelamento com reembolso até 24h antes. Menos que isso, apenas
@@ -217,9 +261,18 @@ export default function ClienteSessaoPage() {
             </p>
           </div>
 
-          {/* Se você quiser, pode mostrar um “resumo” sem expor prontuário:
-              por enquanto deixei pronto, mas escondido.
-              Remova o "hidden" quando quiser mostrar algo. */}
+          <div className="mt-5 rounded-xl border border-[#D6DED9] bg-white/70 p-3">
+            <p className="text-xs font-semibold text-[#111111]">
+              Próximos passos
+            </p>
+            <p className="mt-2 text-xs text-[#5F6B64]">
+              {room.appointment_type === "video"
+                ? "Vídeo: vamos integrar Daily e o botão vai abrir a sala."
+                : "Chat: use o painel à direita durante o horário."}
+            </p>
+          </div>
+
+          {/* Se quiser mostrar algo em read-only depois, já está estruturado */}
           <div className="hidden mt-5 rounded-xl border border-[#D6DED9] bg-white/70 p-3">
             <p className="text-xs font-semibold text-[#111111]">
               Notas (somente leitura)
@@ -231,7 +284,10 @@ export default function ClienteSessaoPage() {
         </section>
 
         {/* chat */}
-        <section className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
+        <section
+          id="chat"
+          className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur"
+        >
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-[#111111]">Chat</p>
             <p className="text-xs text-[#5F6B64]">
@@ -276,6 +332,9 @@ export default function ClienteSessaoPage() {
                     onChange={(e) => setMsg(e.target.value)}
                     placeholder="Escreva uma mensagem…"
                     className="h-11 w-full rounded-xl border border-[#D6DED9] bg-white px-3 text-sm text-[#111111] outline-none focus:ring-2 focus:ring-black/10"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") onSend();
+                    }}
                   />
                   <button
                     disabled={chatBusy || !msg.trim()}

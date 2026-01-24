@@ -1,3 +1,4 @@
+// src/services/professional-agenda.ts
 import { supabase } from "@/lib/supabase-browser";
 
 export type AppointmentStatus =
@@ -19,7 +20,7 @@ export type ProfessionalAppointment = {
   patient_name?: string | null;
 };
 
-// Supabase pode devolver join como objeto OU array
+// Supabase pode devolver join como objeto OU array (dependendo do relacionamento)
 type JoinMaybeArray<T> = T | T[] | null;
 
 type AppointmentRowFromDB = {
@@ -44,18 +45,20 @@ function startOfDay(d: Date) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
+
 function endOfDay(d: Date) {
   const x = new Date(d);
   x.setHours(23, 59, 59, 999);
   return x;
 }
+
 function addDays(d: Date, days: number) {
   const x = new Date(d);
   x.setDate(x.getDate() + days);
   return x;
 }
 
-export async function getLoggedProfessionalId() {
+export async function getLoggedProfessionalId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
   const id = data.user?.id;
@@ -92,7 +95,7 @@ export async function listProfessionalAppointmentsForRange(
 
   if (error) throw error;
 
-  const rows = (data ?? []) as AppointmentRowFromDB[];
+  const rows = (data ?? []) as unknown as AppointmentRowFromDB[];
 
   return rows.map((r) => {
     const u = pickJoinOne(r.user);
@@ -112,7 +115,7 @@ export async function listProfessionalAppointmentsForRange(
 export async function updateAppointmentStatus(
   appointmentId: string,
   status: AppointmentStatus,
-) {
+): Promise<void> {
   const { error } = await supabase
     .from("appointments")
     .update({ status })
