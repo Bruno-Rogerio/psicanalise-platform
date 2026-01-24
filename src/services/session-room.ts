@@ -7,7 +7,7 @@ export type AppointmentStatus =
   | "cancelled"
   | "rescheduled";
 
-// Supabase pode devolver join como objeto OU array (depende de como o select/join foi resolvido)
+// Supabase pode devolver join como objeto OU array (depende do select/join)
 type JoinMaybeArray<T> = T | T[] | null;
 
 function pickJoinOne<T>(value: JoinMaybeArray<T>): T | null {
@@ -66,7 +66,6 @@ export async function getSessionRoomById(
     .eq("id", appointmentId)
     .maybeSingle();
 
-  // maybeSingle() evita estourar "Cannot coerce..." quando vier 0 linhas
   if (error) throw error;
   if (!data) throw new Error("Sessão não encontrada.");
 

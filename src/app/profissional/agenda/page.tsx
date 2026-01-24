@@ -12,18 +12,7 @@ import {
   updateAppointmentStatus,
 } from "@/services/professional-agenda";
 import { rescheduleAppointment } from "@/services/session";
-
-/** libera entrada 10 min antes até o fim */
-function canEnterSession(startISO: string, endISO: string) {
-  const now = new Date();
-  const start = new Date(startISO);
-  const end = new Date(endISO);
-
-  const openFrom = new Date(start);
-  openFrom.setMinutes(openFrom.getMinutes() - 10);
-
-  return now >= openFrom && now <= end;
-}
+import { isNowWithinSessionWithMargin } from "@/services/session-room";
 
 export default function ProfissionalAgendaPage() {
   const [loading, setLoading] = useState(true);
@@ -137,7 +126,6 @@ export default function ProfissionalAgendaPage() {
   function openReschedule(target: ProfessionalAppointment) {
     setRescheduleTarget(target);
 
-    // pré-preenche com o horário atual (timezone local)
     const start = new Date(target.start_at);
     const end = new Date(target.end_at);
 
@@ -316,7 +304,8 @@ export default function ProfissionalAgendaPage() {
               Acesso rápido
             </p>
             <p className="mt-2 text-xs leading-relaxed text-[#5F6B64]">
-              Clique em “Abrir sessão” quando estiver no horário (10 min antes).
+              Para entrar na sessão, use “Abrir sessão” e clique em “Iniciar
+              vídeo” no horário permitido.
             </p>
           </div>
         </aside>
@@ -336,8 +325,8 @@ export default function ProfissionalAgendaPage() {
                   Reagendar sessão
                 </p>
                 <p className="mt-1 text-xs text-[#5F6B64]">
-                  Ajuste data e horário. Depois vamos trocar para seleção por
-                  slots (mais lindo e sem erro).
+                  Ajuste data e horário (MVP). Depois refinamos para seleção por
+                  slots.
                 </p>
               </div>
               <button
@@ -414,10 +403,13 @@ function SessionCard({
   const end = new Date(item.end_at);
   const time = `${fmtTime(start)}–${fmtTime(end)}`;
 
+  const canEnterVideo =
+    item.appointment_type === "video" &&
+    item.status !== "cancelled" &&
+    isNowWithinSessionWithMargin(item.start_at, item.end_at, 10);
+
   const disableActions =
     busy || item.status === "completed" || item.status === "cancelled";
-
-  const canEnter = canEnterSession(item.start_at, item.end_at);
 
   return (
     <div className="rounded-2xl border border-[#D6DED9] bg-white/70 p-4 backdrop-blur">
@@ -429,26 +421,37 @@ function SessionCard({
             <TypePill type={item.appointment_type} />
           </div>
 
-          <p className="mt-2 truncate text-sm text-[#111111]">
-            {item.patient_name ? item.patient_name : "Paciente"}
-          </p>
+          <p className="mt-2 truncate text-sm text-[#111111]">Sessão</p>
           <p className="mt-1 text-xs text-[#5F6B64]">
-            ID paciente: <span className="font-medium">{item.user_id}</span>
+            ID: <span className="font-medium">{item.id}</span>
           </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href={`/profissional/sessoes/${item.id}`}
+              className="rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-xs font-semibold text-[#111111] hover:bg-white/80"
+            >
+              Abrir sessão
+            </Link>
+
+            <Link
+              href={`/profissional/sessoes/${item.id}`}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                canEnterVideo
+                  ? "bg-[#111111] text-white hover:opacity-90"
+                  : "border border-[#D6DED9] bg-white text-[#5F6B64]"
+              }`}
+              aria-disabled={!canEnterVideo}
+              onClick={(e) => {
+                if (!canEnterVideo) e.preventDefault();
+              }}
+            >
+              Entrar (vídeo)
+            </Link>
+          </div>
         </div>
 
         <div className="flex shrink-0 flex-col gap-2">
-          <Link
-            href={`/profissional/sessoes/${item.id}`}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold text-center ${
-              canEnter
-                ? "bg-[#111111] text-white hover:opacity-90"
-                : "border border-[#D6DED9] bg-white text-[#111111] opacity-60 pointer-events-none"
-            }`}
-          >
-            Abrir sessão
-          </Link>
-
           <button
             disabled={disableActions}
             onClick={onComplete}
@@ -576,7 +579,6 @@ function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-// yyyy-MM-ddTHH:mm (local)
 function toLocalInputValue(date: Date) {
   const y = date.getFullYear();
   const m = pad2(date.getMonth() + 1);
@@ -586,7 +588,6 @@ function toLocalInputValue(date: Date) {
   return `${y}-${m}-${d}T${hh}:${mm}`;
 }
 
-// parse datetime-local -> Date (local)
 function fromLocalInputValue(value: string) {
   if (!value) return null;
   const dt = new Date(value);
