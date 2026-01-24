@@ -36,6 +36,18 @@ const EMPTY_NOTES: NotesReadOnly = {
   observacoes: "",
 };
 
+// Ajustes de tolerância
+const ENTER_EARLY_MIN = 10; // libera 10 min antes
+const VIDEO_END_GRACE_MIN = 0; // tolerância após o fim (0 = acabou, derruba)
+
+function isNowAllowedForVideo(startISO: string, endISO: string) {
+  // libera 10 min antes e derruba ao passar do fim + grace
+  const now = Date.now();
+  const start = new Date(startISO).getTime() - ENTER_EARLY_MIN * 60 * 1000;
+  const end = new Date(endISO).getTime() + VIDEO_END_GRACE_MIN * 60 * 1000;
+  return now >= start && now <= end;
+}
+
 export default function ClienteSessaoPage() {
   const params = useParams<{ id: string }>();
   const appointmentId = params.id;
@@ -49,22 +61,25 @@ export default function ClienteSessaoPage() {
   const [msg, setMsg] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
 
-  // Daily
+  // Daily (vídeo dentro da página)
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [dailyUrl, setDailyUrl] = useState<string | null>(null);
 
   const senderRole: SenderRole | null = useMemo(() => {
     if (!room) return null;
     return "cliente";
   }, [room]);
 
-  // libera 10 min antes do início
   const canEnterSession = useMemo(() => {
     if (!room) return false;
-    if (room.status !== "scheduled" && room.status !== "rescheduled") {
+    if (room.status !== "scheduled" && room.status !== "rescheduled")
       return false;
-    }
-    return isNowWithinSessionWithMargin(room.start_at, room.end_at, 10);
+    return isNowWithinSessionWithMargin(
+      room.start_at,
+      room.end_at,
+      ENTER_EARLY_MIN,
+    );
   }, [room]);
 
   const canChat = useMemo(() => {
@@ -74,7 +89,15 @@ export default function ClienteSessaoPage() {
     return true;
   }, [room, canEnterSession]);
 
+  const canVideo = useMemo(() => {
+    if (!room) return false;
+    if (room.appointment_type !== "video") return false;
+    if (room.status === "cancelled") return false;
+    return isNowAllowedForVideo(room.start_at, room.end_at);
+  }, [room]);
+
   const pollRef = useRef<number | null>(null);
+  const videoWatchRef = useRef<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -89,7 +112,6 @@ export default function ClienteSessaoPage() {
           listChatMessages(appointmentId),
         ]);
 
-        // cliente não edita prontuário: só leitura (se quiser mostrar algo)
         if (n) {
           setNotes({
             queixa: n.queixa ?? "",
@@ -126,6 +148,27 @@ export default function ClienteSessaoPage() {
     };
   }, [appointmentId, room]);
 
+  // ✅ Auto-encerrar vídeo quando sair da janela permitida
+  useEffect(() => {
+    if (!room) return;
+    if (room.appointment_type !== "video") return;
+
+    // limpa watcher anterior
+    if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+
+    videoWatchRef.current = window.setInterval(() => {
+      const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
+      if (!allowed && dailyUrl) {
+        setDailyUrl(null);
+        setJoinError("Sessão encerrada. O horário do atendimento terminou.");
+      }
+    }, 15000);
+
+    return () => {
+      if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+    };
+  }, [room, dailyUrl]);
+
   async function onSend() {
     if (!room || !senderRole) return;
 
@@ -155,10 +198,18 @@ export default function ClienteSessaoPage() {
     if (room.status === "cancelled") return;
     if (!canEnterSession) return;
 
+    setJoinError(null);
+
     // chat: só rola pro chat
     if (room.appointment_type === "chat") {
       const el = document.getElementById("chat");
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    // vídeo: abre dentro da página
+    if (!canVideo) {
+      setJoinError("Vídeo indisponível fora do horário da sessão.");
       return;
     }
 
@@ -177,8 +228,8 @@ export default function ClienteSessaoPage() {
         throw new Error(json?.error || "Falha ao abrir sala de vídeo.");
       }
 
-      const url: string | undefined = json?.url; // ✅ agora é "url"
-      const token: string | undefined = json?.token; // ✅ token obrigatório em sala private
+      const url: string | undefined = json?.url;
+      const token: string | undefined = json?.token;
 
       if (!url) throw new Error("Resposta inválida do servidor (sem url).");
       if (!token) throw new Error("Resposta inválida do servidor (sem token).");
@@ -186,10 +237,16 @@ export default function ClienteSessaoPage() {
       const u = new URL(url);
       u.searchParams.set("t", token);
 
-      window.open(u.toString(), "_blank", "noopener,noreferrer");
+      setDailyUrl(u.toString());
+
+      // rola para o player
+      setTimeout(() => {
+        const el = document.getElementById("video");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     } catch (e: any) {
       console.error(e);
-      alert(e?.message ?? "Erro ao entrar na sessão de vídeo.");
+      setJoinError(e?.message ?? "Erro ao entrar na sessão de vídeo.");
     } finally {
       setJoinBusy(false);
     }
@@ -284,10 +341,10 @@ export default function ClienteSessaoPage() {
             </div>
           ) : null}
 
-          {/* CTA de entrada */}
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-[#5F6B64]">
-              Acesso libera 10 min antes do início e bloqueia após o fim.
+              Acesso libera {ENTER_EARLY_MIN} min antes do início e bloqueia
+              após o fim.
             </p>
 
             {room.status === "cancelled" ? null : canEnterSession ? (
@@ -311,32 +368,77 @@ export default function ClienteSessaoPage() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* orientações */}
-        <section className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
-          <p className="text-sm font-semibold text-[#111111]">Orientações</p>
-          <div className="mt-3 space-y-2 text-sm text-[#5F6B64]">
-            <p>
-              A sessão só fica acessível durante o horário (com tolerância de 10
-              min antes).
-            </p>
-            <p>
-              Cancelamento com reembolso até 24h antes. Menos que isso, apenas
-              reagendamento.
-            </p>
+        {/* ESQUERDA: orientações + vídeo */}
+        <section className="space-y-4">
+          <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
+            <p className="text-sm font-semibold text-[#111111]">Orientações</p>
+            <div className="mt-3 space-y-2 text-sm text-[#5F6B64]">
+              <p>
+                A sessão só fica acessível durante o horário (com tolerância de{" "}
+                {ENTER_EARLY_MIN} min antes).
+              </p>
+              <p>
+                Cancelamento com reembolso até 24h antes. Menos que isso, apenas
+                reagendamento.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-[#D6DED9] bg-white/70 p-3">
-            <p className="text-xs font-semibold text-[#111111]">
-              Próximos passos
-            </p>
-            <p className="mt-2 text-xs text-[#5F6B64]">
-              {room.appointment_type === "video"
-                ? "Vídeo: ao clicar em “Entrar na sessão”, a sala do Daily abrirá em uma nova aba."
-                : "Chat: use o painel à direita durante o horário."}
-            </p>
-          </div>
+          {/* ✅ vídeo dentro da página */}
+          {room.appointment_type === "video" ? (
+            <div
+              id="video"
+              className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-[#111111]">Vídeo</p>
+                <p className="text-xs text-[#5F6B64]">Durante a sessão</p>
+              </div>
 
-          <div className="hidden mt-5 rounded-xl border border-[#D6DED9] bg-white/70 p-3">
+              <div className="mt-4 space-y-3">
+                {!canVideo ? (
+                  <div className="rounded-xl border border-[#D6DED9] bg-white p-3 text-sm text-[#5F6B64]">
+                    Vídeo disponível {ENTER_EARLY_MIN} min antes do início e até
+                    o fim da sessão.
+                  </div>
+                ) : null}
+
+                {!dailyUrl ? (
+                  <button
+                    disabled={!canVideo || joinBusy}
+                    onClick={onJoinSession}
+                    className="w-full rounded-xl bg-[#111111] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {joinBusy ? "Preparando sala…" : "Iniciar vídeo"}
+                  </button>
+                ) : (
+                  <div className="overflow-hidden rounded-2xl border border-[#D6DED9] bg-white">
+                    <div className="flex items-center justify-between border-b border-[#D6DED9] p-3">
+                      <p className="text-xs font-semibold text-[#111111]">
+                        Sala de vídeo ativa
+                      </p>
+                      <button
+                        onClick={() => setDailyUrl(null)}
+                        className="rounded-lg border border-[#D6DED9] bg-white px-3 py-1.5 text-xs font-semibold text-[#111111] hover:bg-white/80"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+
+                    <iframe
+                      title="Daily Video Call"
+                      src={dailyUrl}
+                      allow="camera; microphone; fullscreen; speaker; display-capture"
+                      className="h-[560px] w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Notas read-only (futuro) */}
+          <div className="hidden rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
             <p className="text-xs font-semibold text-[#111111]">
               Notas (somente leitura)
             </p>
@@ -346,7 +448,7 @@ export default function ClienteSessaoPage() {
           </div>
         </section>
 
-        {/* chat */}
+        {/* DIREITA: chat */}
         <section
           id="chat"
           className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur"
@@ -443,9 +545,7 @@ function ChatBubble({
       >
         <p className="whitespace-pre-wrap leading-relaxed">{body}</p>
         <p
-          className={`mt-1 text-[11px] ${
-            mine ? "text-white/70" : "text-[#5F6B64]"
-          }`}
+          className={`mt-1 text-[11px] ${mine ? "text-white/70" : "text-[#5F6B64]"}`}
         >
           {fmtTime(new Date(at))}
         </p>
