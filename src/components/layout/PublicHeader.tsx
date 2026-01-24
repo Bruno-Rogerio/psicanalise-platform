@@ -12,7 +12,7 @@ export default function PublicHeader() {
             width={160}
             height={40}
             priority
-            className="h-30 w-auto group-hover:opacity-80"
+            className="h-20 w-auto group-hover:opacity-80"
           />
         </Link>
 
