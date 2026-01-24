@@ -136,7 +136,10 @@ export default function ProfissionalPacientesPage() {
           .eq("profissional_id", profissionalId)
           .order("start_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw new Error(error.message);
+        }
 
         const raw = (data ?? []) as AppointmentRowRaw[];
 
