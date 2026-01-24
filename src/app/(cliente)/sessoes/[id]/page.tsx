@@ -155,8 +155,6 @@ export default function ClienteSessaoPage() {
     if (room.status === "cancelled") return;
     if (!canEnterSession) return;
 
-    setJoinError(null);
-
     // chat: só rola pro chat
     if (room.appointment_type === "chat") {
       const el = document.getElementById("chat");
@@ -164,7 +162,6 @@ export default function ClienteSessaoPage() {
       return;
     }
 
-    // video: chama API, pega url + token e abre com token
     setJoinBusy(true);
     try {
       const resp = await fetch("/api/daily/ensure-room", {
@@ -177,30 +174,22 @@ export default function ClienteSessaoPage() {
 
       if (!resp.ok) {
         console.error("ensure-room failed", { status: resp.status, json });
-        throw new Error(
-          json?.error ||
-            json?.message ||
-            "Falha ao abrir sala de vídeo. Tente novamente.",
-        );
+        throw new Error(json?.error || "Falha ao abrir sala de vídeo.");
       }
 
-      // ✅ o route agora deve devolver { url, token }
-      const url: string | undefined = json?.url;
-      const token: string | undefined = json?.token;
+      const url: string | undefined = json?.url; // ✅ agora é "url"
+      const token: string | undefined = json?.token; // ✅ token obrigatório em sala private
 
       if (!url) throw new Error("Resposta inválida do servidor (sem url).");
       if (!token) throw new Error("Resposta inválida do servidor (sem token).");
 
-      // ✅ abre com token (Daily private room)
       const u = new URL(url);
       u.searchParams.set("t", token);
 
       window.open(u.toString(), "_blank", "noopener,noreferrer");
     } catch (e: any) {
       console.error(e);
-      const msg = e?.message ?? "Erro ao entrar na sessão de vídeo.";
-      setJoinError(msg);
-      alert(msg);
+      alert(e?.message ?? "Erro ao entrar na sessão de vídeo.");
     } finally {
       setJoinBusy(false);
     }
