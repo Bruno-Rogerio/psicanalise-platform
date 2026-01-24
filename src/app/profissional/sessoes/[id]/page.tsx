@@ -7,7 +7,6 @@ import { useParams } from "next/navigation";
 import {
   getSessionRoomById,
   isNowWithinSession,
-  isNowWithinSessionWithMargin,
   SessionRoom,
   fmtDate,
   fmtTime,
@@ -37,6 +36,17 @@ const EMPTY_FORM: NotesForm = {
   plano: "",
   observacoes: "",
 };
+
+// Ajustes de tolerância
+const ENTER_EARLY_MIN = 10; // libera 10 min antes
+const VIDEO_END_GRACE_MIN = 0; // tolerância após o fim (0 = acabou, derruba)
+
+function isNowAllowedForVideo(startISO: string, endISO: string) {
+  const now = Date.now();
+  const start = new Date(startISO).getTime() - ENTER_EARLY_MIN * 60 * 1000;
+  const end = new Date(endISO).getTime() + VIDEO_END_GRACE_MIN * 60 * 1000;
+  return now >= start && now <= end;
+}
 
 export default function ProfissionalSessaoPage() {
   const params = useParams<{ id: string }>();
@@ -73,11 +83,11 @@ export default function ProfissionalSessaoPage() {
     if (!room) return false;
     if (room.appointment_type !== "video") return false;
     if (room.status === "cancelled") return false;
-    // ✅ libera 10 min antes até o fim
-    return isNowWithinSessionWithMargin(room.start_at, room.end_at, 10);
+    return isNowAllowedForVideo(room.start_at, room.end_at);
   }, [room]);
 
   const pollRef = useRef<number | null>(null);
+  const videoWatchRef = useRef<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -129,12 +139,31 @@ export default function ProfissionalSessaoPage() {
     };
   }, [appointmentId, room]);
 
+  // ✅ Auto-encerrar vídeo quando sair da janela permitida
+  useEffect(() => {
+    if (!room) return;
+    if (room.appointment_type !== "video") return;
+
+    if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+
+    videoWatchRef.current = window.setInterval(() => {
+      const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
+      if (!allowed && dailyUrl) {
+        setDailyUrl(null);
+        setDailyError("Sessão encerrada. O horário do atendimento terminou.");
+      }
+    }, 15000);
+
+    return () => {
+      if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+    };
+  }, [room, dailyUrl]);
+
   async function onSaveNotes() {
     if (!room) return;
 
     setNotesBusy(true);
     try {
-      // ✅ upsertNotes NO SEU PROJETO aceita 1 argumento
       await upsertNotes({
         appointment_id: room.id,
         profissional_id: room.profissional_id,
@@ -180,6 +209,11 @@ export default function ProfissionalSessaoPage() {
   async function ensureDailyRoom() {
     if (!room) return;
 
+    if (!canVideo) {
+      setDailyError("Vídeo indisponível fora do horário da sessão.");
+      return;
+    }
+
     setDailyBusy(true);
     setDailyError(null);
 
@@ -193,7 +227,6 @@ export default function ProfissionalSessaoPage() {
       const json = await res.json().catch(() => ({}) as any);
 
       if (!res.ok) {
-        // tenta mostrar erro mais legível
         const msg =
           json?.error ||
           json?.message ||
@@ -207,7 +240,6 @@ export default function ProfissionalSessaoPage() {
       if (!url) throw new Error("Resposta inválida do servidor (sem url).");
       if (!token) throw new Error("Resposta inválida do servidor (sem token).");
 
-      // ✅ token na URL do iframe
       const u = new URL(url);
       u.searchParams.set("t", token);
 
@@ -360,8 +392,8 @@ export default function ProfissionalSessaoPage() {
             <div className="mt-4 space-y-3">
               {!canVideo ? (
                 <div className="rounded-xl border border-[#D6DED9] bg-white p-3 text-sm text-[#5F6B64]">
-                  Vídeo fica disponível 10 min antes do início e até o fim da
-                  sessão.
+                  Vídeo disponível {ENTER_EARLY_MIN} min antes do início e até o
+                  fim da sessão.
                 </div>
               ) : null}
 
@@ -433,6 +465,9 @@ export default function ProfissionalSessaoPage() {
                       onChange={(e) => setMsg(e.target.value)}
                       placeholder="Escreva uma mensagem…"
                       className="h-11 w-full rounded-xl border border-[#D6DED9] bg-white px-3 text-sm text-[#111111] outline-none focus:ring-2 focus:ring-black/10"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") onSend();
+                      }}
                     />
                     <button
                       disabled={chatBusy || !msg.trim()}
