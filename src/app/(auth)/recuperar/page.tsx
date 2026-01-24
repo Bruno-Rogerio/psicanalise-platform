@@ -5,8 +5,6 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
 export default function RecuperarSenhaPage() {
-  const supabase = ;
-
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
