@@ -51,6 +51,7 @@ export default function ClienteSessaoPage() {
 
   // Daily
   const [joinBusy, setJoinBusy] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const senderRole: SenderRole | null = useMemo(() => {
     if (!room) return null;
@@ -60,8 +61,9 @@ export default function ClienteSessaoPage() {
   // libera 10 min antes do início
   const canEnterSession = useMemo(() => {
     if (!room) return false;
-    if (room.status !== "scheduled" && room.status !== "rescheduled")
+    if (room.status !== "scheduled" && room.status !== "rescheduled") {
       return false;
+    }
     return isNowWithinSessionWithMargin(room.start_at, room.end_at, 10);
   }, [room]);
 
@@ -96,6 +98,8 @@ export default function ClienteSessaoPage() {
             plano: n.plano ?? "",
             observacoes: n.observacoes ?? "",
           });
+        } else {
+          setNotes(EMPTY_NOTES);
         }
 
         setMessages(m);
@@ -151,6 +155,8 @@ export default function ClienteSessaoPage() {
     if (room.status === "cancelled") return;
     if (!canEnterSession) return;
 
+    setJoinError(null);
+
     // chat: só rola pro chat
     if (room.appointment_type === "chat") {
       const el = document.getElementById("chat");
@@ -158,7 +164,7 @@ export default function ClienteSessaoPage() {
       return;
     }
 
-    // video: chama API e abre sala
+    // video: chama API, pega url + token e abre com token
     setJoinBusy(true);
     try {
       const resp = await fetch("/api/daily/ensure-room", {
@@ -167,20 +173,34 @@ export default function ClienteSessaoPage() {
         body: JSON.stringify({ appointmentId: room.id }),
       });
 
-      const json = await resp.json().catch(() => ({}));
+      const json = await resp.json().catch(() => ({}) as any);
 
       if (!resp.ok) {
         console.error("ensure-room failed", { status: resp.status, json });
-        throw new Error(json?.error || "Falha ao abrir sala de vídeo.");
+        throw new Error(
+          json?.error ||
+            json?.message ||
+            "Falha ao abrir sala de vídeo. Tente novamente.",
+        );
       }
 
-      const roomUrl: string | undefined = json?.roomUrl;
-      if (!roomUrl) throw new Error("Daily não retornou a URL da sala.");
+      // ✅ o route agora deve devolver { url, token }
+      const url: string | undefined = json?.url;
+      const token: string | undefined = json?.token;
 
-      // abre em nova aba (simples e confiável)
-      window.open(roomUrl, "_blank", "noopener,noreferrer");
+      if (!url) throw new Error("Resposta inválida do servidor (sem url).");
+      if (!token) throw new Error("Resposta inválida do servidor (sem token).");
+
+      // ✅ abre com token (Daily private room)
+      const u = new URL(url);
+      u.searchParams.set("t", token);
+
+      window.open(u.toString(), "_blank", "noopener,noreferrer");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao entrar na sessão de vídeo.");
+      console.error(e);
+      const msg = e?.message ?? "Erro ao entrar na sessão de vídeo.";
+      setJoinError(msg);
+      alert(msg);
     } finally {
       setJoinBusy(false);
     }
@@ -268,6 +288,12 @@ export default function ClienteSessaoPage() {
               Sigilo e ética em todas as sessões.
             </p>
           </div>
+
+          {joinError ? (
+            <div className="mt-3 rounded-xl border border-[#D6DED9] bg-white/70 p-3 text-xs text-[#5F6B64]">
+              {joinError}
+            </div>
+          ) : null}
 
           {/* CTA de entrada */}
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
