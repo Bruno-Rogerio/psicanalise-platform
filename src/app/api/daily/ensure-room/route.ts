@@ -1,3 +1,4 @@
+// src/app/api/daily/ensure-room/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
@@ -6,7 +7,7 @@ const DAILY_API_KEY = process.env.DAILY_API_KEY!;
 const DAILY_DOMAIN = process.env.DAILY_DOMAIN!; // ex: "seusubdominio.daily.co"
 
 function supabaseServer() {
-  const cookieStorePromise = cookies(); // Next 16: cookies() é async
+  const cookieStorePromise = cookies(); // async no Next 15/16
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,11 +33,18 @@ type Body = {
   appointmentId: string;
 };
 
+function buildDailyUrl(roomName: string) {
+  const domain = String(DAILY_DOMAIN || "")
+    .replace(/^https?:\/\//, "")
+    .trim();
+  return `https://${domain}/${roomName}`;
+}
+
 export async function POST(req: Request) {
   try {
     if (!DAILY_API_KEY || !DAILY_DOMAIN) {
       return NextResponse.json(
-        { error: "Missing DAILY env vars" },
+        { error: "Missing DAILY_API_KEY or DAILY_DOMAIN" },
         { status: 500 },
       );
     }
@@ -86,9 +94,11 @@ export async function POST(req: Request) {
 
     // se já existe sala salva no banco, só retorna
     if (appt.daily_room_name) {
+      const url = buildDailyUrl(appt.daily_room_name);
       return NextResponse.json({
         roomName: appt.daily_room_name,
-        roomUrl: `https://${DAILY_DOMAIN}/${appt.daily_room_name}`,
+        url, // ✅ o frontend geralmente espera isso
+        roomUrl: url, // ✅ compat
       });
     }
 
@@ -105,16 +115,16 @@ export async function POST(req: Request) {
         name: roomName,
         privacy: "private",
         properties: {
-          enable_chat: false, // chat do Daily off (vocês já tem chat próprio)
+          enable_chat: false, // chat do Daily off (vocês já têm chat próprio)
           enable_screenshare: true,
+          // ✅ NÃO setar enable_recording (o Daily rejeitou "none")
           start_audio_off: false,
           start_video_off: false,
-          // sem gravação: NÃO enviar enable_recording
         },
       }),
     });
 
-    const createJson = await createResp.json().catch(() => null);
+    const createJson = await createResp.json();
 
     if (!createResp.ok) {
       return NextResponse.json(
@@ -123,26 +133,35 @@ export async function POST(req: Request) {
       );
     }
 
+    const url: string =
+      createJson?.url && typeof createJson.url === "string"
+        ? createJson.url
+        : buildDailyUrl(roomName);
+
     // salva no banco para reuso
     const { error: updErr } = await supabase
       .from("appointments")
       .update({ daily_room_name: roomName })
       .eq("id", appointmentId);
 
-    const roomUrl = createJson?.url ?? `https://${DAILY_DOMAIN}/${roomName}`;
-
     if (updErr) {
+      // se falhar salvar, ainda devolve a sala
       return NextResponse.json(
         {
           roomName,
-          roomUrl,
+          url, // ✅ sempre devolve url
+          roomUrl: url,
           warning: "Room created but not saved to DB",
         },
         { status: 200 },
       );
     }
 
-    return NextResponse.json({ roomName, roomUrl });
+    return NextResponse.json({
+      roomName,
+      url, // ✅ sempre devolve url
+      roomUrl: url,
+    });
   } catch (e: any) {
     console.error("ensure-room error:", e);
     return NextResponse.json(

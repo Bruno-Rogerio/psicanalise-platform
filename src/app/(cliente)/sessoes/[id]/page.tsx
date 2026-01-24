@@ -49,6 +49,9 @@ export default function ClienteSessaoPage() {
   const [msg, setMsg] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
 
+  // Daily
+  const [joinBusy, setJoinBusy] = useState(false);
+
   const senderRole: SenderRole | null = useMemo(() => {
     if (!room) return null;
     return "cliente";
@@ -143,6 +146,46 @@ export default function ClienteSessaoPage() {
     }
   }
 
+  async function onJoinSession() {
+    if (!room) return;
+    if (room.status === "cancelled") return;
+    if (!canEnterSession) return;
+
+    // chat: só rola pro chat
+    if (room.appointment_type === "chat") {
+      const el = document.getElementById("chat");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    // video: chama API e abre sala
+    setJoinBusy(true);
+    try {
+      const resp = await fetch("/api/daily/ensure-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId: room.id }),
+      });
+
+      const json = await resp.json().catch(() => ({}));
+
+      if (!resp.ok) {
+        console.error("ensure-room failed", { status: resp.status, json });
+        throw new Error(json?.error || "Falha ao abrir sala de vídeo.");
+      }
+
+      const roomUrl: string | undefined = json?.roomUrl;
+      if (!roomUrl) throw new Error("Daily não retornou a URL da sala.");
+
+      // abre em nova aba (simples e confiável)
+      window.open(roomUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      alert(e?.message ?? "Erro ao entrar na sessão de vídeo.");
+    } finally {
+      setJoinBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -163,6 +206,11 @@ export default function ClienteSessaoPage() {
 
   const start = new Date(room.start_at);
   const end = new Date(room.end_at);
+
+  const joinLabel =
+    room.appointment_type === "video"
+      ? "Entrar na sessão (vídeo)"
+      : "Entrar na sessão (chat)";
 
   return (
     <div className="space-y-6">
@@ -228,12 +276,13 @@ export default function ClienteSessaoPage() {
             </p>
 
             {room.status === "cancelled" ? null : canEnterSession ? (
-              <a
-                href="#chat"
-                className="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              <button
+                onClick={onJoinSession}
+                disabled={joinBusy}
+                className="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
-                Entrar na sessão
-              </a>
+                {joinBusy ? "Abrindo…" : joinLabel}
+              </button>
             ) : (
               <button
                 disabled
@@ -267,12 +316,11 @@ export default function ClienteSessaoPage() {
             </p>
             <p className="mt-2 text-xs text-[#5F6B64]">
               {room.appointment_type === "video"
-                ? "Vídeo: vamos integrar Daily e o botão vai abrir a sala."
+                ? "Vídeo: ao clicar em “Entrar na sessão”, a sala do Daily abrirá em uma nova aba."
                 : "Chat: use o painel à direita durante o horário."}
             </p>
           </div>
 
-          {/* Se quiser mostrar algo em read-only depois, já está estruturado */}
           <div className="hidden mt-5 rounded-xl border border-[#D6DED9] bg-white/70 p-3">
             <p className="text-xs font-semibold text-[#111111]">
               Notas (somente leitura)
@@ -380,7 +428,9 @@ function ChatBubble({
       >
         <p className="whitespace-pre-wrap leading-relaxed">{body}</p>
         <p
-          className={`mt-1 text-[11px] ${mine ? "text-white/70" : "text-[#5F6B64]"}`}
+          className={`mt-1 text-[11px] ${
+            mine ? "text-white/70" : "text-[#5F6B64]"
+          }`}
         >
           {fmtTime(new Date(at))}
         </p>
