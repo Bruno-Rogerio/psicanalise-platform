@@ -1,123 +1,54 @@
+// src/app/profissional/pacientes/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
-
-type AppointmentStatus =
-  | "scheduled"
-  | "completed"
-  | "cancelled"
-  | "rescheduled";
-type AppointmentType = "video" | "chat";
 
 type Patient = {
   id: string;
   nome: string;
+  email?: string;
 };
 
-// ✅ Supabase costuma tipar joins como ARRAY
-type AppointmentRowRaw = {
+type Appointment = {
   id: string;
   user_id: string;
-  profissional_id: string;
-  appointment_type: AppointmentType;
-  status: AppointmentStatus;
+  appointment_type: "video" | "chat";
+  status: string;
   start_at: string;
   end_at: string;
-  patient?: { id: string; nome: string | null }[]; // <- array
-};
-
-// ✅ Tipo normalizado para usar no app
-type AppointmentRow = Omit<AppointmentRowRaw, "patient"> & {
-  patient: { id: string; nome: string | null } | null; // <- objeto
 };
 
 type SessionNotes = {
   appointment_id: string;
-  profissional_id: string;
-  user_id: string;
   queixa: string | null;
   associacoes: string | null;
   intervencoes: string | null;
   plano: string | null;
   observacoes: string | null;
-  created_at: string;
-  updated_at: string;
 };
 
-function fmtDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function statusLabel(s: AppointmentStatus) {
-  if (s === "scheduled") return "Agendada";
-  if (s === "completed") return "Realizada";
-  if (s === "cancelled") return "Cancelada";
-  if (s === "rescheduled") return "Reagendada";
-  return s;
-}
-
-function typeLabel(t: AppointmentType) {
-  return t === "video" ? "Vídeo" : "Chat";
-}
-
-function showOrDash(v: string | null | undefined) {
-  const t = (v ?? "").trim();
-  return t.length ? t : "—";
-}
-
-export default function ProfissionalPacientesPage() {
+export default function PacientesPage() {
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  const [allAppointments, setAllAppointments] = useState<AppointmentRow[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [query, setQuery] = useState("");
-
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
-    null,
-  );
-
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailErr, setDetailErr] = useState<string | null>(null);
-  const [patientAppointments, setPatientAppointments] = useState<
-    AppointmentRow[]
-  >([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [notesByAppointment, setNotesByAppointment] = useState<
     Record<string, SessionNotes>
   >({});
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    null,
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  const filteredPatients = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return patients;
-    return patients.filter((p) => p.nome.toLowerCase().includes(q));
-  }, [patients, query]);
-
-  const selectedPatient = useMemo(() => {
-    if (!selectedPatientId) return null;
-    return patients.find((p) => p.id === selectedPatientId) ?? null;
-  }, [patients, selectedPatientId]);
-
-  // 1) Carrega todos os appointments do profissional + join do paciente (profiles)
+  // Load patients
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      setErr(null);
-
       try {
-        const { data: auth, error: authErr } = await supabase.auth.getUser();
-        if (authErr) throw authErr;
-        if (!auth.user?.id) throw new Error("Você precisa estar logado.");
-
-        const profissionalId = auth.user.id;
+        setLoading(true);
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user?.id) return;
 
         const { data, error } = await supabase
           .from("appointments")
@@ -125,308 +56,470 @@ export default function ProfissionalPacientesPage() {
             `
             id,
             user_id,
-            profissional_id,
             appointment_type,
             status,
             start_at,
             end_at,
-            patient:profiles!appointments_user_id_fkey ( id, nome )
+            patient:profiles!appointments_user_id_fkey ( id, nome, email )
           `,
           )
-          .eq("profissional_id", profissionalId)
+          .eq("profissional_id", auth.user.id)
           .order("start_at", { ascending: false });
 
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(error.message);
-        }
+        if (error) throw error;
 
-        const raw = (data ?? []) as AppointmentRowRaw[];
-
-        // ✅ normaliza patient array -> objeto
-        const rows: AppointmentRow[] = raw.map((a) => ({
-          ...a,
-          patient: a.patient?.[0] ?? null,
+        const raw = (data ?? []) as any[];
+        const appts: Appointment[] = raw.map((a) => ({
+          id: a.id,
+          user_id: a.user_id,
+          appointment_type: a.appointment_type,
+          status: a.status,
+          start_at: a.start_at,
+          end_at: a.end_at,
         }));
+        setAppointments(appts);
 
-        setAllAppointments(rows);
-
-        // pacientes únicos
+        // Unique patients
         const map = new Map<string, Patient>();
-        for (const a of rows) {
-          const p = a.patient;
-          if (!p?.id) continue;
-          if (!map.has(p.id)) {
-            map.set(p.id, { id: p.id, nome: (p.nome ?? "—").trim() || "—" });
+        for (const a of raw) {
+          const p = a.patient?.[0];
+          if (p?.id && !map.has(p.id)) {
+            map.set(p.id, {
+              id: p.id,
+              nome: p.nome ?? "Paciente",
+              email: p.email,
+            });
           }
         }
-
         const uniquePatients = Array.from(map.values()).sort((a, b) =>
           a.nome.localeCompare(b.nome, "pt-BR"),
         );
-
         setPatients(uniquePatients);
 
-        if (uniquePatients.length && !selectedPatientId) {
+        if (uniquePatients.length > 0) {
           setSelectedPatientId(uniquePatients[0].id);
         }
-      } catch (e: any) {
-        console.error(e);
-        setErr(e?.message ?? "Erro ao carregar pacientes.");
       } finally {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2) Quando seleciona paciente: pega as sessões dele + prontuário (session_notes)
+  // Load notes when patient changes
   useEffect(() => {
+    if (!selectedPatientId) return;
+
     (async () => {
-      if (!selectedPatientId) return;
-
       setDetailLoading(true);
-      setDetailErr(null);
-      setPatientAppointments([]);
-      setNotesByAppointment({});
+      const patientAppts = appointments.filter(
+        (a) => a.user_id === selectedPatientId,
+      );
+      const ids = patientAppts.map((a) => a.id);
 
-      try {
-        const appts = allAppointments.filter(
-          (a) => a.user_id === selectedPatientId,
-        );
-        setPatientAppointments(appts);
-
-        const ids = appts.map((a) => a.id);
-        if (!ids.length) {
-          setDetailLoading(false);
-          return;
-        }
-
-        const { data: notesData, error: notesErr } = await supabase
-          .from("session_notes")
-          .select(
-            "appointment_id, profissional_id, user_id, queixa, associacoes, intervencoes, plano, observacoes, created_at, updated_at",
-          )
-          .in("appointment_id", ids);
-
-        if (notesErr) throw notesErr;
-
-        const map: Record<string, SessionNotes> = {};
-        for (const n of (notesData ?? []) as SessionNotes[]) {
-          map[n.appointment_id] = n;
-        }
-        setNotesByAppointment(map);
-      } catch (e: any) {
-        console.error(e);
-        setDetailErr(e?.message ?? "Erro ao carregar histórico.");
-      } finally {
+      if (ids.length === 0) {
+        setNotesByAppointment({});
         setDetailLoading(false);
+        return;
       }
+
+      const { data } = await supabase
+        .from("session_notes")
+        .select(
+          "appointment_id, queixa, associacoes, intervencoes, plano, observacoes",
+        )
+        .in("appointment_id", ids);
+
+      const map: Record<string, SessionNotes> = {};
+      for (const n of (data ?? []) as SessionNotes[]) {
+        map[n.appointment_id] = n;
+      }
+      setNotesByAppointment(map);
+      setDetailLoading(false);
     })();
-  }, [selectedPatientId, allAppointments]);
+  }, [selectedPatientId, appointments]);
+
+  // Filtered patients
+  const filteredPatients = useMemo(() => {
+    if (!searchQuery.trim()) return patients;
+    const q = searchQuery.toLowerCase();
+    return patients.filter((p) => p.nome.toLowerCase().includes(q));
+  }, [patients, searchQuery]);
+
+  // Selected patient data
+  const selectedPatient = useMemo(() => {
+    return patients.find((p) => p.id === selectedPatientId) ?? null;
+  }, [patients, selectedPatientId]);
+
+  const patientAppointments = useMemo(() => {
+    if (!selectedPatientId) return [];
+    return appointments
+      .filter((a) => a.user_id === selectedPatientId)
+      .sort((a, b) => +new Date(b.start_at) - +new Date(a.start_at));
+  }, [appointments, selectedPatientId]);
+
+  // Stats
+  const patientStats = useMemo(() => {
+    const total = patientAppointments.length;
+    const completed = patientAppointments.filter(
+      (a) => a.status === "completed",
+    ).length;
+    const scheduled = patientAppointments.filter(
+      (a) => a.status === "scheduled",
+    ).length;
+    return { total, completed, scheduled };
+  }, [patientAppointments]);
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-10 w-56 animate-pulse rounded-xl border border-[#D6DED9] bg-white/70" />
-        <div className="h-36 animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70" />
-        <div className="h-64 animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70" />
-      </div>
-    );
-  }
-
-  if (err) {
-    return (
-      <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 text-sm text-[#5F6B64]">
-        {err}
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <div className="flex items-start justify-between gap-4">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg">
+            <UsersIcon className="h-7 w-7 text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#111111] sm:text-3xl">
-              Pacientes
-            </h1>
-            <p className="mt-1 text-sm text-[#5F6B64]">
-              Selecione um paciente para ver sessões e prontuários.
+            <h1 className="text-2xl font-bold text-warm-900">Pacientes</h1>
+            <p className="text-sm text-warm-600">
+              {patients.length} paciente(s) com sessões
             </p>
           </div>
-
-          <Link
-            href="/profissional/agenda"
-            className="rounded-xl border border-[#D6DED9] bg-white px-4 py-2 text-sm font-semibold text-[#111111] hover:bg-white/80"
-          >
-            Voltar para agenda
-          </Link>
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Lista de pacientes */}
-        <section className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur lg:col-span-1">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#111111]">Lista</p>
-            <span className="text-xs font-semibold text-[#5F6B64]">
-              {patients.length} total
-            </span>
-          </div>
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Patients List */}
+        <div className="lg:col-span-1">
+          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <div className="mb-4">
+              <p className="font-semibold text-warm-900">Lista de Pacientes</p>
+              <p className="text-xs text-warm-500">
+                {filteredPatients.length} encontrado(s)
+              </p>
+            </div>
 
-          <div className="mt-3">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar paciente…"
-              className="h-11 w-full rounded-xl border border-[#D6DED9] bg-white px-3 text-sm text-[#111111] outline-none focus:ring-2 focus:ring-black/10"
-            />
-          </div>
+            {/* Search */}
+            <div className="relative mb-4">
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-warm-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar paciente..."
+                className="h-11 w-full rounded-xl border border-warm-200 bg-warm-50 pl-10 pr-4 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
+              />
+            </div>
 
-          <div className="mt-3 max-h-[520px] overflow-auto rounded-2xl border border-[#D6DED9] bg-white/70 p-2">
-            {filteredPatients.length === 0 ? (
-              <div className="rounded-xl border border-[#D6DED9] bg-white p-3 text-sm text-[#5F6B64]">
-                Nenhum paciente encontrado.
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filteredPatients.map((p) => {
-                  const active = p.id === selectedPatientId;
+            {/* List */}
+            <div className="max-h-[500px] space-y-1 overflow-y-auto">
+              {filteredPatients.length === 0 ? (
+                <div className="rounded-xl bg-warm-50 p-4 text-center text-sm text-warm-500">
+                  Nenhum paciente encontrado
+                </div>
+              ) : (
+                filteredPatients.map((patient) => {
+                  const isActive = patient.id === selectedPatientId;
+                  const patientApptCount = appointments.filter(
+                    (a) => a.user_id === patient.id,
+                  ).length;
+
                   return (
                     <button
-                      key={p.id}
-                      onClick={() => setSelectedPatientId(p.id)}
-                      className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
-                        active
-                          ? "bg-[#111111] text-white"
-                          : "bg-white text-[#111111] hover:bg-white/80"
+                      key={patient.id}
+                      onClick={() => setSelectedPatientId(patient.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all ${
+                        isActive
+                          ? "bg-[#4A7C59] text-white shadow-md"
+                          : "bg-warm-50 text-warm-900 hover:bg-warm-100"
                       }`}
                     >
-                      {p.nome}
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-sage-100 text-sage-700"
+                        }`}
+                      >
+                        {patient.nome.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{patient.nome}</p>
+                        <p
+                          className={`text-xs ${isActive ? "text-white/70" : "text-warm-500"}`}
+                        >
+                          {patientApptCount} sessão(ões)
+                        </p>
+                      </div>
                     </button>
                   );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Detalhe do paciente */}
-        <section className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur lg:col-span-2">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-[#111111]">
-                {selectedPatient
-                  ? selectedPatient.nome
-                  : "Selecione um paciente"}
-              </p>
-              <p className="mt-1 text-xs text-[#5F6B64]">
-                Histórico de sessões (com prontuário quando existir).
-              </p>
+                })
+              )}
             </div>
           </div>
+        </div>
 
-          {detailErr ? (
-            <div className="mt-4 rounded-xl border border-[#D6DED9] bg-white p-3 text-sm text-[#5F6B64]">
-              {detailErr}
+        {/* Patient Detail */}
+        <div className="lg:col-span-2">
+          {!selectedPatient ? (
+            <div className="rounded-2xl border border-warm-200 bg-white p-8 text-center shadow-sm">
+              <UsersIcon className="mx-auto h-12 w-12 text-warm-300" />
+              <p className="mt-4 font-semibold text-warm-700">
+                Selecione um paciente
+              </p>
+              <p className="mt-1 text-sm text-warm-500">
+                Escolha um paciente na lista para ver o histórico.
+              </p>
             </div>
-          ) : null}
-
-          <div className="mt-4">
-            {detailLoading ? (
-              <div className="space-y-2">
-                <div className="h-16 animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70" />
-                <div className="h-16 animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70" />
-                <div className="h-16 animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70" />
-              </div>
-            ) : patientAppointments.length === 0 ? (
-              <div className="rounded-xl border border-[#D6DED9] bg-white p-3 text-sm text-[#5F6B64]">
-                Esse paciente ainda não tem sessões.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {patientAppointments.map((a) => {
-                  const notes = notesByAppointment[a.id] ?? null;
-
-                  return (
-                    <div
-                      key={a.id}
-                      className="rounded-2xl border border-[#D6DED9] bg-white/70 p-4"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-[#111111]">
-                            {fmtDateTime(a.start_at)} •{" "}
-                            {typeLabel(a.appointment_type)}
-                          </p>
-                          <p className="mt-1 text-xs text-[#5F6B64]">
-                            Status: {statusLabel(a.status)}
-                          </p>
-                        </div>
-
-                        <Link
-                          href={`/profissional/sessoes/${a.id}`}
-                          className="inline-flex items-center justify-center rounded-xl bg-[#111111] px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
-                        >
-                          Abrir sessão
-                        </Link>
-                      </div>
-
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        <Field
-                          label="Queixa"
-                          value={showOrDash(notes?.queixa)}
-                        />
-                        <Field
-                          label="Associações"
-                          value={showOrDash(notes?.associacoes)}
-                        />
-                        <Field
-                          label="Intervenções"
-                          value={showOrDash(notes?.intervencoes)}
-                        />
-                        <Field label="Plano" value={showOrDash(notes?.plano)} />
-                      </div>
-
-                      <div className="mt-3">
-                        <Field
-                          label="Observações"
-                          value={showOrDash(notes?.observacoes)}
-                          full
-                        />
-                      </div>
-
-                      {!notes ? (
-                        <p className="mt-3 text-xs text-[#5F6B64]">
-                          Sem prontuário salvo para essa sessão.
-                        </p>
-                      ) : null}
+          ) : (
+            <div className="space-y-4">
+              {/* Patient Header */}
+              <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-sage-100 to-sage-200 text-xl font-bold text-sage-700">
+                      {selectedPatient.nome.charAt(0).toUpperCase()}
                     </div>
-                  );
-                })}
+                    <div>
+                      <p className="text-lg font-bold text-warm-900">
+                        {selectedPatient.nome}
+                      </p>
+                      {selectedPatient.email && (
+                        <p className="text-sm text-warm-500">
+                          {selectedPatient.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  <div className="rounded-xl bg-warm-50 p-3 text-center">
+                    <p className="text-2xl font-bold text-warm-900">
+                      {patientStats.total}
+                    </p>
+                    <p className="text-xs text-warm-500">Total</p>
+                  </div>
+                  <div className="rounded-xl bg-emerald-50 p-3 text-center">
+                    <p className="text-2xl font-bold text-emerald-700">
+                      {patientStats.completed}
+                    </p>
+                    <p className="text-xs text-emerald-600">Realizadas</p>
+                  </div>
+                  <div className="rounded-xl bg-amber-50 p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-700">
+                      {patientStats.scheduled}
+                    </p>
+                    <p className="text-xs text-amber-600">Agendadas</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </section>
+
+              {/* Sessions History */}
+              <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+                <div className="mb-4">
+                  <p className="font-semibold text-warm-900">
+                    Histórico de Sessões
+                  </p>
+                  <p className="text-xs text-warm-500">
+                    Com prontuário quando disponível
+                  </p>
+                </div>
+
+                {detailLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="h-32 animate-pulse rounded-xl bg-warm-100"
+                      />
+                    ))}
+                  </div>
+                ) : patientAppointments.length === 0 ? (
+                  <div className="rounded-xl bg-warm-50 p-6 text-center">
+                    <p className="text-sm text-warm-500">
+                      Nenhuma sessão registrada
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {patientAppointments.map((appt) => {
+                      const notes = notesByAppointment[appt.id];
+                      return (
+                        <SessionHistoryCard
+                          key={appt.id}
+                          appointment={appt}
+                          notes={notes}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Field({
-  label,
-  value,
-  full = false,
+function SessionHistoryCard({
+  appointment,
+  notes,
 }: {
-  label: string;
-  value: string;
-  full?: boolean;
+  appointment: Appointment;
+  notes?: SessionNotes;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const startDate = new Date(appointment.start_at);
+
+  const statusColors: Record<string, string> = {
+    scheduled: "bg-amber-100 text-amber-700",
+    completed: "bg-emerald-100 text-emerald-700",
+    cancelled: "bg-rose-100 text-rose-700",
+    rescheduled: "bg-indigo-100 text-indigo-700",
+  };
+
+  const statusLabels: Record<string, string> = {
+    scheduled: "Agendada",
+    completed: "Realizada",
+    cancelled: "Cancelada",
+    rescheduled: "Reagendada",
+  };
+
   return (
-    <div className="rounded-xl border border-[#D6DED9] bg-white p-3">
-      <p className="text-xs font-semibold text-[#111111]">{label}</p>
-      <p className="mt-1 whitespace-pre-wrap text-sm text-[#111111]">{value}</p>
+    <div className="rounded-xl border border-warm-200 bg-warm-50/50 p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <p className="text-lg font-bold text-warm-900">
+              {startDate.toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </p>
+            <p className="text-xs text-warm-500">
+              {startDate.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+          <div className="h-10 w-px bg-warm-200" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${appointment.appointment_type === "video" ? "bg-rose-100 text-rose-700" : "bg-indigo-100 text-indigo-700"}`}
+              >
+                {appointment.appointment_type === "video" ? "Vídeo" : "Chat"}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[appointment.status] || "bg-warm-100 text-warm-700"}`}
+              >
+                {statusLabels[appointment.status] || appointment.status}
+              </span>
+            </div>
+            {notes && (
+              <p className="mt-1 text-xs text-warm-500">
+                Prontuário disponível
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {notes && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="rounded-lg bg-warm-100 px-3 py-1.5 text-xs font-medium text-warm-700 hover:bg-warm-200"
+            >
+              {expanded ? "Ocultar" : "Ver notas"}
+            </button>
+          )}
+          <Link
+            href={`/profissional/sessoes/${appointment.id}`}
+            className="rounded-lg bg-[#4A7C59] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#3d6649]"
+          >
+            Abrir
+          </Link>
+        </div>
+      </div>
+
+      {/* Expanded Notes */}
+      {expanded && notes && (
+        <div className="mt-4 grid gap-3 border-t border-warm-200 pt-4 sm:grid-cols-2">
+          <NoteField label="Queixa" value={notes.queixa} />
+          <NoteField label="Associações" value={notes.associacoes} />
+          <NoteField label="Intervenções" value={notes.intervencoes} />
+          <NoteField label="Plano" value={notes.plano} />
+          <div className="sm:col-span-2">
+            <NoteField label="Observações" value={notes.observacoes} />
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function NoteField({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="rounded-lg bg-white p-3">
+      <p className="text-xs font-semibold text-warm-500">{label}</p>
+      <p className="mt-1 text-sm text-warm-900">{value || "—"}</p>
+    </div>
+  );
+}
+
+function PageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-20 animate-pulse rounded-2xl bg-warm-200" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="h-96 animate-pulse rounded-2xl bg-warm-200" />
+        <div className="h-96 animate-pulse rounded-2xl bg-warm-200 lg:col-span-2" />
+      </div>
+    </div>
+  );
+}
+
+// Icons
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
+    </svg>
+  );
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
   );
 }
