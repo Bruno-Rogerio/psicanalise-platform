@@ -45,7 +45,7 @@ export function Contato() {
             </p>
 
             {/* Heading */}
-            <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl">
+            <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight tracking-tight text-warm-50 sm:text-3xl md:text-4xl">
               Um encontro com a sua história pode mudar a forma como você vive o{" "}
               <span className="text-rose-300">agora</span>.
             </h3>
@@ -80,7 +80,7 @@ export function Contato() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-medium text-white backdrop-blur-sm transition-all duration-400 hover:border-white/30 hover:bg-white/10 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-2xl border border-warm-50/20 bg-warm-50/5 px-7 py-4 text-base font-medium text-warm-50 backdrop-blur-sm transition-all duration-400 hover:border-warm-50/30 hover:bg-warm-50/10 sm:w-auto"
               >
                 Já tenho conta
               </Link>

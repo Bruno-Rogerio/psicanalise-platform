@@ -55,7 +55,7 @@ export function Hero() {
           >
             <Link
               href="/cadastro"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-sage-500 px-7 py-4 text-base font-medium text-white shadow-soft transition-all duration-400 hover:bg-sage-600 hover:shadow-soft-lg sm:w-auto"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-sage-500 px-7 py-4 text-base font-medium text-warm-50 shadow-soft transition-all duration-400 hover:bg-sage-600 hover:shadow-soft-lg sm:w-auto"
             >
               Começar agora
               <svg

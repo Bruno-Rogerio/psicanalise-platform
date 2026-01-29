@@ -25,7 +25,7 @@ export default function PublicHeader() {
           </Link>
           <Link
             href="/cadastro"
-            className="rounded-xl bg-sage-500 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
+            className="rounded-xl bg-sage-500 px-5 py-2.5 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
           >
             Criar conta
           </Link>
