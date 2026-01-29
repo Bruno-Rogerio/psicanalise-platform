@@ -45,7 +45,7 @@ export function CalendarMonth({
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-500 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-700"
+          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-800"
           aria-label="Mês anterior"
         >
           <ChevronLeftIcon className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
@@ -57,7 +57,7 @@ export function CalendarMonth({
 
         <button
           onClick={nextMonth}
-          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-500 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-700"
+          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-800"
           aria-label="Próximo mês"
         >
           <ChevronRightIcon className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -67,7 +67,7 @@ export function CalendarMonth({
       {/* Weekday labels */}
       <div className="mt-4 grid grid-cols-7 gap-1 text-center">
         {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
-          <div key={i} className="py-2 text-xs font-semibold text-muted">
+          <div key={i} className="py-2 text-xs font-semibold text-warm-500">
             {d}
           </div>
         ))}
@@ -97,36 +97,20 @@ export function CalendarMonth({
                 isPast
                   ? "cursor-not-allowed text-warm-300"
                   : isSelected
-                    ? "bg-sage-500 text-white shadow-soft"
-                    : hasSlots
-                      ? "bg-white text-warm-900 hover:bg-sage-100 hover:shadow-soft"
-                      : "text-warm-500 hover:bg-warm-200/50"
+                    ? "bg-sage-600 text-white shadow-md ring-2 ring-sage-600 ring-offset-2"
+                    : isToday
+                      ? "bg-sage-100 text-sage-800 font-bold ring-2 ring-sage-300"
+                      : hasSlots
+                        ? "bg-white text-warm-800 hover:bg-sage-50 hover:shadow-sm border border-warm-200"
+                        : "text-warm-400 hover:bg-warm-100"
               }`}
             >
-              {/* Today indicator */}
-              {isToday && !isSelected && (
-                <span className="absolute inset-0 rounded-xl ring-2 ring-sage-400/50" />
-              )}
+              {/* Day number - sempre visível */}
+              <span>{day.getDate()}</span>
 
-              {/* Day number */}
-              <span
-                className={
-                  isToday && !isSelected ? "font-bold text-sage-600" : ""
-                }
-              >
-                {day.getDate()}
-              </span>
-
-              {/* Availability dot */}
+              {/* Availability dot - apenas quando não selecionado e tem slots */}
               {hasSlots && !isSelected && !isPast && (
-                <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-sage-400 transition-transform duration-300 group-hover:scale-150" />
-              )}
-
-              {/* Selected checkmark */}
-              {isSelected && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-soft">
-                  <CheckIcon className="h-2.5 w-2.5 text-sage-500" />
-                </span>
+                <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-sage-500" />
               )}
             </button>
           );
@@ -134,13 +118,13 @@ export function CalendarMonth({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-muted">
+      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-warm-600">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-sage-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-sage-500" />
           Disponível
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-warm-300" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warm-200" />
           Indisponível
         </span>
       </div>
@@ -215,24 +199,6 @@ function ChevronRightIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M9 5l7 7-7 7"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={3}
-        d="M5 13l4 4L19 7"
       />
     </svg>
   );

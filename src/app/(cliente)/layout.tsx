@@ -35,6 +35,10 @@ export default function ClienteLayout({
     loadUser();
   }, []);
 
+  // Pega a inicial do nome
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : "?";
+  const firstName = userName ? userName.split(" ")[0] : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-100 to-soft-100/30">
       {/* Decorative background */}
@@ -58,10 +62,8 @@ export default function ClienteLayout({
               <span className="text-sm font-semibold tracking-tight text-warm-900">
                 Área do Cliente
               </span>
-              {userName && (
-                <p className="text-xs text-muted">
-                  Olá, {userName.split(" ")[0]}
-                </p>
+              {firstName && (
+                <p className="text-xs text-warm-600">Olá, {firstName}</p>
               )}
             </div>
           </Link>
@@ -78,7 +80,7 @@ export default function ClienteLayout({
                   href={item.href}
                   className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
                     isActive
-                      ? "bg-white/80 text-warm-900 shadow-soft"
+                      ? "bg-white text-warm-900 shadow-soft"
                       : "text-warm-600 hover:bg-white/50 hover:text-warm-900"
                   }`}
                 >
@@ -93,16 +95,23 @@ export default function ClienteLayout({
           <div className="flex items-center gap-3">
             {/* User menu - Desktop */}
             <div className="hidden items-center gap-3 md:flex">
-              {userName && (
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sage-400/30 to-sage-500/30 text-sm font-medium text-sage-700">
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
+              {/* Avatar com círculo visível */}
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-sm font-bold text-sage-700 shadow-sm">
+                  {userInitial}
                 </div>
-              )}
+                {firstName && (
+                  <span className="text-sm font-medium text-warm-800">
+                    {firstName}
+                  </span>
+                )}
+              </div>
+
+              <div className="h-6 w-px bg-warm-300/50" />
+
               <Link
                 href="/logout"
-                className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white/80 px-4 py-2 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:text-warm-900 hover:shadow-soft"
+                className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white px-4 py-2 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-warm-50 hover:text-warm-900 hover:shadow-soft"
               >
                 <LogoutIcon className="h-4 w-4" />
                 Sair
@@ -127,19 +136,18 @@ export default function ClienteLayout({
         {menuOpen && (
           <div className="border-t border-warm-300/40 bg-warm-100/95 backdrop-blur-md md:hidden">
             <nav className="mx-auto max-w-7xl space-y-1 px-5 py-4">
-              {userName && (
-                <div className="mb-4 flex items-center gap-3 border-b border-warm-300/40 pb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sage-400/30 to-sage-500/30 text-base font-medium text-sage-700">
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-warm-900">
-                      {userName}
-                    </p>
-                    <p className="text-xs text-muted">Área do cliente</p>
-                  </div>
+              {/* Mobile user info */}
+              <div className="mb-4 flex items-center gap-3 border-b border-warm-300/40 pb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-base font-bold text-sage-700 shadow-sm">
+                  {userInitial}
                 </div>
-              )}
+                <div>
+                  <p className="text-sm font-semibold text-warm-900">
+                    {userName || "Usuário"}
+                  </p>
+                  <p className="text-xs text-warm-600">Área do cliente</p>
+                </div>
+              </div>
 
               {navItems.map((item) => {
                 const isActive =
@@ -153,7 +161,7 @@ export default function ClienteLayout({
                     onClick={() => setMenuOpen(false)}
                     className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                       isActive
-                        ? "bg-white/80 text-warm-900 shadow-soft"
+                        ? "bg-white text-warm-900 shadow-soft"
                         : "text-warm-600 hover:bg-white/50 hover:text-warm-900"
                     }`}
                   >
@@ -187,11 +195,11 @@ export default function ClienteLayout({
       <footer className="relative z-10 border-t border-warm-300/40 bg-warm-100/60">
         <div className="mx-auto max-w-7xl px-5 py-6 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-xs text-muted">
+            <p className="text-xs text-warm-500">
               Seus dados estão protegidos com criptografia e sigilo
               profissional.
             </p>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-warm-500">
               © {new Date().getFullYear()} • Psicanálise Online
             </p>
           </div>

@@ -44,8 +44,14 @@ export default function AgendaPage() {
   const [month, setMonth] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [pickedSlot, setPickedSlot] = useState<Slot | null>(null);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [confirming, setConfirming] = useState(false);
+
+  // Derive current step from selections
+  const currentStep = useMemo(() => {
+    if (pickedSlot) return 3;
+    if (type) return 2;
+    return 1;
+  }, [type, pickedSlot]);
 
   // Load initial data
   useEffect(() => {
@@ -131,13 +137,11 @@ export default function AgendaPage() {
   // Handlers
   function pickSlot(slot: Slot) {
     setPickedSlot(slot);
-    setStep(3);
   }
 
   function resetCheckout() {
     setPickedSlot(null);
     setSelectedProductId(products[0]?.id ?? null);
-    setStep(1);
   }
 
   async function onUseCredit() {
@@ -166,11 +170,6 @@ export default function AgendaPage() {
     }
   }
 
-  const creditsLabel =
-    credits.available > 0
-      ? `Você tem ${credits.available} sessão(ões) de ${type === "video" ? "vídeo" : "chat"} disponível(is).`
-      : `Você ainda não tem créditos de ${type === "video" ? "vídeo" : "chat"}.`;
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -183,39 +182,55 @@ export default function AgendaPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl">
               Agendar sessão
             </h1>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-warm-600">
               Escolha o tipo, dia e horário ideal para você
             </p>
           </div>
         </div>
       </header>
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-center gap-2">
-        <StepIndicator
-          number={1}
-          label="Tipo"
-          active={step >= 1}
-          completed={step > 1}
-        />
-        <div
-          className={`h-0.5 w-12 rounded-full transition-colors duration-300 ${step > 1 ? "bg-sage-500" : "bg-warm-200"}`}
-        />
-        <StepIndicator
-          number={2}
-          label="Data"
-          active={step >= 2}
-          completed={step > 2}
-        />
-        <div
-          className={`h-0.5 w-12 rounded-full transition-colors duration-300 ${step > 2 ? "bg-sage-500" : "bg-warm-200"}`}
-        />
-        <StepIndicator
-          number={3}
-          label="Confirmar"
-          active={step >= 3}
-          completed={false}
-        />
+      {/* Progress Steps - Redesigned */}
+      <div className="rounded-2xl border border-warm-300/50 bg-white p-4 shadow-soft">
+        <div className="flex items-center justify-between">
+          <StepItem
+            number={1}
+            label="Tipo"
+            description={type === "video" ? "Videochamada" : "Chat"}
+            status={currentStep === 1 ? "current" : "completed"}
+          />
+
+          <div
+            className={`mx-2 h-1 flex-1 rounded-full transition-all duration-500 ${currentStep >= 2 ? "bg-sage-500" : "bg-warm-200"}`}
+          />
+
+          <StepItem
+            number={2}
+            label="Data e Horário"
+            description={
+              pickedSlot
+                ? `${fmtDateShort(pickedSlot.start)} às ${fmtTime(pickedSlot.start)}`
+                : "Selecione"
+            }
+            status={
+              currentStep === 2
+                ? "current"
+                : currentStep > 2
+                  ? "completed"
+                  : "pending"
+            }
+          />
+
+          <div
+            className={`mx-2 h-1 flex-1 rounded-full transition-all duration-500 ${currentStep >= 3 ? "bg-sage-500" : "bg-warm-200"}`}
+          />
+
+          <StepItem
+            number={3}
+            label="Confirmar"
+            description={pickedSlot ? "Pronto!" : "Aguardando"}
+            status={currentStep === 3 ? "current" : "pending"}
+          />
+        </div>
       </div>
 
       {/* Main Grid */}
@@ -223,21 +238,18 @@ export default function AgendaPage() {
         {/* Left Column - Steps */}
         <div className="space-y-6 lg:col-span-2">
           {/* Step 1 - Type */}
-          <Card
+          <SectionCard
+            number={1}
             title="Tipo de atendimento"
             subtitle="Escolha a modalidade da sua sessão"
-            step={1}
-            active={step === 1}
-            onClick={() => setStep(1)}
+            isActive={currentStep === 1}
+            isCompleted={currentStep > 1}
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <TypeCard
                 type="video"
                 selected={type === "video"}
-                onClick={() => {
-                  setType("video");
-                  setStep(2);
-                }}
+                onClick={() => setType("video")}
                 icon={<VideoIcon className="h-6 w-6" />}
                 title="Videochamada"
                 description="Sessão ao vivo com vídeo e áudio"
@@ -246,26 +258,22 @@ export default function AgendaPage() {
               <TypeCard
                 type="chat"
                 selected={type === "chat"}
-                onClick={() => {
-                  setType("chat");
-                  setStep(2);
-                }}
+                onClick={() => setType("chat")}
                 icon={<ChatIcon className="h-6 w-6" />}
                 title="Chat por texto"
                 description="Sessão por mensagens em tempo real"
                 duration={settings?.session_duration_chat_min ?? 50}
               />
             </div>
-          </Card>
+          </SectionCard>
 
           {/* Step 2 - Calendar & Slots */}
-          <Card
+          <SectionCard
+            number={2}
             title="Escolha a data e horário"
             subtitle={fmtDayTitle(selectedDay)}
-            step={2}
-            active={step === 2}
-            onClick={() => step > 2 && setStep(2)}
-            disabled={step < 2}
+            isActive={currentStep === 2}
+            isCompleted={currentStep > 2}
           >
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Calendar */}
@@ -288,7 +296,7 @@ export default function AgendaPage() {
                   <p className="text-sm font-medium text-warm-900">
                     Horários disponíveis
                   </p>
-                  <span className="text-xs text-muted">
+                  <span className="rounded-full bg-warm-200/60 px-2.5 py-1 text-xs font-medium text-warm-700">
                     {daySlots.length} horário(s)
                   </span>
                 </div>
@@ -304,13 +312,13 @@ export default function AgendaPage() {
                 )}
               </div>
             </div>
-          </Card>
+          </SectionCard>
         </div>
 
         {/* Right Column - Summary & Actions */}
         <aside className="space-y-4">
           {/* Credits Card */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white/90 to-warm-50/50 p-5 backdrop-blur-sm">
+          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-white p-5 shadow-soft">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sage-400/20 to-sage-500/20">
                 <CreditCardIcon className="h-5 w-5 text-sage-600" />
@@ -319,7 +327,7 @@ export default function AgendaPage() {
                 <p className="text-sm font-semibold text-warm-900">
                   Seus créditos
                 </p>
-                <p className="text-xs text-muted">
+                <p className="text-xs text-warm-600">
                   {type === "video" ? "Videochamada" : "Chat"}
                 </p>
               </div>
@@ -329,29 +337,32 @@ export default function AgendaPage() {
               <span className="text-3xl font-bold text-sage-600">
                 {credits.available}
               </span>
-              <span className="text-sm text-muted">sessão(ões)</span>
+              <span className="text-sm text-warm-600">sessão(ões)</span>
             </div>
 
             {credits.available === 0 && (
-              <p className="mt-2 text-xs text-rose-600">
-                Adquira um plano para agendar
-              </p>
+              <div className="mt-3 rounded-lg bg-amber-50 p-2">
+                <p className="text-xs font-medium text-amber-700">
+                  ⚠️ Você precisa adquirir créditos para agendar
+                </p>
+              </div>
             )}
           </div>
 
-          {/* Session Summary */}
-          {pickedSlot && (
-            <div className="overflow-hidden rounded-2xl border border-sage-200 bg-gradient-to-br from-sage-50/80 to-white p-5 shadow-soft">
-              <div className="flex items-center gap-2 text-sage-700">
-                <SparklesIcon className="h-4 w-4" />
-                <p className="text-xs font-semibold uppercase tracking-wider">
+          {/* Session Summary - Only when slot picked */}
+          {pickedSlot ? (
+            <div className="overflow-hidden rounded-2xl border-2 border-sage-300 bg-white p-5 shadow-soft">
+              <div className="flex items-center gap-2">
+                <SparklesIcon className="h-5 w-5 text-sage-600" />
+                <p className="text-sm font-bold uppercase tracking-wider text-sage-700">
                   Resumo da sessão
                 </p>
               </div>
 
               <div className="mt-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-soft">
+                {/* Type */}
+                <div className="flex items-center gap-3 rounded-xl bg-warm-50 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
                     {type === "video" ? (
                       <VideoIcon className="h-5 w-5 text-rose-500" />
                     ) : (
@@ -362,7 +373,7 @@ export default function AgendaPage() {
                     <p className="text-sm font-semibold text-warm-900">
                       {type === "video" ? "Videochamada" : "Chat"}
                     </p>
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-warm-600">
                       {type === "video"
                         ? settings?.session_duration_video_min
                         : settings?.session_duration_chat_min}{" "}
@@ -371,15 +382,16 @@ export default function AgendaPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-soft">
+                {/* Date/Time */}
+                <div className="flex items-center gap-3 rounded-xl bg-warm-50 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
                     <CalendarIcon className="h-5 w-5 text-sage-600" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-warm-900">
-                      {fmtDate(pickedSlot.start)}
+                      {fmtDateFull(pickedSlot.start)}
                     </p>
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-warm-600">
                       {fmtTime(pickedSlot.start)} – {fmtTime(pickedSlot.end)}
                     </p>
                   </div>
@@ -392,7 +404,7 @@ export default function AgendaPage() {
                   <button
                     onClick={onUseCredit}
                     disabled={confirming}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 px-4 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:shadow-soft-lg hover:brightness-105 disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 px-4 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-700 hover:shadow-xl disabled:opacity-60"
                   >
                     {confirming ? (
                       <>
@@ -402,55 +414,65 @@ export default function AgendaPage() {
                     ) : (
                       <>
                         <CheckCircleIcon className="h-5 w-5" />
-                        Confirmar usando 1 crédito
+                        Confirmar (usar 1 crédito)
                       </>
                     )}
                   </button>
                 ) : (
                   <button
-                    onClick={() => {}}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-warm-500 px-4 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:shadow-soft-lg hover:brightness-105"
+                    onClick={() => {
+                      /* Redirect to plans */
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:from-rose-600 hover:to-rose-700 hover:shadow-xl"
                   >
                     <CreditCardIcon className="h-5 w-5" />
-                    Adquirir plano
+                    Comprar créditos
                   </button>
                 )}
 
                 <button
                   onClick={resetCheckout}
-                  className="w-full rounded-xl border border-warm-300/60 bg-white/80 px-4 py-2.5 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:shadow-soft"
+                  className="w-full rounded-xl border border-warm-300 bg-warm-50 px-4 py-3 text-sm font-semibold text-warm-700 transition-all duration-300 hover:bg-warm-100"
                 >
-                  Trocar horário
+                  ← Trocar horário
                 </button>
               </div>
 
-              <p className="mt-4 text-center text-xs text-muted">
-                Cancelamento gratuito até 24h antes
+              <p className="mt-4 text-center text-xs text-warm-500">
+                ✓ Cancelamento gratuito até 24h antes
               </p>
             </div>
-          )}
-
-          {/* Rules Card */}
-          {!pickedSlot && (
-            <div className="rounded-2xl border border-warm-300/50 bg-white/80 p-5 backdrop-blur-sm">
+          ) : (
+            /* Info Card - When no slot picked */
+            <div className="rounded-2xl border border-warm-300/50 bg-white p-5 shadow-soft">
               <p className="flex items-center gap-2 text-sm font-semibold text-warm-900">
-                <InfoIcon className="h-4 w-4 text-muted" />
-                Informações
+                <InfoIcon className="h-4 w-4 text-warm-500" />
+                Próximo passo
               </p>
-              <ul className="mt-3 space-y-2 text-xs text-muted">
-                <li className="flex items-start gap-2">
-                  <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                  Cancelamento gratuito até 24h antes
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                  Reagendamento sem custo adicional
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                  Sigilo e ética profissional garantidos
-                </li>
-              </ul>
+              <p className="mt-2 text-sm text-warm-600">
+                Selecione um horário no calendário para ver o resumo e confirmar
+                sua sessão.
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-semibold text-warm-700">
+                  Informações:
+                </p>
+                <ul className="space-y-1.5 text-xs text-warm-600">
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
+                    Cancelamento gratuito até 24h antes
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
+                    Reagendamento sem custo adicional
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
+                    Sigilo profissional garantido
+                  </li>
+                </ul>
+              </div>
             </div>
           )}
         </aside>
@@ -459,84 +481,88 @@ export default function AgendaPage() {
   );
 }
 
-// Step Indicator
-function StepIndicator({
+// Step Item - Redesigned com melhor contraste
+function StepItem({
   number,
   label,
-  active,
-  completed,
+  description,
+  status,
 }: {
   number: number;
   label: string;
-  active: boolean;
-  completed: boolean;
+  description: string;
+  status: "pending" | "current" | "completed";
 }) {
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex items-center gap-3">
       <div
-        className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300 ${
-          completed
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${
+          status === "completed"
             ? "bg-sage-500 text-white"
-            : active
-              ? "bg-sage-500 text-white shadow-soft"
-              : "bg-warm-200 text-warm-500"
+            : status === "current"
+              ? "border-2 border-sage-500 bg-white text-sage-700"
+              : "bg-warm-100 text-warm-400"
         }`}
       >
-        {completed ? <CheckIcon className="h-4 w-4" /> : number}
+        {status === "completed" ? <CheckIcon className="h-5 w-5" /> : number}
       </div>
-      <span
-        className={`text-xs font-medium ${active ? "text-sage-600" : "text-muted"}`}
-      >
-        {label}
-      </span>
+      <div className="hidden sm:block">
+        <p
+          className={`text-sm font-semibold ${status === "pending" ? "text-warm-400" : "text-warm-900"}`}
+        >
+          {label}
+        </p>
+        <p
+          className={`text-xs ${status === "pending" ? "text-warm-400" : "text-warm-600"}`}
+        >
+          {description}
+        </p>
+      </div>
     </div>
   );
 }
 
-// Card component
-function Card({
+// Section Card
+function SectionCard({
+  number,
   title,
   subtitle,
-  step,
-  active,
-  onClick,
-  disabled,
+  isActive,
+  isCompleted,
   children,
 }: {
+  number: number;
   title: string;
   subtitle?: string;
-  step: number;
-  active: boolean;
-  onClick?: () => void;
-  disabled?: boolean;
+  isActive: boolean;
+  isCompleted: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div
       className={`overflow-hidden rounded-3xl border transition-all duration-300 ${
-        active
-          ? "border-sage-300 bg-white/90 shadow-soft-lg"
-          : disabled
-            ? "border-warm-200 bg-warm-50/50 opacity-60"
-            : "border-warm-300/50 bg-white/80 hover:shadow-soft"
-      } ${onClick && !disabled ? "cursor-pointer" : ""}`}
-      onClick={disabled ? undefined : onClick}
+        isActive
+          ? "border-sage-300 bg-white shadow-lg"
+          : "border-warm-300/50 bg-white shadow-soft"
+      }`}
     >
-      <div className="border-b border-warm-200/50 bg-gradient-to-r from-warm-50/50 to-transparent px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-base font-semibold text-warm-900">{title}</p>
-            {subtitle && (
-              <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
-            )}
-          </div>
-          <span
-            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-              active ? "bg-sage-500 text-white" : "bg-warm-200 text-warm-500"
-            }`}
-          >
-            {step}
-          </span>
+      <div
+        className={`flex items-center gap-3 border-b px-5 py-4 ${isActive ? "border-sage-200 bg-sage-50/50" : "border-warm-200/50 bg-warm-50/30"}`}
+      >
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+            isCompleted
+              ? "bg-sage-500 text-white"
+              : isActive
+                ? "border-2 border-sage-500 bg-white text-sage-700"
+                : "bg-warm-100 text-warm-500"
+          }`}
+        >
+          {isCompleted ? <CheckIcon className="h-4 w-4" /> : number}
+        </div>
+        <div>
+          <p className="text-base font-semibold text-warm-900">{title}</p>
+          {subtitle && <p className="text-xs text-warm-600">{subtitle}</p>}
         </div>
       </div>
       <div className="p-5">{children}</div>
@@ -564,21 +590,21 @@ function TypeCard({
 }) {
   const colorClass =
     type === "video"
-      ? "from-rose-400/20 to-warm-500/20 text-rose-500"
-      : "from-soft-400/20 to-soft-500/20 text-soft-600";
+      ? "from-rose-400/20 to-rose-500/20 text-rose-600"
+      : "from-soft-400/20 to-soft-500/20 text-soft-700";
 
   return (
     <button
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
+      className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
         selected
-          ? "border-sage-300 bg-sage-50/50 shadow-soft"
-          : "border-warm-300/60 bg-white hover:border-sage-200 hover:shadow-soft"
+          ? "border-sage-500 bg-sage-50 shadow-md"
+          : "border-warm-200 bg-white hover:border-sage-300 hover:shadow-md"
       }`}
     >
       {selected && (
-        <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-sage-500 shadow">
-          <CheckIcon className="h-3 w-3 text-white" />
+        <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-sage-500">
+          <CheckIcon className="h-3.5 w-3.5 text-white" />
         </span>
       )}
 
@@ -588,11 +614,11 @@ function TypeCard({
         {icon}
       </div>
 
-      <p className="mt-3 text-base font-semibold text-warm-900">{title}</p>
-      <p className="mt-1 text-xs text-muted">{description}</p>
+      <p className="mt-3 text-base font-bold text-warm-900">{title}</p>
+      <p className="mt-1 text-sm text-warm-600">{description}</p>
 
-      <div className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-        <ClockIcon className="h-3.5 w-3.5" />
+      <div className="mt-3 flex items-center gap-1.5 text-sm text-warm-500">
+        <ClockIcon className="h-4 w-4" />
         {duration} minutos
       </div>
     </button>
@@ -606,7 +632,7 @@ function SkeletonSlots() {
       <div className="h-4 w-20 animate-pulse rounded bg-warm-200" />
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-10 animate-pulse rounded-xl bg-warm-200" />
+          <div key={i} className="h-11 animate-pulse rounded-xl bg-warm-200" />
         ))}
       </div>
     </div>
@@ -634,11 +660,18 @@ function fmtDayTitle(d: Date) {
   });
 }
 
-function fmtDate(d: Date) {
+function fmtDateShort(d: Date) {
   return d.toLocaleDateString("pt-BR", {
-    weekday: "short",
     day: "2-digit",
     month: "short",
+  });
+}
+
+function fmtDateFull(d: Date) {
+  return d.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
   });
 }
 
@@ -772,7 +805,7 @@ function CheckIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2}
+        strokeWidth={2.5}
         d="M5 13l4 4L19 7"
       />
     </svg>
@@ -790,7 +823,7 @@ function CheckCircleIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>

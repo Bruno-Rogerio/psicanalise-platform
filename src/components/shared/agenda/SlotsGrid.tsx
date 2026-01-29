@@ -32,14 +32,14 @@ export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
 
   if (!slots.length) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-300/50 bg-white/80 p-8 backdrop-blur-sm">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warm-200/50">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-300/50 bg-white p-8">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warm-100">
           <CalendarXIcon className="h-7 w-7 text-warm-400" />
         </div>
         <p className="mt-4 text-center text-sm font-medium text-warm-700">
           Sem horários disponíveis
         </p>
-        <p className="mt-1 text-center text-xs text-muted">
+        <p className="mt-1 text-center text-xs text-warm-500">
           Tente selecionar outro dia no calendário
         </p>
       </div>
@@ -55,7 +55,6 @@ export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
           slots={grouped.morning}
           onPick={onPick}
           selectedSlot={selectedSlot}
-          startIndex={0}
         />
       )}
 
@@ -66,7 +65,6 @@ export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
           slots={grouped.afternoon}
           onPick={onPick}
           selectedSlot={selectedSlot}
-          startIndex={grouped.morning.length}
         />
       )}
 
@@ -77,7 +75,6 @@ export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
           slots={grouped.evening}
           onPick={onPick}
           selectedSlot={selectedSlot}
-          startIndex={grouped.morning.length + grouped.afternoon.length}
         />
       )}
     </div>
@@ -90,27 +87,27 @@ function SlotGroup({
   slots,
   onPick,
   selectedSlot,
-  startIndex,
 }: {
   title: string;
   icon: React.ReactNode;
   slots: Slot[];
   onPick: (slot: Slot) => void;
   selectedSlot?: Slot | null;
-  startIndex: number;
 }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
         <span className="text-warm-500">{icon}</span>
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+        <span className="text-xs font-semibold uppercase tracking-wider text-warm-600">
           {title}
         </span>
-        <span className="text-xs text-warm-400">({slots.length})</span>
+        <span className="rounded-full bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-600">
+          {slots.length}
+        </span>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-        {slots.map((slot, idx) => {
+        {slots.map((slot) => {
           const isSelected =
             selectedSlot?.start.toISOString() === slot.start.toISOString();
 
@@ -118,27 +115,19 @@ function SlotGroup({
             <button
               key={slot.start.toISOString()}
               onClick={() => onPick(slot)}
-              className={`group relative overflow-hidden rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
+              className={`group relative overflow-hidden rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
                 isSelected
-                  ? "border-sage-500 bg-sage-500 text-white shadow-soft"
-                  : "border-warm-300/60 bg-white text-warm-900 hover:-translate-y-0.5 hover:border-sage-300 hover:shadow-soft"
+                  ? "border-sage-500 bg-sage-600 text-white shadow-md"
+                  : "border-warm-200 bg-white text-warm-800 hover:border-sage-300 hover:bg-sage-50 hover:shadow-sm"
               }`}
-              style={{
-                animationDelay: `${(startIndex + idx) * 30}ms`,
-              }}
             >
-              {/* Hover gradient */}
-              {!isSelected && (
-                <span className="absolute inset-0 bg-gradient-to-br from-sage-50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              )}
-
               {/* Time */}
               <span className="relative">{fmtTime(slot.start)}</span>
 
-              {/* Selected checkmark */}
+              {/* Selected indicator */}
               {isSelected && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow">
-                  <CheckIcon className="h-3 w-3 text-sage-500" />
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white">
+                  <CheckIcon className="h-2.5 w-2.5 text-sage-600" />
                 </span>
               )}
             </button>
