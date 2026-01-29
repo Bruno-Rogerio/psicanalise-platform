@@ -45,10 +45,10 @@ export function CalendarMonth({
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-800"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200 hover:text-warm-800"
           aria-label="Mês anterior"
         >
-          <ChevronLeftIcon className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+          <ChevronLeftIcon className="h-5 w-5" />
         </button>
 
         <h3 className="text-base font-semibold capitalize text-warm-900">
@@ -57,10 +57,10 @@ export function CalendarMonth({
 
         <button
           onClick={nextMonth}
-          className="group flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200/50 hover:text-warm-800"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-all duration-300 hover:bg-warm-200 hover:text-warm-800"
           aria-label="Próximo mês"
         >
-          <ChevronRightIcon className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5" />
+          <ChevronRightIcon className="h-5 w-5" />
         </button>
       </div>
 
@@ -93,24 +93,31 @@ export function CalendarMonth({
               key={day.toISOString()}
               onClick={() => !isPast && onSelect(day)}
               disabled={isPast}
-              className={`group relative flex h-11 flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`group relative flex h-11 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-300 ${
                 isPast
                   ? "cursor-not-allowed text-warm-300"
                   : isSelected
-                    ? "bg-sage-600 text-white shadow-md ring-2 ring-sage-600 ring-offset-2"
+                    ? "bg-sage-100 text-sage-800 ring-2 ring-sage-500 ring-offset-2 scale-110 shadow-md"
                     : isToday
-                      ? "bg-sage-100 text-sage-800 font-bold ring-2 ring-sage-300"
+                      ? "bg-amber-100 text-amber-800 font-bold"
                       : hasSlots
-                        ? "bg-white text-warm-800 hover:bg-sage-50 hover:shadow-sm border border-warm-200"
+                        ? "bg-white text-warm-800 border border-warm-200 hover:border-sage-400 hover:bg-sage-50 hover:scale-105"
                         : "text-warm-400 hover:bg-warm-100"
               }`}
             >
-              {/* Day number - sempre visível */}
+              {/* Day number - SEMPRE visível */}
               <span>{day.getDate()}</span>
 
-              {/* Availability dot - apenas quando não selecionado e tem slots */}
+              {/* Availability dot */}
               {hasSlots && !isSelected && !isPast && (
                 <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-sage-500" />
+              )}
+
+              {/* Selected checkmark */}
+              {isSelected && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-sage-500 shadow-md">
+                  <CheckIcon className="h-3 w-3 text-white" />
+                </span>
               )}
             </button>
           );
@@ -124,7 +131,7 @@ export function CalendarMonth({
           Disponível
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-warm-200" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warm-300" />
           Indisponível
         </span>
       </div>
@@ -142,12 +149,10 @@ function buildCalendarWeeks(month: Date): (Date | null)[][] {
   const weeks: (Date | null)[][] = [];
   let week: (Date | null)[] = [];
 
-  // Empty cells before first day
   for (let i = 0; i < firstDay.getDay(); i++) {
     week.push(null);
   }
 
-  // Days of month
   for (let d = 1; d <= lastDay.getDate(); d++) {
     week.push(new Date(year, m, d));
     if (week.length === 7) {
@@ -156,7 +161,6 @@ function buildCalendarWeeks(month: Date): (Date | null)[][] {
     }
   }
 
-  // Empty cells after last day
   if (week.length > 0) {
     while (week.length < 7) {
       week.push(null);
@@ -199,6 +203,24 @@ function ChevronRightIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M9 5l7 7-7 7"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={3}
+        d="M5 13l4 4L19 7"
       />
     </svg>
   );

@@ -301,8 +301,8 @@ export default function AgendaPage() {
               <OptionCard
                 selected={type === "video"}
                 onClick={() => selectType("video")}
-                icon={<VideoIcon className="h-7 w-7" />}
-                iconBg="from-rose-400 to-rose-500"
+                icon={<VideoIcon className="h-7 w-7 text-white" />}
+                iconBg="bg-gradient-to-br from-rose-400 to-rose-500"
                 title="Videochamada"
                 description="Sessão ao vivo com câmera e áudio"
                 badge={`${settings?.session_duration_video_min ?? 50} min`}
@@ -312,8 +312,8 @@ export default function AgendaPage() {
               <OptionCard
                 selected={type === "chat"}
                 onClick={() => selectType("chat")}
-                icon={<ChatIcon className="h-7 w-7" />}
-                iconBg="from-soft-400 to-soft-500"
+                icon={<ChatBubbleIcon className="h-7 w-7 text-white" />}
+                iconBg="bg-gradient-to-br from-indigo-400 to-indigo-500"
                 title="Chat por texto"
                 description="Mensagens em tempo real"
                 badge={`${settings?.session_duration_chat_min ?? 50} min`}
@@ -422,51 +422,53 @@ export default function AgendaPage() {
 
           {/* Resumo da Sessão - aparece no step 3 */}
           {pickedSlot && (
-            <div className="rounded-2xl border-2 border-sage-400 bg-gradient-to-br from-sage-50 to-white p-5 shadow-lg">
+            <div className="rounded-2xl border-2 border-sage-400 bg-white p-5 shadow-lg">
               <div className="flex items-center gap-2 text-sage-700">
                 <SparklesIcon className="h-5 w-5" />
-                <p className="font-bold uppercase tracking-wide">Resumo</p>
+                <p className="font-bold uppercase tracking-wide">
+                  Resumo da Sessão
+                </p>
               </div>
 
               <div className="mt-5 space-y-4">
                 {/* Tipo */}
-                <div className="flex items-center gap-4 rounded-xl bg-white p-3 shadow-sm">
+                <div className="flex items-center gap-4 rounded-xl bg-warm-50 border border-warm-200 p-4">
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow ${
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl shadow ${
                       type === "video"
-                        ? "from-rose-400 to-rose-500"
-                        : "from-soft-400 to-soft-500"
+                        ? "bg-gradient-to-br from-rose-400 to-rose-500"
+                        : "bg-gradient-to-br from-indigo-400 to-indigo-500"
                     }`}
                   >
                     {type === "video" ? (
                       <VideoIcon className="h-6 w-6 text-white" />
                     ) : (
-                      <ChatIcon className="h-6 w-6 text-white" />
+                      <ChatBubbleIcon className="h-6 w-6 text-white" />
                     )}
                   </div>
                   <div>
                     <p className="font-semibold text-warm-900">
-                      {type === "video" ? "Videochamada" : "Chat"}
+                      {type === "video" ? "Videochamada" : "Chat por texto"}
                     </p>
-                    <p className="text-sm text-warm-500">
+                    <p className="text-sm text-warm-600">
                       {type === "video"
                         ? settings?.session_duration_video_min
                         : settings?.session_duration_chat_min}{" "}
-                      minutos
+                      minutos de duração
                     </p>
                   </div>
                 </div>
 
                 {/* Data/Hora */}
-                <div className="flex items-center gap-4 rounded-xl bg-white p-3 shadow-sm">
+                <div className="flex items-center gap-4 rounded-xl bg-warm-50 border border-warm-200 p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sage-400 to-sage-500 shadow">
-                    <CalendarIcon className="h-6 w-6 text-white" />
+                    <CalendarCheckIcon className="h-6 w-6 text-white" />
                   </div>
                   <div>
                     <p className="font-semibold text-warm-900">
                       {fmtDateFull(pickedSlot.start)}
                     </p>
-                    <p className="text-sm text-warm-500">
+                    <p className="text-sm text-warm-600">
                       {fmtTime(pickedSlot.start)} – {fmtTime(pickedSlot.end)}
                     </p>
                   </div>
@@ -479,7 +481,7 @@ export default function AgendaPage() {
                   <button
                     onClick={onUseCredit}
                     disabled={confirming}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:from-sage-600 hover:to-sage-700 hover:shadow-xl disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-sage-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-700 hover:shadow-xl disabled:opacity-60"
                   >
                     {confirming ? (
                       <>
@@ -498,7 +500,7 @@ export default function AgendaPage() {
                     onClick={() => {
                       /* Redirect to plans */
                     }}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:from-rose-600 hover:to-rose-700 hover:shadow-xl"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-rose-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-rose-700 hover:shadow-xl"
                   >
                     <CreditIcon className="h-6 w-6" />
                     <span>Comprar Créditos</span>
@@ -507,7 +509,7 @@ export default function AgendaPage() {
 
                 <button
                   onClick={() => resetToStep(2)}
-                  className="w-full rounded-xl border-2 border-warm-300 bg-white px-4 py-3 font-semibold text-warm-700 transition-all duration-300 hover:bg-warm-50"
+                  className="w-full rounded-xl border-2 border-warm-300 bg-warm-50 px-4 py-3 font-semibold text-warm-700 transition-all duration-300 hover:bg-warm-100"
                 >
                   ← Escolher outro horário
                 </button>
@@ -576,7 +578,7 @@ function StepBubble({
           status === "done"
             ? "bg-sage-500 text-white shadow-lg shadow-sage-500/30"
             : status === "active"
-              ? "bg-white text-sage-600 ring-4 ring-sage-500 shadow-lg"
+              ? "bg-sage-100 text-sage-700 ring-4 ring-sage-500 shadow-lg"
               : "bg-warm-100 text-warm-400"
         }`}
       >
@@ -634,7 +636,7 @@ function StepCard({
   // Se completado, mostra versão compacta
   if (isCompleted && selectedValue) {
     return (
-      <div className="rounded-2xl border border-sage-200 bg-sage-50/50 p-5">
+      <div className="rounded-2xl border border-sage-200 bg-sage-50 p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-500 text-white shadow">
@@ -647,7 +649,7 @@ function StepCard({
           </div>
           <button
             onClick={onEdit}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-sage-600 transition-colors hover:bg-sage-100"
+            className="rounded-lg bg-white border border-sage-200 px-4 py-2 text-sm font-medium text-sage-700 transition-colors hover:bg-sage-100"
           >
             Alterar
           </button>
@@ -668,7 +670,7 @@ function StepCard({
         <div
           className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold ${
             isActive
-              ? "bg-sage-500 text-white shadow-lg shadow-sage-500/30"
+              ? "bg-sage-100 text-sage-700 ring-2 ring-sage-500"
               : "bg-warm-100 text-warm-400"
           }`}
         >
@@ -709,7 +711,7 @@ function OptionCard({
       onClick={onClick}
       className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
         selected
-          ? "border-sage-500 bg-sage-50 shadow-lg shadow-sage-500/10"
+          ? "border-sage-500 bg-sage-50 shadow-lg ring-2 ring-sage-500 ring-offset-2"
           : "border-warm-200 bg-white hover:border-sage-300 hover:shadow-md"
       }`}
     >
@@ -722,7 +724,7 @@ function OptionCard({
 
       {/* Icon */}
       <div
-        className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${iconBg} text-white shadow-lg transition-transform duration-300 group-hover:scale-105`}
+        className={`flex h-14 w-14 items-center justify-center rounded-xl ${iconBg} shadow-lg transition-transform duration-300 group-hover:scale-105`}
       >
         {icon}
       </div>
@@ -732,7 +734,7 @@ function OptionCard({
       <p className="mt-1 text-sm text-warm-500">{description}</p>
 
       {/* Badge */}
-      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warm-100 px-3 py-1 text-sm font-medium text-warm-600">
+      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warm-100 px-3 py-1 text-sm font-medium text-warm-700">
         <ClockIcon className="h-4 w-4" />
         {badge}
       </div>
@@ -743,7 +745,7 @@ function OptionCard({
 // Empty Slots
 function EmptySlots({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-200 bg-warm-50/50 py-12">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-200 bg-warm-50 py-12">
       <CalendarIcon className="h-12 w-12 text-warm-300" />
       <p className="mt-4 text-warm-500">{message}</p>
     </div>
@@ -858,6 +860,30 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+function CalendarCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2.5}
+        d="M9 14l2 2 4-4"
+      />
+    </svg>
+  );
+}
+
 function VideoIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -876,7 +902,7 @@ function VideoIcon({ className }: { className?: string }) {
   );
 }
 
-function ChatIcon({ className }: { className?: string }) {
+function ChatBubbleIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}

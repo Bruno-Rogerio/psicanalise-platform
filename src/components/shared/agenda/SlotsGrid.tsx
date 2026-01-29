@@ -10,7 +10,6 @@ type Props = {
 };
 
 export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
-  // Agrupa slots por período do dia
   const grouped = useMemo(() => {
     const morning: Slot[] = [];
     const afternoon: Slot[] = [];
@@ -32,8 +31,8 @@ export function SlotsGrid({ slots, onPick, selectedSlot }: Props) {
 
   if (!slots.length) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-300/50 bg-white p-8">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warm-100">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-200 bg-warm-50 p-8">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warm-200">
           <CalendarXIcon className="h-7 w-7 text-warm-400" />
         </div>
         <p className="mt-4 text-center text-sm font-medium text-warm-700">
@@ -115,19 +114,19 @@ function SlotGroup({
             <button
               key={slot.start.toISOString()}
               onClick={() => onPick(slot)}
-              className={`group relative overflow-hidden rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${
+              className={`group relative overflow-hidden rounded-xl border-2 px-3 py-3 text-sm font-bold transition-all duration-300 ${
                 isSelected
-                  ? "border-sage-500 bg-sage-600 text-white shadow-md"
-                  : "border-warm-200 bg-white text-warm-800 hover:border-sage-300 hover:bg-sage-50 hover:shadow-sm"
+                  ? "border-sage-500 bg-sage-100 text-sage-800 scale-105 shadow-lg ring-2 ring-sage-500 ring-offset-2"
+                  : "border-warm-200 bg-white text-warm-800 hover:border-sage-400 hover:bg-sage-50 hover:scale-102 hover:shadow-md"
               }`}
             >
-              {/* Time */}
-              <span className="relative">{fmtTime(slot.start)}</span>
+              {/* Time - SEMPRE visível */}
+              <span>{fmtTime(slot.start)}</span>
 
-              {/* Selected indicator */}
+              {/* Selected checkmark */}
               {isSelected && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white">
-                  <CheckIcon className="h-2.5 w-2.5 text-sage-600" />
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-sage-500 shadow-md">
+                  <CheckIcon className="h-3 w-3 text-white" />
                 </span>
               )}
             </button>
