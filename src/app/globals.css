@@ -197,3 +197,15 @@ body {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* ========================================
+   TEXT UTILITIES (contraste garantido)
+   ======================================== */
+
+.text-muted {
+  color: #7a7070;
+}
+
+.text-muted-light {
+  color: #9a9090;
+}

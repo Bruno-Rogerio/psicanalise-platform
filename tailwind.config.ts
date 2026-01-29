@@ -60,7 +60,8 @@ export default {
         },
         muted: {
           DEFAULT: "#7A7070", // Texto secundário - cinza acolhedor
-          foreground: "#FFFDFB",
+          light: "#9A9090", // Texto terciário
+          foreground: "#3D3535", // Texto escuro para fundos claros
         },
       },
       borderRadius: {
