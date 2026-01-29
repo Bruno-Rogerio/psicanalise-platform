@@ -3,8 +3,8 @@ import Image from "next/image";
 
 export default function PublicHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[#D6DED9] bg-[#EEF3EF]/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-warm-300/60 bg-warm-100/80 backdrop-blur-md">
+      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-6">
         <Link href="/" className="group inline-flex items-center">
           <Image
             src="/logo.png"
@@ -12,20 +12,20 @@ export default function PublicHeader() {
             width={160}
             height={40}
             priority
-            className="h-20 w-auto group-hover:opacity-80"
+            className="h-20 w-auto transition-opacity duration-300 group-hover:opacity-80"
           />
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-3">
           <Link
             href="/login"
-            className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900"
+            className="rounded-xl px-4 py-2.5 text-sm font-medium text-warm-900/80 transition-all duration-300 hover:bg-warm-300/30 hover:text-warm-900"
           >
             Entrar
           </Link>
           <Link
             href="/cadastro"
-            className="rounded-md bg-[#111111] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-sage-500 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
           >
             Criar conta
           </Link>

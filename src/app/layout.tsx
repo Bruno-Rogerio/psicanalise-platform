@@ -2,7 +2,8 @@ import "./globals.css";
 
 export const metadata = {
   title: "Psicanálise",
-  description: "Plataforma de psicanálise online",
+  description:
+    "Plataforma de psicanálise online - Um espaço seguro para falar, sentir e se escutar.",
 };
 
 export default function RootLayout({
@@ -12,9 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-[#EEF3EF] text-[#1F1F1F] antialiased">
-        {children}
-      </body>
+      <body className="bg-warm-100 text-warm-900 antialiased">{children}</body>
     </html>
   );
 }

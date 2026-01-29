@@ -4,28 +4,30 @@ export function Section({
   children,
   id,
   eyebrow,
+  className = "",
 }: {
   id?: string;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section id={id} className="py-14 sm:py-16">
+    <section id={id} className={`py-16 sm:py-20 ${className}`}>
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
         {title ? (
-          <div className="mb-8 sm:mb-10">
+          <div className="mb-10 sm:mb-12">
             {eyebrow ? (
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-warm-500">
                 {eyebrow}
               </p>
             ) : null}
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl md:text-4xl">
               {title}
             </h2>
             {subtitle ? (
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#6F6F6F] sm:text-base">
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
                 {subtitle}
               </p>
             ) : null}

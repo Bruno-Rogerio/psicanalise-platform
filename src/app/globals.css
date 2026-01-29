@@ -1,16 +1,199 @@
 @import "tailwindcss";
 
-/* Base */
+/* ========================================
+   PALETA "ACOLHIMENTO SERENO"
+   ======================================== */
+
+:root {
+  /* Fundos */
+  --bg-primary: #fdf8f6; /* Creme rosado - fundo principal */
+  --bg-secondary: #f5f3f8; /* Lavanda suave - fundo secundário */
+  --bg-card: #fffdfb; /* Branco quente - cards */
+
+  /* Textos */
+  --text-primary: #3d3535; /* Marrom escuro - texto principal */
+  --text-secondary: #7a7070; /* Cinza acolhedor - texto secundário */
+  --text-muted: #9a9090; /* Cinza mais claro */
+
+  /* Destaques */
+  --accent-primary: #c4a484; /* Terracota suave */
+  --accent-secondary: #d4a5a5; /* Rosa antigo */
+  --accent-cta: #8b9a8b; /* Verde sálvia - botões principais */
+
+  /* Bordas e divisores */
+  --border-soft: #e8e0dc; /* Bege neutro */
+  --border-muted: #f0eae6; /* Bege mais claro */
+
+  /* Estados */
+  --hover-light: rgba(196, 164, 132, 0.08);
+  --hover-medium: rgba(196, 164, 132, 0.12);
+
+  /* Sombras */
+  --shadow-color: 20 10 5;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  background: #fafafa;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Suavidade */
+/* Suavidade nos toques mobile */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ========================================
+   SCROLLBAR CUSTOMIZADA
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-soft);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* ========================================
+   SELECTION
+   ======================================== */
+
+::selection {
+  background: rgba(212, 165, 165, 0.3);
+  color: var(--text-primary);
+}
+
+/* ========================================
+   FOCUS STATES ACESSÍVEIS
+   ======================================== */
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   ANIMAÇÕES SUAVES
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ========================================
+   UTILITÁRIOS CUSTOMIZADOS
+   ======================================== */
+
+.bg-gradient-warm {
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+}
+
+.bg-gradient-soft {
+  background: linear-gradient(
+    180deg,
+    var(--bg-card) 0%,
+    var(--bg-primary) 100%
+  );
+}
+
+.text-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary) 0%,
+    var(--accent-secondary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-gradient {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(135deg, var(--border-soft) 0%, var(--border-muted) 100%)
+      border-box;
+}
+
+/* ========================================
+   GLASS EFFECT
+   ======================================== */
+
+.glass {
+  background: rgba(255, 253, 251, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-soft {
+  background: rgba(253, 248, 246, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

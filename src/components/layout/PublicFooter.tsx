@@ -2,60 +2,89 @@ import Link from "next/link";
 
 export default function PublicFooter() {
   return (
-    <footer className="border-t border-[#D6DED9] bg-[#EEF3EF]">
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-md">
-            <p className="text-sm font-semibold tracking-tight text-zinc-900">
-              Plataforma de Psicanálise
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-[#6F6F6F]">
+    <footer className="border-t border-warm-300/60 bg-warm-100">
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6">
+        <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
+          {/* Brand */}
+          <div className="max-w-sm">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-warm-500/20 text-lg font-semibold text-warm-900">
+                Ψ
+              </span>
+              <p className="text-base font-semibold tracking-tight text-warm-900">
+                Psicanálise Online
+              </p>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted">
               Um espaço de escuta, cuidado e sigilo. Atendimento psicanalítico
               online com organização e responsabilidade clínica.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 text-sm sm:grid-cols-3">
-            <div className="space-y-2">
-              <p className="font-medium text-zinc-900">Navegação</p>
-              <div className="flex flex-col gap-2 text-[#6F6F6F]">
-                <Link className="hover:text-zinc-900" href="/#como-funciona">
+          {/* Links */}
+          <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3 sm:gap-12">
+            <div className="space-y-3">
+              <p className="font-semibold text-warm-900">Navegação</p>
+              <div className="flex flex-col gap-2.5 text-muted">
+                <Link
+                  className="transition-colors duration-300 hover:text-warm-500"
+                  href="/#como-funciona"
+                >
                   Como funciona
                 </Link>
-                <Link className="hover:text-zinc-900" href="/#avaliacoes">
+                <Link
+                  className="transition-colors duration-300 hover:text-warm-500"
+                  href="/#avaliacoes"
+                >
                   Avaliações
                 </Link>
-                <Link className="hover:text-zinc-900" href="/#contato">
+                <Link
+                  className="transition-colors duration-300 hover:text-warm-500"
+                  href="/#contato"
+                >
                   Contato
                 </Link>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="font-medium text-zinc-900">Acesso</p>
-              <div className="flex flex-col gap-2 text-[#6F6F6F]">
-                <Link className="hover:text-zinc-900" href="/login">
+            <div className="space-y-3">
+              <p className="font-semibold text-warm-900">Acesso</p>
+              <div className="flex flex-col gap-2.5 text-muted">
+                <Link
+                  className="transition-colors duration-300 hover:text-warm-500"
+                  href="/login"
+                >
                   Entrar
                 </Link>
-                <Link className="hover:text-zinc-900" href="/cadastro">
+                <Link
+                  className="transition-colors duration-300 hover:text-warm-500"
+                  href="/cadastro"
+                >
                   Criar conta
                 </Link>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="font-medium text-zinc-900">Legal</p>
-              <div className="flex flex-col gap-2 text-[#6F6F6F]">
-                <span className="text-zinc-500">Política de privacidade</span>
-                <span className="text-zinc-500">Termos de uso</span>
+            <div className="space-y-3">
+              <p className="font-semibold text-warm-900">Legal</p>
+              <div className="flex flex-col gap-2.5 text-muted">
+                <span className="cursor-default">Política de privacidade</span>
+                <span className="cursor-default">Termos de uso</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t border-zinc-200/70 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Plataforma de Psicanálise.</span>
-          <span>Feito com cuidado • Mobile first</span>
+        {/* Bottom */}
+        <div className="mt-12 flex flex-col gap-3 border-t border-warm-300/40 pt-8 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            © {new Date().getFullYear()} Psicanálise Online. Todos os direitos
+            reservados.
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-sage-500" />
+            Feito com cuidado e acolhimento
+          </span>
         </div>
       </div>
     </footer>
