@@ -481,7 +481,7 @@ export default function AgendaPage() {
                   <button
                     onClick={onUseCredit}
                     disabled={confirming}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-sage-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-700 hover:shadow-xl disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#4A7C59] px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-[#3d6649] hover:shadow-xl disabled:opacity-60"
                   >
                     {confirming ? (
                       <>
@@ -500,7 +500,7 @@ export default function AgendaPage() {
                     onClick={() => {
                       /* Redirect to plans */
                     }}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-rose-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-rose-700 hover:shadow-xl"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#be123c] px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-[#9f1239] hover:shadow-xl"
                   >
                     <CreditIcon className="h-6 w-6" />
                     <span>Comprar Créditos</span>
