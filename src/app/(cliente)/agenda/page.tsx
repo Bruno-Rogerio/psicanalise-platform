@@ -40,18 +40,19 @@ export default function AgendaPage() {
   const [credits, setCredits] = useState({ total: 0, used: 0, available: 0 });
 
   // UI State
-  const [type, setType] = useState<AppointmentType>("video");
+  const [type, setType] = useState<AppointmentType | null>(null);
   const [month, setMonth] = useState(() => new Date());
-  const [selectedDay, setSelectedDay] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [pickedSlot, setPickedSlot] = useState<Slot | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  // Derive current step from selections
+  // Derive current step
   const currentStep = useMemo(() => {
     if (pickedSlot) return 3;
+    if (type && selectedDay) return 2;
     if (type) return 2;
     return 1;
-  }, [type, pickedSlot]);
+  }, [type, selectedDay, pickedSlot]);
 
   // Load initial data
   useEffect(() => {
@@ -79,11 +80,11 @@ export default function AgendaPage() {
         setBlocks(b);
         setBooked(a);
 
-        const prods = await getProducts(prof.id, type);
+        const prods = await getProducts(prof.id, "video");
         setProducts(prods);
         setSelectedProductId(prods[0]?.id ?? null);
 
-        const bal = await getCreditsBalance(prof.id, type);
+        const bal = await getCreditsBalance(prof.id, "video");
         setCredits(bal);
       } finally {
         setLoading(false);
@@ -94,7 +95,7 @@ export default function AgendaPage() {
   // Update products when type changes
   useEffect(() => {
     (async () => {
-      if (!professionalId) return;
+      if (!professionalId || !type) return;
 
       const prods = await getProducts(professionalId, type);
       setProducts(prods);
@@ -109,7 +110,7 @@ export default function AgendaPage() {
 
   // Generate slots for selected day
   const daySlots = useMemo(() => {
-    if (!settings) return [];
+    if (!settings || !type || !selectedDay) return [];
     return generateSlotsForDay({
       day: selectedDay,
       type,
@@ -122,7 +123,7 @@ export default function AgendaPage() {
 
   // Check if day has availability
   const hasAvailabilityForDay = (d: Date) => {
-    if (!settings) return false;
+    if (!settings || !type) return false;
     const slots = generateSlotsForDay({
       day: d,
       type,
@@ -135,13 +136,29 @@ export default function AgendaPage() {
   };
 
   // Handlers
+  function selectType(t: AppointmentType) {
+    setType(t);
+    setSelectedDay(new Date());
+    setPickedSlot(null);
+  }
+
+  function selectDay(d: Date) {
+    setSelectedDay(d);
+    setPickedSlot(null);
+  }
+
   function pickSlot(slot: Slot) {
     setPickedSlot(slot);
   }
 
-  function resetCheckout() {
-    setPickedSlot(null);
-    setSelectedProductId(products[0]?.id ?? null);
+  function resetToStep(step: number) {
+    if (step <= 1) {
+      setType(null);
+      setSelectedDay(null);
+      setPickedSlot(null);
+    } else if (step <= 2) {
+      setPickedSlot(null);
+    }
   }
 
   async function onUseCredit() {
@@ -173,207 +190,265 @@ export default function AgendaPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <header className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-400/20 to-sage-500/20">
-            <CalendarPlusIcon className="h-6 w-6 text-sage-600" />
+      <header>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-500 to-sage-600 shadow-lg">
+            <CalendarPlusIcon className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl">
-              Agendar sessão
+            <h1 className="text-2xl font-bold text-warm-900 sm:text-3xl">
+              Agendar Sessão
             </h1>
-            <p className="text-sm text-warm-600">
-              Escolha o tipo, dia e horário ideal para você
+            <p className="mt-1 text-warm-600">
+              Siga os passos abaixo para marcar seu horário
             </p>
           </div>
         </div>
       </header>
 
-      {/* Progress Steps - Redesigned */}
-      <div className="rounded-2xl border border-warm-300/50 bg-white p-4 shadow-soft">
+      {/* ========== PROGRESS BAR ========== */}
+      <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <StepItem
+          {/* Step 1 */}
+          <StepBubble
             number={1}
             label="Tipo"
-            description={type === "video" ? "Videochamada" : "Chat"}
-            status={currentStep === 1 ? "current" : "completed"}
+            sublabel={type ? (type === "video" ? "Vídeo" : "Chat") : "Escolha"}
+            status={
+              currentStep === 1
+                ? "active"
+                : currentStep > 1
+                  ? "done"
+                  : "pending"
+            }
+            onClick={() => resetToStep(1)}
           />
 
-          <div
-            className={`mx-2 h-1 flex-1 rounded-full transition-all duration-500 ${currentStep >= 2 ? "bg-sage-500" : "bg-warm-200"}`}
-          />
+          {/* Connector 1-2 */}
+          <div className="relative mx-2 h-1 flex-1">
+            <div className="absolute inset-0 rounded-full bg-warm-200" />
+            <div
+              className={`absolute inset-y-0 left-0 rounded-full bg-sage-500 transition-all duration-500 ease-out ${
+                currentStep >= 2 ? "w-full" : "w-0"
+              }`}
+            />
+          </div>
 
-          <StepItem
+          {/* Step 2 */}
+          <StepBubble
             number={2}
-            label="Data e Horário"
-            description={
+            label="Horário"
+            sublabel={
               pickedSlot
-                ? `${fmtDateShort(pickedSlot.start)} às ${fmtTime(pickedSlot.start)}`
-                : "Selecione"
+                ? `${fmtDateShort(pickedSlot.start)} ${fmtTime(pickedSlot.start)}`
+                : selectedDay
+                  ? fmtDateShort(selectedDay)
+                  : "Escolha"
             }
             status={
               currentStep === 2
-                ? "current"
+                ? "active"
                 : currentStep > 2
-                  ? "completed"
+                  ? "done"
                   : "pending"
             }
+            onClick={() => currentStep > 2 && resetToStep(2)}
+            disabled={currentStep < 2}
           />
 
-          <div
-            className={`mx-2 h-1 flex-1 rounded-full transition-all duration-500 ${currentStep >= 3 ? "bg-sage-500" : "bg-warm-200"}`}
-          />
+          {/* Connector 2-3 */}
+          <div className="relative mx-2 h-1 flex-1">
+            <div className="absolute inset-0 rounded-full bg-warm-200" />
+            <div
+              className={`absolute inset-y-0 left-0 rounded-full bg-sage-500 transition-all duration-500 ease-out ${
+                currentStep >= 3 ? "w-full" : "w-0"
+              }`}
+            />
+          </div>
 
-          <StepItem
+          {/* Step 3 */}
+          <StepBubble
             number={3}
             label="Confirmar"
-            description={pickedSlot ? "Pronto!" : "Aguardando"}
-            status={currentStep === 3 ? "current" : "pending"}
+            sublabel={pickedSlot ? "Pronto!" : "Aguardando"}
+            status={currentStep === 3 ? "active" : "pending"}
+            disabled={currentStep < 3}
           />
         </div>
       </div>
 
-      {/* Main Grid */}
+      {/* ========== MAIN CONTENT ========== */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Steps */}
+        {/* Left Column */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Step 1 - Type */}
-          <SectionCard
-            number={1}
-            title="Tipo de atendimento"
-            subtitle="Escolha a modalidade da sua sessão"
+          {/* ===== STEP 1: TIPO ===== */}
+          <StepCard
+            stepNumber={1}
+            title="Escolha o tipo de atendimento"
             isActive={currentStep === 1}
             isCompleted={currentStep > 1}
+            selectedValue={
+              type
+                ? type === "video"
+                  ? "Videochamada"
+                  : "Chat por texto"
+                : null
+            }
+            onEdit={() => resetToStep(1)}
           >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TypeCard
-                type="video"
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Video Option */}
+              <OptionCard
                 selected={type === "video"}
-                onClick={() => setType("video")}
-                icon={<VideoIcon className="h-6 w-6" />}
+                onClick={() => selectType("video")}
+                icon={<VideoIcon className="h-7 w-7" />}
+                iconBg="from-rose-400 to-rose-500"
                 title="Videochamada"
-                description="Sessão ao vivo com vídeo e áudio"
-                duration={settings?.session_duration_video_min ?? 50}
+                description="Sessão ao vivo com câmera e áudio"
+                badge={`${settings?.session_duration_video_min ?? 50} min`}
               />
-              <TypeCard
-                type="chat"
+
+              {/* Chat Option */}
+              <OptionCard
                 selected={type === "chat"}
-                onClick={() => setType("chat")}
-                icon={<ChatIcon className="h-6 w-6" />}
+                onClick={() => selectType("chat")}
+                icon={<ChatIcon className="h-7 w-7" />}
+                iconBg="from-soft-400 to-soft-500"
                 title="Chat por texto"
-                description="Sessão por mensagens em tempo real"
-                duration={settings?.session_duration_chat_min ?? 50}
+                description="Mensagens em tempo real"
+                badge={`${settings?.session_duration_chat_min ?? 50} min`}
               />
             </div>
-          </SectionCard>
+          </StepCard>
 
-          {/* Step 2 - Calendar & Slots */}
-          <SectionCard
-            number={2}
-            title="Escolha a data e horário"
-            subtitle={fmtDayTitle(selectedDay)}
-            isActive={currentStep === 2}
-            isCompleted={currentStep > 2}
-          >
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Calendar */}
-              <div className="rounded-2xl border border-warm-300/40 bg-warm-50/50 p-4">
-                <CalendarMonth
-                  month={month}
-                  onMonthChange={setMonth}
-                  selected={selectedDay}
-                  onSelect={(d) => {
-                    setSelectedDay(d);
-                    setPickedSlot(null);
-                  }}
-                  hasAvailability={hasAvailabilityForDay}
-                />
-              </div>
-
-              {/* Slots */}
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium text-warm-900">
-                    Horários disponíveis
-                  </p>
-                  <span className="rounded-full bg-warm-200/60 px-2.5 py-1 text-xs font-medium text-warm-700">
-                    {daySlots.length} horário(s)
-                  </span>
+          {/* ===== STEP 2: DATA E HORÁRIO ===== */}
+          {currentStep >= 2 && (
+            <StepCard
+              stepNumber={2}
+              title="Escolha a data e horário"
+              isActive={currentStep === 2}
+              isCompleted={currentStep > 2}
+              selectedValue={
+                pickedSlot
+                  ? `${fmtDateFull(pickedSlot.start)} às ${fmtTime(pickedSlot.start)}`
+                  : null
+              }
+              onEdit={() => resetToStep(2)}
+            >
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Calendar */}
+                <div className="rounded-2xl border border-warm-200 bg-warm-50/50 p-4">
+                  <CalendarMonth
+                    month={month}
+                    onMonthChange={setMonth}
+                    selected={selectedDay || new Date()}
+                    onSelect={selectDay}
+                    hasAvailability={hasAvailabilityForDay}
+                  />
                 </div>
 
-                {loading ? (
-                  <SkeletonSlots />
-                ) : (
-                  <SlotsGrid
-                    slots={daySlots}
-                    onPick={pickSlot}
-                    selectedSlot={pickedSlot}
-                  />
-                )}
+                {/* Slots */}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-warm-900">Horários</p>
+                      <p className="text-sm text-warm-500">
+                        {selectedDay
+                          ? fmtDayTitle(selectedDay)
+                          : "Selecione um dia"}
+                      </p>
+                    </div>
+                    {daySlots.length > 0 && (
+                      <span className="rounded-full bg-sage-100 px-3 py-1 text-sm font-semibold text-sage-700">
+                        {daySlots.length} disponíveis
+                      </span>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <SkeletonSlots />
+                  ) : !selectedDay ? (
+                    <EmptySlots message="Selecione um dia no calendário" />
+                  ) : (
+                    <SlotsGrid
+                      slots={daySlots}
+                      onPick={pickSlot}
+                      selectedSlot={pickedSlot}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          </SectionCard>
+            </StepCard>
+          )}
         </div>
 
-        {/* Right Column - Summary & Actions */}
+        {/* ===== RIGHT COLUMN - RESUMO ===== */}
         <aside className="space-y-4">
-          {/* Credits Card */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-white p-5 shadow-soft">
+          {/* Créditos */}
+          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sage-400/20 to-sage-500/20">
-                <CreditCardIcon className="h-5 w-5 text-sage-600" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 shadow">
+                <CreditIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-warm-900">
-                  Seus créditos
-                </p>
-                <p className="text-xs text-warm-600">
-                  {type === "video" ? "Videochamada" : "Chat"}
+                <p className="font-semibold text-warm-900">Seus Créditos</p>
+                <p className="text-sm text-warm-500">
+                  {type === "video"
+                    ? "Videochamada"
+                    : type === "chat"
+                      ? "Chat"
+                      : "Selecione o tipo"}
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-sage-600">
-                {credits.available}
-              </span>
-              <span className="text-sm text-warm-600">sessão(ões)</span>
-            </div>
-
-            {credits.available === 0 && (
-              <div className="mt-3 rounded-lg bg-amber-50 p-2">
-                <p className="text-xs font-medium text-amber-700">
-                  ⚠️ Você precisa adquirir créditos para agendar
-                </p>
+            <div className="mt-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-sage-600">
+                  {credits.available}
+                </span>
+                <span className="text-warm-500">sessão(ões)</span>
               </div>
-            )}
+
+              {credits.available === 0 && (
+                <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3">
+                  <p className="text-sm font-medium text-amber-800">
+                    ⚠️ Você precisa de créditos para agendar
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Session Summary - Only when slot picked */}
-          {pickedSlot ? (
-            <div className="overflow-hidden rounded-2xl border-2 border-sage-300 bg-white p-5 shadow-soft">
-              <div className="flex items-center gap-2">
-                <SparklesIcon className="h-5 w-5 text-sage-600" />
-                <p className="text-sm font-bold uppercase tracking-wider text-sage-700">
-                  Resumo da sessão
-                </p>
+          {/* Resumo da Sessão - aparece no step 3 */}
+          {pickedSlot && (
+            <div className="rounded-2xl border-2 border-sage-400 bg-gradient-to-br from-sage-50 to-white p-5 shadow-lg">
+              <div className="flex items-center gap-2 text-sage-700">
+                <SparklesIcon className="h-5 w-5" />
+                <p className="font-bold uppercase tracking-wide">Resumo</p>
               </div>
 
-              <div className="mt-4 space-y-3">
-                {/* Type */}
-                <div className="flex items-center gap-3 rounded-xl bg-warm-50 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+              <div className="mt-5 space-y-4">
+                {/* Tipo */}
+                <div className="flex items-center gap-4 rounded-xl bg-white p-3 shadow-sm">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow ${
+                      type === "video"
+                        ? "from-rose-400 to-rose-500"
+                        : "from-soft-400 to-soft-500"
+                    }`}
+                  >
                     {type === "video" ? (
-                      <VideoIcon className="h-5 w-5 text-rose-500" />
+                      <VideoIcon className="h-6 w-6 text-white" />
                     ) : (
-                      <ChatIcon className="h-5 w-5 text-soft-600" />
+                      <ChatIcon className="h-6 w-6 text-white" />
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-warm-900">
+                    <p className="font-semibold text-warm-900">
                       {type === "video" ? "Videochamada" : "Chat"}
                     </p>
-                    <p className="text-xs text-warm-600">
+                    <p className="text-sm text-warm-500">
                       {type === "video"
                         ? settings?.session_duration_video_min
                         : settings?.session_duration_chat_min}{" "}
@@ -382,39 +457,39 @@ export default function AgendaPage() {
                   </div>
                 </div>
 
-                {/* Date/Time */}
-                <div className="flex items-center gap-3 rounded-xl bg-warm-50 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
-                    <CalendarIcon className="h-5 w-5 text-sage-600" />
+                {/* Data/Hora */}
+                <div className="flex items-center gap-4 rounded-xl bg-white p-3 shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sage-400 to-sage-500 shadow">
+                    <CalendarIcon className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-warm-900">
+                    <p className="font-semibold text-warm-900">
                       {fmtDateFull(pickedSlot.start)}
                     </p>
-                    <p className="text-xs text-warm-600">
+                    <p className="text-sm text-warm-500">
                       {fmtTime(pickedSlot.start)} – {fmtTime(pickedSlot.end)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Botões de Ação */}
               <div className="mt-6 space-y-3">
                 {credits.available > 0 ? (
                   <button
                     onClick={onUseCredit}
                     disabled={confirming}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 px-4 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:bg-sage-700 hover:shadow-xl disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:from-sage-600 hover:to-sage-700 hover:shadow-xl disabled:opacity-60"
                   >
                     {confirming ? (
                       <>
                         <LoadingSpinner />
-                        Confirmando...
+                        <span>Confirmando...</span>
                       </>
                     ) : (
                       <>
-                        <CheckCircleIcon className="h-5 w-5" />
-                        Confirmar (usar 1 crédito)
+                        <CheckCircleIcon className="h-6 w-6" />
+                        <span>Confirmar Sessão</span>
                       </>
                     )}
                   </button>
@@ -423,56 +498,44 @@ export default function AgendaPage() {
                     onClick={() => {
                       /* Redirect to plans */
                     }}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-4 text-base font-bold text-white shadow-lg transition-all duration-300 hover:from-rose-600 hover:to-rose-700 hover:shadow-xl"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:from-rose-600 hover:to-rose-700 hover:shadow-xl"
                   >
-                    <CreditCardIcon className="h-5 w-5" />
-                    Comprar créditos
+                    <CreditIcon className="h-6 w-6" />
+                    <span>Comprar Créditos</span>
                   </button>
                 )}
 
                 <button
-                  onClick={resetCheckout}
-                  className="w-full rounded-xl border border-warm-300 bg-warm-50 px-4 py-3 text-sm font-semibold text-warm-700 transition-all duration-300 hover:bg-warm-100"
+                  onClick={() => resetToStep(2)}
+                  className="w-full rounded-xl border-2 border-warm-300 bg-white px-4 py-3 font-semibold text-warm-700 transition-all duration-300 hover:bg-warm-50"
                 >
-                  ← Trocar horário
+                  ← Escolher outro horário
                 </button>
               </div>
 
-              <p className="mt-4 text-center text-xs text-warm-500">
+              <p className="mt-4 text-center text-sm text-warm-500">
                 ✓ Cancelamento gratuito até 24h antes
               </p>
             </div>
-          ) : (
-            /* Info Card - When no slot picked */
-            <div className="rounded-2xl border border-warm-300/50 bg-white p-5 shadow-soft">
-              <p className="flex items-center gap-2 text-sm font-semibold text-warm-900">
-                <InfoIcon className="h-4 w-4 text-warm-500" />
-                Próximo passo
+          )}
+
+          {/* Info quando não tem slot selecionado */}
+          {!pickedSlot && (
+            <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+              <p className="font-semibold text-warm-900">
+                {currentStep === 1 ? "Como funciona" : "Próximo passo"}
               </p>
               <p className="mt-2 text-sm text-warm-600">
-                Selecione um horário no calendário para ver o resumo e confirmar
-                sua sessão.
+                {currentStep === 1
+                  ? "Escolha o tipo de atendimento que prefere. Você pode optar por videochamada ou chat por texto."
+                  : "Selecione um horário disponível para ver o resumo e confirmar sua sessão."}
               </p>
 
-              <div className="mt-4 space-y-2">
-                <p className="text-xs font-semibold text-warm-700">
-                  Informações:
-                </p>
-                <ul className="space-y-1.5 text-xs text-warm-600">
-                  <li className="flex items-start gap-2">
-                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                    Cancelamento gratuito até 24h antes
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                    Reagendamento sem custo adicional
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckIcon className="mt-0.5 h-3 w-3 shrink-0 text-sage-500" />
-                    Sigilo profissional garantido
-                  </li>
-                </ul>
-              </div>
+              <ul className="mt-4 space-y-2">
+                <InfoItem icon="✓" text="Cancelamento gratuito até 24h antes" />
+                <InfoItem icon="✓" text="Reagendamento sem custo" />
+                <InfoItem icon="✓" text="Sigilo profissional garantido" />
+              </ul>
             </div>
           )}
         </aside>
@@ -481,161 +544,233 @@ export default function AgendaPage() {
   );
 }
 
-// Step Item - Redesigned com melhor contraste
-function StepItem({
+// ========== COMPONENTES ==========
+
+// Step Bubble no progress bar
+function StepBubble({
   number,
   label,
-  description,
+  sublabel,
   status,
+  onClick,
+  disabled,
 }: {
   number: number;
   label: string;
-  description: string;
-  status: "pending" | "current" | "completed";
+  sublabel: string;
+  status: "pending" | "active" | "done";
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
+  const canClick = onClick && !disabled && status === "done";
+
   return (
-    <div className="flex items-center gap-3">
+    <button
+      onClick={canClick ? onClick : undefined}
+      disabled={disabled || !canClick}
+      className={`flex flex-col items-center gap-2 ${canClick ? "cursor-pointer" : "cursor-default"}`}
+    >
+      {/* Círculo */}
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${
-          status === "completed"
-            ? "bg-sage-500 text-white"
-            : status === "current"
-              ? "border-2 border-sage-500 bg-white text-sage-700"
+        className={`relative flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold transition-all duration-300 ${
+          status === "done"
+            ? "bg-sage-500 text-white shadow-lg shadow-sage-500/30"
+            : status === "active"
+              ? "bg-white text-sage-600 ring-4 ring-sage-500 shadow-lg"
               : "bg-warm-100 text-warm-400"
         }`}
       >
-        {status === "completed" ? <CheckIcon className="h-5 w-5" /> : number}
+        {status === "done" ? (
+          <CheckIcon className="h-6 w-6" />
+        ) : (
+          <span>{number}</span>
+        )}
+
+        {/* Pulse animation for active */}
+        {status === "active" && (
+          <span className="absolute inset-0 animate-ping rounded-full bg-sage-400 opacity-20" />
+        )}
       </div>
-      <div className="hidden sm:block">
+
+      {/* Labels */}
+      <div className="text-center">
         <p
-          className={`text-sm font-semibold ${status === "pending" ? "text-warm-400" : "text-warm-900"}`}
+          className={`text-sm font-semibold ${
+            status === "pending" ? "text-warm-400" : "text-warm-900"
+          }`}
         >
           {label}
         </p>
         <p
-          className={`text-xs ${status === "pending" ? "text-warm-400" : "text-warm-600"}`}
-        >
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Section Card
-function SectionCard({
-  number,
-  title,
-  subtitle,
-  isActive,
-  isCompleted,
-  children,
-}: {
-  number: number;
-  title: string;
-  subtitle?: string;
-  isActive: boolean;
-  isCompleted: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`overflow-hidden rounded-3xl border transition-all duration-300 ${
-        isActive
-          ? "border-sage-300 bg-white shadow-lg"
-          : "border-warm-300/50 bg-white shadow-soft"
-      }`}
-    >
-      <div
-        className={`flex items-center gap-3 border-b px-5 py-4 ${isActive ? "border-sage-200 bg-sage-50/50" : "border-warm-200/50 bg-warm-50/30"}`}
-      >
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-            isCompleted
-              ? "bg-sage-500 text-white"
-              : isActive
-                ? "border-2 border-sage-500 bg-white text-sage-700"
-                : "bg-warm-100 text-warm-500"
+          className={`text-xs ${
+            status === "pending" ? "text-warm-300" : "text-warm-500"
           }`}
         >
-          {isCompleted ? <CheckIcon className="h-4 w-4" /> : number}
-        </div>
-        <div>
-          <p className="text-base font-semibold text-warm-900">{title}</p>
-          {subtitle && <p className="text-xs text-warm-600">{subtitle}</p>}
+          {sublabel}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+// Step Card
+function StepCard({
+  stepNumber,
+  title,
+  isActive,
+  isCompleted,
+  selectedValue,
+  onEdit,
+  children,
+}: {
+  stepNumber: number;
+  title: string;
+  isActive: boolean;
+  isCompleted: boolean;
+  selectedValue: string | null;
+  onEdit: () => void;
+  children: React.ReactNode;
+}) {
+  // Se completado, mostra versão compacta
+  if (isCompleted && selectedValue) {
+    return (
+      <div className="rounded-2xl border border-sage-200 bg-sage-50/50 p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-500 text-white shadow">
+              <CheckIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm text-warm-500">Etapa {stepNumber}</p>
+              <p className="font-semibold text-warm-900">{selectedValue}</p>
+            </div>
+          </div>
+          <button
+            onClick={onEdit}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-sage-600 transition-colors hover:bg-sage-100"
+          >
+            Alterar
+          </button>
         </div>
       </div>
-      <div className="p-5">{children}</div>
+    );
+  }
+
+  // Versão expandida
+  return (
+    <div
+      className={`rounded-2xl border-2 bg-white p-6 shadow-sm transition-all duration-300 ${
+        isActive ? "border-sage-400 shadow-lg" : "border-warm-200"
+      }`}
+    >
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-4">
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold ${
+            isActive
+              ? "bg-sage-500 text-white shadow-lg shadow-sage-500/30"
+              : "bg-warm-100 text-warm-400"
+          }`}
+        >
+          {stepNumber}
+        </div>
+        <div>
+          <p className="text-sm text-warm-500">Etapa {stepNumber}</p>
+          <p className="text-lg font-semibold text-warm-900">{title}</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      {children}
     </div>
   );
 }
 
-// Type Card
-function TypeCard({
-  type,
+// Option Card (para tipo de atendimento)
+function OptionCard({
   selected,
   onClick,
   icon,
+  iconBg,
   title,
   description,
-  duration,
+  badge,
 }: {
-  type: AppointmentType;
   selected: boolean;
   onClick: () => void;
   icon: React.ReactNode;
+  iconBg: string;
   title: string;
   description: string;
-  duration: number;
+  badge: string;
 }) {
-  const colorClass =
-    type === "video"
-      ? "from-rose-400/20 to-rose-500/20 text-rose-600"
-      : "from-soft-400/20 to-soft-500/20 text-soft-700";
-
   return (
     <button
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
+      className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
         selected
-          ? "border-sage-500 bg-sage-50 shadow-md"
+          ? "border-sage-500 bg-sage-50 shadow-lg shadow-sage-500/10"
           : "border-warm-200 bg-white hover:border-sage-300 hover:shadow-md"
       }`}
     >
+      {/* Selected indicator */}
       {selected && (
-        <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-sage-500">
-          <CheckIcon className="h-3.5 w-3.5 text-white" />
-        </span>
+        <div className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-sage-500 shadow">
+          <CheckIcon className="h-4 w-4 text-white" />
+        </div>
       )}
 
+      {/* Icon */}
       <div
-        className={`inline-flex rounded-xl bg-gradient-to-br p-3 ${colorClass}`}
+        className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${iconBg} text-white shadow-lg transition-transform duration-300 group-hover:scale-105`}
       >
         {icon}
       </div>
 
-      <p className="mt-3 text-base font-bold text-warm-900">{title}</p>
-      <p className="mt-1 text-sm text-warm-600">{description}</p>
+      {/* Content */}
+      <p className="mt-4 text-lg font-bold text-warm-900">{title}</p>
+      <p className="mt-1 text-sm text-warm-500">{description}</p>
 
-      <div className="mt-3 flex items-center gap-1.5 text-sm text-warm-500">
+      {/* Badge */}
+      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warm-100 px-3 py-1 text-sm font-medium text-warm-600">
         <ClockIcon className="h-4 w-4" />
-        {duration} minutos
+        {badge}
       </div>
     </button>
+  );
+}
+
+// Empty Slots
+function EmptySlots({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-warm-200 bg-warm-50/50 py-12">
+      <CalendarIcon className="h-12 w-12 text-warm-300" />
+      <p className="mt-4 text-warm-500">{message}</p>
+    </div>
   );
 }
 
 // Skeleton
 function SkeletonSlots() {
   return (
-    <div className="space-y-3">
-      <div className="h-4 w-20 animate-pulse rounded bg-warm-200" />
+    <div className="space-y-4">
+      <div className="h-5 w-20 animate-pulse rounded-lg bg-warm-200" />
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-11 animate-pulse rounded-xl bg-warm-200" />
+          <div key={i} className="h-12 animate-pulse rounded-xl bg-warm-200" />
         ))}
       </div>
     </div>
+  );
+}
+
+// Info Item
+function InfoItem({ icon, text }: { icon: string; text: string }) {
+  return (
+    <li className="flex items-center gap-2 text-sm text-warm-600">
+      <span className="text-sage-500">{icon}</span>
+      {text}
+    </li>
   );
 }
 
@@ -669,9 +804,9 @@ function fmtDateShort(d: Date) {
 
 function fmtDateFull(d: Date) {
   return d.toLocaleDateString("pt-BR", {
-    weekday: "long",
+    weekday: "short",
     day: "2-digit",
-    month: "long",
+    month: "short",
   });
 }
 
@@ -679,7 +814,8 @@ function fmtTime(d: Date) {
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-// Icons
+// ========== ICONS ==========
+
 function CalendarPlusIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -691,7 +827,7 @@ function CalendarPlusIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
       <path
@@ -715,7 +851,7 @@ function CalendarIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
     </svg>
@@ -733,7 +869,7 @@ function VideoIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
       />
     </svg>
@@ -751,14 +887,14 @@ function ChatIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
       />
     </svg>
   );
 }
 
-function CreditCardIcon({ className }: { className?: string }) {
+function CreditIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -769,8 +905,8 @@ function CreditCardIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+        strokeWidth={2}
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );
@@ -787,7 +923,7 @@ function ClockIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={1.5}
+        strokeWidth={2}
         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
@@ -805,7 +941,7 @@ function CheckIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2.5}
+        strokeWidth={3}
         d="M5 13l4 4L19 7"
       />
     </svg>
@@ -848,27 +984,9 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
-function InfoIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
 function LoadingSpinner() {
   return (
-    <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+    <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
       <circle
         className="opacity-25"
         cx="12"
