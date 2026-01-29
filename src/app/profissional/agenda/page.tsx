@@ -1,90 +1,75 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase-browser";
 import { CalendarMonth } from "@/components/shared/agenda/CalendarMonth";
-import {
-  AppointmentStatus,
-  ProfessionalAppointment,
-  getLoggedProfessionalId,
-  getMonthRange,
-  listProfessionalAppointmentsForRange,
-  updateAppointmentStatus,
-} from "@/services/professional-agenda";
-import { rescheduleAppointment } from "@/services/session";
-import { isNowWithinSessionWithMargin } from "@/services/session-room";
+
+type AppointmentStatus =
+  | "scheduled"
+  | "completed"
+  | "cancelled"
+  | "rescheduled";
+
+type Appointment = {
+  id: string;
+  user_id: string;
+  appointment_type: "video" | "chat";
+  status: AppointmentStatus;
+  start_at: string;
+  end_at: string;
+  patient: { id: string; nome: string } | null;
+};
 
 export default function ProfissionalAgendaPage() {
   const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [month, setMonth] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [busy, setBusy] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [profId, setProfId] = useState<string | null>(null);
-
-  const [month, setMonth] = useState<Date>(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-  );
-  const [selectedDay, setSelectedDay] = useState<Date>(() =>
-    startOfDay(new Date()),
-  );
-
-  const [appointments, setAppointments] = useState<ProfessionalAppointment[]>(
-    [],
-  );
-
-  // Reagendamento (MVP)
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
-  const [rescheduleTarget, setRescheduleTarget] =
-    useState<ProfessionalAppointment | null>(null);
-
-  const [newStartLocal, setNewStartLocal] = useState<string>("");
-  const [newEndLocal, setNewEndLocal] = useState<string>("");
-
+  // Load appointments
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        setErrorMsg(null);
-        const id = await getLoggedProfessionalId();
-        setProfId(id);
-      } catch (e: any) {
-        console.error(e);
-        setErrorMsg(e?.message ?? "Erro ao carregar profissional.");
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user?.id) return;
+
+        const { data, error } = await supabase
+          .from("appointments")
+          .select(
+            `
+            id,
+            user_id,
+            appointment_type,
+            status,
+            start_at,
+            end_at,
+            patient:profiles!appointments_user_id_fkey ( id, nome )
+          `,
+          )
+          .eq("profissional_id", auth.user.id)
+          .order("start_at", { ascending: true });
+
+        if (!error && data) {
+          const normalized = data.map((a: any) => ({
+            ...a,
+            patient: a.patient?.[0] ?? null,
+          }));
+          setAppointments(normalized);
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      if (!profId) return;
-
-      const { from, to } = getMonthRange(month);
-
-      try {
-        setLoading(true);
-        setErrorMsg(null);
-
-        const appts = await listProfessionalAppointmentsForRange(
-          profId,
-          from,
-          to,
-        );
-        setAppointments(appts);
-      } catch (e: any) {
-        console.error(e);
-        setErrorMsg(e?.message ?? "Erro ao carregar agenda.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [profId, month]);
-
+  // Group sessions by day
   const sessionsByDay = useMemo(() => {
-    const map = new Map<string, ProfessionalAppointment[]>();
+    const map = new Map<string, Appointment[]>();
     for (const a of appointments) {
-      const k = toKey(new Date(a.start_at));
+      const k = new Date(a.start_at).toDateString();
       const prev = map.get(k) ?? [];
       prev.push(a);
       map.set(k, prev);
@@ -92,99 +77,50 @@ export default function ProfissionalAgendaPage() {
     return map;
   }, [appointments]);
 
+  // Sessions for selected day
   const selectedSessions = useMemo(() => {
-    const k = toKey(selectedDay);
+    const k = selectedDay.toDateString();
     const list = sessionsByDay.get(k) ?? [];
     return [...list].sort(
       (a, b) => +new Date(a.start_at) - +new Date(b.start_at),
     );
   }, [selectedDay, sessionsByDay]);
 
-  function hasSessions(d: Date) {
-    return (sessionsByDay.get(toKey(d))?.length ?? 0) > 0;
-  }
+  // Check if day has sessions
+  const hasSessions = (d: Date) => {
+    return (sessionsByDay.get(d.toDateString())?.length ?? 0) > 0;
+  };
 
-  async function onSetStatus(id: string, status: AppointmentStatus) {
+  // Stats
+  const stats = useMemo(() => {
+    const scheduled = selectedSessions.filter(
+      (s) => s.status === "scheduled",
+    ).length;
+    const completed = selectedSessions.filter(
+      (s) => s.status === "completed",
+    ).length;
+    const cancelled = selectedSessions.filter(
+      (s) => s.status === "cancelled",
+    ).length;
+    return { scheduled, completed, cancelled, total: selectedSessions.length };
+  }, [selectedSessions]);
+
+  // Update status
+  async function updateStatus(id: string, status: AppointmentStatus) {
     try {
       setBusy(id);
-      setErrorMsg(null);
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status })
+        .eq("id", id);
 
-      await updateAppointmentStatus(id, status);
+      if (error) throw error;
 
       setAppointments((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status } : a)),
       );
     } catch (e: any) {
-      console.error(e);
-      setErrorMsg(e?.message ?? "Erro ao atualizar status.");
-      alert(e?.message ?? "Erro ao atualizar status.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  function openReschedule(target: ProfessionalAppointment) {
-    setRescheduleTarget(target);
-
-    const start = new Date(target.start_at);
-    const end = new Date(target.end_at);
-
-    setNewStartLocal(toLocalInputValue(start));
-    setNewEndLocal(toLocalInputValue(end));
-
-    setRescheduleOpen(true);
-  }
-
-  function closeReschedule() {
-    setRescheduleOpen(false);
-    setRescheduleTarget(null);
-    setNewStartLocal("");
-    setNewEndLocal("");
-  }
-
-  async function confirmReschedule() {
-    if (!rescheduleTarget) return;
-
-    const start = fromLocalInputValue(newStartLocal);
-    const end = fromLocalInputValue(newEndLocal);
-
-    if (!start || !end) {
-      alert("Preencha data/hora de início e fim.");
-      return;
-    }
-    if (+end <= +start) {
-      alert("O fim precisa ser depois do início.");
-      return;
-    }
-
-    try {
-      setBusy(rescheduleTarget.id);
-      setErrorMsg(null);
-
-      await rescheduleAppointment(
-        rescheduleTarget.id,
-        start.toISOString(),
-        end.toISOString(),
-      );
-
-      setAppointments((prev) =>
-        prev.map((a) =>
-          a.id === rescheduleTarget.id
-            ? {
-                ...a,
-                start_at: start.toISOString(),
-                end_at: end.toISOString(),
-                status: "rescheduled",
-              }
-            : a,
-        ),
-      );
-
-      closeReschedule();
-      alert("Sessão reagendada ✅");
-    } catch (e: any) {
-      console.error(e);
-      alert(e?.message ?? "Erro ao reagendar.");
+      alert(e?.message ?? "Erro ao atualizar.");
     } finally {
       setBusy(null);
     }
@@ -192,405 +128,377 @@ export default function ProfissionalAgendaPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-[#111111] sm:text-3xl">
-          Agenda do profissional
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-[#5F6B64] sm:text-base">
-          Visão mensal com lista diária. Clique em um dia para ver as sessões e
-          gerenciar status/reagendamento.
-        </p>
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4A7C59] to-[#3d6649] shadow-lg">
+            <CalendarIcon className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-warm-900">Agenda</h1>
+            <p className="text-sm text-warm-600">
+              Gerencie suas sessões e disponibilidade
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/profissional/configuracoes"
+          className="inline-flex items-center gap-2 rounded-xl border border-warm-300 bg-white px-4 py-2.5 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50 hover:shadow-sm"
+        >
+          <SettingsIcon className="h-4 w-4" />
+          Configurar disponibilidade
+        </Link>
       </header>
 
-      {errorMsg ? (
-        <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 text-sm text-[#5F6B64]">
-          {errorMsg}
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-[#111111]">
-                  Calendário
-                </p>
-                <p className="mt-1 text-xs text-[#5F6B64]">
-                  Dias com ponto indicam sessões agendadas.
-                </p>
-              </div>
-              <div className="text-xs font-semibold text-[#5F6B64]">
-                {fmtDayTitle(selectedDay)}
-              </div>
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Calendar */}
+        <div className="lg:col-span-1">
+          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <div className="mb-4">
+              <p className="font-semibold text-warm-900">Calendário</p>
+              <p className="text-xs text-warm-500">
+                Dias com ponto têm sessões marcadas
+              </p>
             </div>
+            <CalendarMonth
+              month={month}
+              onMonthChange={setMonth}
+              selected={selectedDay}
+              onSelect={setSelectedDay}
+              hasAvailability={hasSessions}
+            />
+          </div>
 
-            <div className="mt-3">
-              <CalendarMonth
-                month={month}
-                onMonthChange={setMonth}
-                selected={selectedDay}
-                onSelect={setSelectedDay}
-                hasAvailability={(d) => hasSessions(d)}
+          {/* Day Stats */}
+          <div className="mt-4 rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <p className="font-semibold text-warm-900">
+              {selectedDay.toLocaleDateString("pt-BR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+              })}
+            </p>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <MiniStat
+                label="Agendadas"
+                value={stats.scheduled}
+                color="bg-amber-100 text-amber-700"
+              />
+              <MiniStat
+                label="Realizadas"
+                value={stats.completed}
+                color="bg-emerald-100 text-emerald-700"
+              />
+              <MiniStat
+                label="Canceladas"
+                value={stats.cancelled}
+                color="bg-rose-100 text-rose-700"
               />
             </div>
           </div>
+        </div>
 
-          <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
-            <div className="flex items-end justify-between gap-4">
+        {/* Sessions List */}
+        <div className="lg:col-span-2">
+          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-[#111111]">
-                  Sessões do dia
-                </p>
-                <p className="mt-1 text-xs text-[#5F6B64]">
-                  {selectedSessions.length > 0
-                    ? `${selectedSessions.length} sessão(ões) no dia selecionado.`
-                    : "Sem sessões neste dia."}
+                <p className="font-semibold text-warm-900">Sessões do dia</p>
+                <p className="text-xs text-warm-500">
+                  {stats.total > 0
+                    ? `${stats.total} sessão(ões) neste dia`
+                    : "Sem sessões agendadas"}
                 </p>
               </div>
-
-              <div className="text-xs font-semibold text-[#5F6B64]">
-                {loading ? "Carregando…" : "Atualizado"}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${loading ? "bg-warm-100 text-warm-500" : "bg-emerald-100 text-emerald-700"}`}
+                >
+                  {loading ? "Carregando..." : "Atualizado"}
+                </span>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="mt-6 space-y-3">
               {loading ? (
-                <SkeletonList />
+                <SessionsSkeleton />
               ) : selectedSessions.length === 0 ? (
-                <EmptyDay />
+                <EmptyState />
               ) : (
-                selectedSessions.map((s) => (
-                  <div key={s.id} className="rounded-2xl">
-                    <SessionCard
-                      item={s}
-                      busy={busy === s.id}
-                      onComplete={() => onSetStatus(s.id, "completed")}
-                      onCancel={() => onSetStatus(s.id, "cancelled")}
-                      onReschedule={() => openReschedule(s)}
-                    />
-                  </div>
+                selectedSessions.map((session) => (
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    busy={busy === session.id}
+                    onComplete={() => updateStatus(session.id, "completed")}
+                    onCancel={() => updateStatus(session.id, "cancelled")}
+                  />
                 ))
               )}
             </div>
           </div>
-        </div>
 
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
-            <p className="text-sm font-semibold text-[#111111]">Legenda</p>
-            <div className="mt-3 space-y-2 text-xs text-[#5F6B64]">
-              <LegendRow
-                label="Agendada"
-                pill={<StatusPill status="scheduled" />}
-              />
-              <LegendRow
-                label="Realizada"
-                pill={<StatusPill status="completed" />}
-              />
-              <LegendRow
-                label="Cancelada"
-                pill={<StatusPill status="cancelled" />}
-              />
-              <LegendRow
-                label="Reagendada"
-                pill={<StatusPill status="rescheduled" />}
-              />
+          {/* Legend */}
+          <div className="mt-4 rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <p className="font-semibold text-warm-900">Legenda de Status</p>
+            <div className="mt-3 flex flex-wrap gap-4">
+              <LegendItem color="bg-amber-500" label="Agendada" />
+              <LegendItem color="bg-emerald-500" label="Realizada" />
+              <LegendItem color="bg-rose-500" label="Cancelada" />
+              <LegendItem color="bg-indigo-500" label="Reagendada" />
             </div>
           </div>
-
-          <div className="rounded-2xl border border-[#D6DED9] bg-white/60 p-4 backdrop-blur">
-            <p className="text-sm font-semibold text-[#111111]">
-              Acesso rápido
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-[#5F6B64]">
-              Para entrar na sessão, use “Abrir sessão” e clique em “Iniciar
-              vídeo” no horário permitido.
-            </p>
-          </div>
-        </aside>
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Modal Reagendar (MVP) */}
-      {rescheduleOpen && rescheduleTarget ? (
-        <div className="fixed inset-0 z-[80]">
-          <div
-            className="absolute inset-0 bg-black/20"
-            onClick={closeReschedule}
-          />
-          <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-2xl rounded-t-3xl border border-[#D6DED9] bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#111111]">
-                  Reagendar sessão
-                </p>
-                <p className="mt-1 text-xs text-[#5F6B64]">
-                  Ajuste data e horário (MVP). Depois refinamos para seleção por
-                  slots.
-                </p>
-              </div>
-              <button
-                onClick={closeReschedule}
-                className="rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-xs font-semibold text-[#111111] hover:bg-white/80"
-              >
-                Fechar
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-xs font-semibold text-[#111111]">
-                  Início
-                </span>
-                <input
-                  type="datetime-local"
-                  value={newStartLocal}
-                  onChange={(e) => setNewStartLocal(e.target.value)}
-                  className="w-full rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-sm text-[#111111] outline-none focus:ring-2 focus:ring-black/10"
-                />
-              </label>
-
-              <label className="space-y-1">
-                <span className="text-xs font-semibold text-[#111111]">
-                  Fim
-                </span>
-                <input
-                  type="datetime-local"
-                  value={newEndLocal}
-                  onChange={(e) => setNewEndLocal(e.target.value)}
-                  className="w-full rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-sm text-[#111111] outline-none focus:ring-2 focus:ring-black/10"
-                />
-              </label>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Link
-                href={`/profissional/sessoes/${rescheduleTarget.id}`}
-                className="rounded-xl border border-[#D6DED9] bg-white px-4 py-2 text-sm font-semibold text-[#111111] hover:bg-white/80"
-              >
-                Abrir sessão
-              </Link>
-
-              <button
-                disabled={busy === rescheduleTarget.id}
-                onClick={confirmReschedule}
-                className="rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                Confirmar reagendamento
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+// Components
+function MiniStat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div className={`rounded-xl p-3 text-center ${color}`}>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs font-medium">{label}</p>
     </div>
   );
 }
 
 function SessionCard({
-  item,
+  session,
   busy,
   onComplete,
   onCancel,
-  onReschedule,
 }: {
-  item: ProfessionalAppointment;
+  session: Appointment;
   busy: boolean;
   onComplete: () => void;
   onCancel: () => void;
-  onReschedule: () => void;
 }) {
-  const start = new Date(item.start_at);
-  const end = new Date(item.end_at);
-  const time = `${fmtTime(start)}–${fmtTime(end)}`;
+  const startDate = new Date(session.start_at);
+  const endDate = new Date(session.end_at);
+  const isNow = new Date() >= startDate && new Date() <= endDate;
 
-  const canEnterVideo =
-    item.appointment_type === "video" &&
-    item.status !== "cancelled" &&
-    isNowWithinSessionWithMargin(item.start_at, item.end_at, 10);
+  const statusColors: Record<AppointmentStatus, string> = {
+    scheduled: "bg-amber-100 text-amber-700 border-amber-200",
+    completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    cancelled: "bg-rose-100 text-rose-700 border-rose-200",
+    rescheduled: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  };
 
-  const disableActions =
-    busy || item.status === "completed" || item.status === "cancelled";
+  const statusLabels: Record<AppointmentStatus, string> = {
+    scheduled: "Agendada",
+    completed: "Realizada",
+    cancelled: "Cancelada",
+    rescheduled: "Reagendada",
+  };
 
   return (
-    <div className="rounded-2xl border border-[#D6DED9] bg-white/70 p-4 backdrop-blur">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-[#111111]">{time}</p>
-            <StatusPill status={item.status} />
-            <TypePill type={item.appointment_type} />
+    <div
+      className={`rounded-xl border p-4 transition-all ${isNow ? "border-[#4A7C59] bg-sage-50 ring-2 ring-[#4A7C59]/20" : "border-warm-200 bg-warm-50/50 hover:shadow-md"}`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Time & Patient */}
+        <div className="flex items-center gap-4">
+          {/* Time */}
+          <div className="text-center">
+            <p className="text-xl font-bold text-warm-900">
+              {startDate.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+            <p className="text-xs text-warm-500">
+              até{" "}
+              {endDate.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
           </div>
 
-          <p className="mt-2 truncate text-sm text-[#111111]">Sessão</p>
-          <p className="mt-1 text-xs text-[#5F6B64]">
-            ID: <span className="font-medium">{item.id}</span>
-          </p>
+          <div className="h-10 w-px bg-warm-200" />
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href={`/profissional/sessoes/${item.id}`}
-              className="rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-xs font-semibold text-[#111111] hover:bg-white/80"
-            >
-              Abrir sessão
-            </Link>
-
-            <Link
-              href={`/profissional/sessoes/${item.id}`}
-              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
-                canEnterVideo
-                  ? "bg-[#111111] text-white hover:opacity-90"
-                  : "border border-[#D6DED9] bg-white text-[#5F6B64]"
-              }`}
-              aria-disabled={!canEnterVideo}
-              onClick={(e) => {
-                if (!canEnterVideo) e.preventDefault();
-              }}
-            >
-              Entrar (vídeo)
-            </Link>
+          {/* Patient & Type */}
+          <div>
+            <p className="font-semibold text-warm-900">
+              {session.patient?.nome || "Paciente"}
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${session.appointment_type === "video" ? "bg-rose-100 text-rose-700" : "bg-indigo-100 text-indigo-700"}`}
+              >
+                {session.appointment_type === "video" ? (
+                  <VideoIcon className="h-3 w-3" />
+                ) : (
+                  <ChatIcon className="h-3 w-3" />
+                )}
+                {session.appointment_type === "video" ? "Vídeo" : "Chat"}
+              </span>
+              <span
+                className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusColors[session.status]}`}
+              >
+                {statusLabels[session.status]}
+              </span>
+              {isNow && (
+                <span className="flex items-center gap-1 rounded-full bg-[#4A7C59] px-2 py-0.5 text-xs font-semibold text-white">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                  Agora
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
-          <button
-            disabled={disableActions}
-            onClick={onComplete}
-            className="rounded-xl bg-[#111111] px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          {session.status === "scheduled" && (
+            <>
+              <button
+                onClick={onComplete}
+                disabled={busy}
+                className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 disabled:opacity-50"
+              >
+                ✓ Realizada
+              </button>
+              <button
+                onClick={onCancel}
+                disabled={busy}
+                className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-200 disabled:opacity-50"
+              >
+                ✕ Cancelar
+              </button>
+            </>
+          )}
+          <Link
+            href={`/profissional/sessoes/${session.id}`}
+            className="rounded-lg bg-[#4A7C59] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#3d6649]"
           >
-            Marcar realizada
-          </button>
-
-          <button
-            disabled={disableActions}
-            onClick={onCancel}
-            className="rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-xs font-semibold text-[#111111] hover:bg-white/80 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-
-          <button
-            disabled={disableActions}
-            onClick={onReschedule}
-            className="rounded-xl border border-[#D6DED9] bg-white px-3 py-2 text-xs font-semibold text-[#111111] hover:bg-white/80 disabled:opacity-50"
-          >
-            Reagendar
-          </button>
+            Abrir
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-function StatusPill({ status }: { status: AppointmentStatus }) {
-  const { label, cls } = useMemo(() => {
-    switch (status) {
-      case "scheduled":
-        return { label: "Agendada", cls: "bg-white text-[#111111]" };
-      case "completed":
-        return { label: "Realizada", cls: "bg-[#111111] text-white" };
-      case "cancelled":
-        return { label: "Cancelada", cls: "bg-white text-[#5F6B64]" };
-      case "rescheduled":
-        return { label: "Reagendada", cls: "bg-white text-[#111111]" };
-      default:
-        return { label: String(status), cls: "bg-white text-[#111111]" };
-    }
-  }, [status]);
-
+function LegendItem({ color, label }: { color: string; label: string }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full border border-[#D6DED9] px-2.5 py-1 text-[11px] font-semibold ${cls}`}
-    >
-      {label}
-    </span>
-  );
-}
-
-function TypePill({ type }: { type: "video" | "chat" }) {
-  const label = type === "video" ? "Vídeo" : "Chat";
-  return (
-    <span className="inline-flex items-center rounded-full border border-[#D6DED9] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111111]">
-      {label}
-    </span>
-  );
-}
-
-function LegendRow({ label, pill }: { label: string; pill: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span>{label}</span>
-      {pill}
+    <div className="flex items-center gap-2">
+      <span className={`h-3 w-3 rounded-full ${color}`} />
+      <span className="text-sm text-warm-700">{label}</span>
     </div>
   );
 }
 
-function EmptyDay() {
+function EmptyState() {
   return (
-    <div className="rounded-2xl border border-[#D6DED9] bg-white/70 p-4 text-sm text-[#5F6B64]">
-      Sem sessões neste dia.
+    <div className="rounded-xl border border-warm-200 bg-warm-50 p-8 text-center">
+      <CalendarIcon className="mx-auto h-12 w-12 text-warm-300" />
+      <p className="mt-4 font-semibold text-warm-700">
+        Nenhuma sessão neste dia
+      </p>
+      <p className="mt-1 text-sm text-warm-500">
+        Selecione outro dia ou configure sua disponibilidade.
+      </p>
     </div>
   );
 }
 
-function SkeletonList() {
+function SessionsSkeleton() {
   return (
-    <div className="grid gap-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-[92px] animate-pulse rounded-2xl border border-[#D6DED9] bg-white/70"
-        />
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-20 animate-pulse rounded-xl bg-warm-200" />
       ))}
     </div>
   );
 }
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+// Icons
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
 }
 
-function toKey(d: Date) {
-  const x = startOfDay(d);
-  const y = x.getFullYear();
-  const m = String(x.getMonth() + 1).padStart(2, "0");
-  const day = String(x.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
 }
 
-function fmtDayTitle(d: Date) {
-  return d.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+function VideoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
+    </svg>
+  );
 }
 
-function fmtTime(d: Date) {
-  return d.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
-}
-
-function toLocalInputValue(date: Date) {
-  const y = date.getFullYear();
-  const m = pad2(date.getMonth() + 1);
-  const d = pad2(date.getDate());
-  const hh = pad2(date.getHours());
-  const mm = pad2(date.getMinutes());
-  return `${y}-${m}-${d}T${hh}:${mm}`;
-}
-
-function fromLocalInputValue(value: string) {
-  if (!value) return null;
-  const dt = new Date(value);
-  if (Number.isNaN(+dt)) return null;
-  return dt;
+function ChatIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+      />
+    </svg>
+  );
 }

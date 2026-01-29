@@ -1,132 +1,230 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ProfissionalSidebar } from "@/components/layout/ProfissionalSidebar";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase-browser";
+
+const navItems = [
+  { label: "Dashboard", href: "/profissional", icon: DashboardIcon },
+  { label: "Agenda", href: "/profissional/agenda", icon: CalendarIcon },
+  { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
+  { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
+  { label: "Financeiro", href: "/profissional/financeiro", icon: WalletIcon },
+  {
+    label: "Configurações",
+    href: "/profissional/configuracoes",
+    icon: SettingsIcon,
+  },
+];
 
 export default function ProfissionalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const [userName, setUserName] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data: auth } = await supabase.auth.getUser();
+      if (auth.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("nome")
+          .eq("id", auth.user.id)
+          .single();
+        setUserName(profile?.nome ?? null);
+      }
+    }
+    loadUser();
+  }, []);
+
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : "P";
+  const firstName = userName ? userName.split(" ")[0] : "Profissional";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-100 to-soft-100/30">
-      {/* Decorative background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-sage-400/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-soft-400/5 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-50 to-soft-100/30">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-warm-900/20 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <div className="relative flex">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <ProfissionalSidebar />
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-warm-200 bg-white shadow-xl transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Sidebar Header */}
+        <div className="flex h-20 items-center justify-between border-b border-warm-200 px-6">
+          <Link href="/profissional" className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sage-500 to-sage-600 text-lg font-bold text-white shadow-md">
+              Ψ
+            </div>
+            <div>
+              <p className="text-sm font-bold text-warm-900">Painel</p>
+              <p className="text-xs text-warm-500">Área Profissional</p>
+            </div>
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-warm-500 hover:bg-warm-100 lg:hidden"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Mobile Sidebar Overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="absolute inset-0 bg-warm-900/20 backdrop-blur-sm"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div className="absolute inset-y-0 left-0 w-64">
-              <ProfissionalSidebar />
+        {/* User Card */}
+        <div className="border-b border-warm-200 p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-sage-50 to-soft-50 p-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-lg font-bold text-sage-700 shadow-sm">
+              {userInitial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-warm-900">
+                {firstName}
+              </p>
+              <p className="text-xs text-warm-500">Psicólogo(a)</p>
+            </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
             </div>
           </div>
-        )}
-
-        {/* Main Content */}
-        <div className="flex min-h-screen flex-1 flex-col">
-          {/* Topbar */}
-          <header className="sticky top-0 z-40 border-b border-warm-300/40 bg-warm-100/80 backdrop-blur-md">
-            <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-              <div className="flex items-center gap-3">
-                {/* Mobile menu button */}
-                <button
-                  onClick={() => setMobileMenuOpen(true)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-white/50 hover:text-warm-900 lg:hidden"
-                >
-                  <MenuIcon className="h-5 w-5" />
-                </button>
-
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white/80 px-4 py-2 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:shadow-soft"
-                >
-                  <ArrowLeftIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Voltar ao site</span>
-                </Link>
-
-                <div className="hidden sm:block">
-                  <p className="text-sm font-semibold text-warm-900">
-                    Área do profissional
-                  </p>
-                  <p className="text-xs text-muted">
-                    Agenda, sessões, prontuários e configurações
-                  </p>
-                </div>
-              </div>
-
-              {/* Topbar actions */}
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/profissional/agenda"
-                  className="inline-flex items-center gap-2 rounded-xl bg-sage-500 px-4 py-2 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Ir para agenda</span>
-                </Link>
-              </div>
-            </div>
-          </header>
-
-          {/* Content */}
-          <main className="flex-1 px-4 py-6 sm:px-6">
-            <div className="mx-auto max-w-6xl">
-              <div className="overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 p-5 shadow-soft backdrop-blur-sm sm:p-6">
-                {children}
-              </div>
-            </div>
-          </main>
-
-          {/* Footer */}
-          <footer className="border-t border-warm-300/40 bg-warm-100/60">
-            <div className="px-4 py-4 sm:px-6">
-              <p className="text-center text-xs text-muted">
-                Sigilo e ética em todas as sessões • ©{" "}
-                {new Date().getFullYear()} Psicanálise Online
-              </p>
-            </div>
-          </footer>
         </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-warm-400">
+            Menu Principal
+          </p>
+          {navItems.map((item) => {
+            const isActive =
+              item.href === "/profissional"
+                ? pathname === "/profissional"
+                : pathname.startsWith(item.href);
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? "bg-[#4A7C59] text-white shadow-md"
+                    : "text-warm-700 hover:bg-warm-100 hover:text-warm-900"
+                }`}
+              >
+                <Icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-white"
+                      : "text-warm-400 group-hover:text-warm-600"
+                  }`}
+                />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="border-t border-warm-200 p-4">
+          <Link
+            href="/logout"
+            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-warm-600 transition-colors hover:bg-rose-50 hover:text-rose-600"
+          >
+            <LogoutIcon className="h-5 w-5" />
+            Sair da conta
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="lg:pl-72">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 border-b border-warm-200/60 bg-white/80 backdrop-blur-md">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+            <div className="flex items-center gap-4">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 hover:bg-warm-100 lg:hidden"
+              >
+                <MenuIcon className="h-5 w-5" />
+              </button>
+
+              {/* Page title - shows on mobile */}
+              <div className="lg:hidden">
+                <p className="text-sm font-semibold text-warm-900">
+                  {navItems.find((item) =>
+                    item.href === "/profissional"
+                      ? pathname === "/profissional"
+                      : pathname.startsWith(item.href),
+                  )?.label || "Painel"}
+                </p>
+              </div>
+
+              {/* Breadcrumb - shows on desktop */}
+              <div className="hidden lg:block">
+                <p className="text-sm text-warm-500">
+                  Bem-vindo(a) de volta,{" "}
+                  <span className="font-semibold text-warm-900">
+                    {firstName}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Header actions */}
+            <div className="flex items-center gap-3">
+              {/* Notifications */}
+              <button className="relative flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-warm-100">
+                <BellIcon className="h-5 w-5" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
+              </button>
+
+              {/* Quick action */}
+              <Link
+                href="/profissional/agenda"
+                className="hidden items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#3d6649] hover:shadow-lg sm:flex"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Ver Agenda
+              </Link>
+
+              {/* User avatar - mobile */}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-sm font-bold text-sage-700 lg:hidden">
+                {userInitial}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+
+        {/* Footer */}
+        <footer className="border-t border-warm-200/60 bg-white/60 px-4 py-4 sm:px-6">
+          <div className="flex flex-col items-center justify-between gap-2 text-xs text-warm-500 sm:flex-row">
+            <p>Sigilo e ética profissional em todas as sessões</p>
+            <p>© {new Date().getFullYear()} • Psicanálise Online</p>
+          </div>
+        </footer>
       </div>
     </div>
   );
 }
 
-// Icons
-function MenuIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4 6h16M4 12h16M4 18h16"
-      />
-    </svg>
-  );
-}
+// ========== ICONS ==========
 
-function ArrowLeftIcon({ className }: { className?: string }) {
+function DashboardIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -138,7 +236,7 @@ function ArrowLeftIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.5}
-        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"
       />
     </svg>
   );
@@ -157,6 +255,156 @@ function CalendarIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
+    </svg>
+  );
+}
+
+function VideoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+
+function WalletIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+      />
+    </svg>
+  );
+}
+
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      />
+    </svg>
+  );
+}
+
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+      />
+    </svg>
+  );
+}
+
+function MenuIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M4 6h16M4 12h16M4 18h16"
+      />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M6 18L18 6M6 6l12 12"
       />
     </svg>
   );
