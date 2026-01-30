@@ -18,8 +18,8 @@ type AvailabilityRule = {
 type Settings = {
   session_duration_video_min: number;
   session_duration_chat_min: number;
-  buffer_before_min: number;
-  buffer_after_min: number;
+  min_cancel_hours: number;
+  timezone: string;
 };
 
 type Profile = {
@@ -52,9 +52,9 @@ export default function ConfiguracoesPage() {
   // Settings
   const [settings, setSettings] = useState<Settings>({
     session_duration_video_min: 50,
-    session_duration_chat_min: 50,
-    buffer_before_min: 10,
-    buffer_after_min: 10,
+    session_duration_chat_min: 30,
+    min_cancel_hours: 24,
+    timezone: "America/Sao_Paulo",
   });
 
   // Profile
@@ -101,7 +101,7 @@ export default function ConfiguracoesPage() {
         const { data: settingsData } = await supabase
           .from("professional_settings")
           .select(
-            "session_duration_video_min, session_duration_chat_min, buffer_before_min, buffer_after_min",
+            "session_duration_video_min, session_duration_chat_min, min_cancel_hours, timezone",
           )
           .eq("profissional_id", auth.user.id)
           .single();
@@ -111,9 +111,9 @@ export default function ConfiguracoesPage() {
             session_duration_video_min:
               settingsData.session_duration_video_min || 50,
             session_duration_chat_min:
-              settingsData.session_duration_chat_min || 50,
-            buffer_before_min: settingsData.buffer_before_min || 10,
-            buffer_after_min: settingsData.buffer_after_min || 10,
+              settingsData.session_duration_chat_min || 30,
+            min_cancel_hours: settingsData.min_cancel_hours || 24,
+            timezone: settingsData.timezone || "America/Sao_Paulo",
           });
         }
 
@@ -209,8 +209,8 @@ export default function ConfiguracoesPage() {
         profissional_id: profissionalId,
         session_duration_video_min: settings.session_duration_video_min,
         session_duration_chat_min: settings.session_duration_chat_min,
-        buffer_before_min: settings.buffer_before_min,
-        buffer_after_min: settings.buffer_after_min,
+        min_cancel_hours: settings.min_cancel_hours,
+        timezone: settings.timezone,
       });
 
       if (error) throw error;
@@ -465,21 +465,32 @@ export default function ConfiguracoesPage() {
               }
             />
             <SettingField
-              label="Intervalo antes da sessão"
-              suffix="minutos"
-              value={settings.buffer_before_min}
+              label="Antecedência mínima para cancelar"
+              suffix="horas"
+              value={settings.min_cancel_hours}
               onChange={(v) =>
-                setSettings({ ...settings, buffer_before_min: v })
+                setSettings({ ...settings, min_cancel_hours: v })
               }
             />
-            <SettingField
-              label="Intervalo após a sessão"
-              suffix="minutos"
-              value={settings.buffer_after_min}
-              onChange={(v) =>
-                setSettings({ ...settings, buffer_after_min: v })
-              }
-            />
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-warm-700">
+                Fuso horário
+              </label>
+              <select
+                value={settings.timezone}
+                onChange={(e) =>
+                  setSettings({ ...settings, timezone: e.target.value })
+                }
+                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400"
+              >
+                <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
+                <option value="America/Manaus">Manaus (GMT-4)</option>
+                <option value="America/Recife">Recife (GMT-3)</option>
+                <option value="America/Fortaleza">Fortaleza (GMT-3)</option>
+                <option value="America/Belem">Belém (GMT-3)</option>
+                <option value="America/Cuiaba">Cuiabá (GMT-4)</option>
+              </select>
+            </div>
           </div>
         </div>
       )}
