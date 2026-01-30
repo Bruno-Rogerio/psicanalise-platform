@@ -82,7 +82,7 @@ export default function PacientesPage() {
         // Unique patients
         const map = new Map<string, Patient>();
         for (const a of raw) {
-          const p = a.patient?.[0];
+          const p = Array.isArray(a.patient) ? a.patient[0] : a.patient;
           if (p?.id && !map.has(p.id)) {
             map.set(p.id, { id: p.id, nome: p.nome ?? "Paciente" });
           }
