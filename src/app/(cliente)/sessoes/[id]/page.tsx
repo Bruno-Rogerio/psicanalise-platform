@@ -759,7 +759,7 @@ function ChatBubble({
       <div
         className={`group max-w-[85%] rounded-2xl px-4 py-3 shadow-soft transition-all hover:shadow-soft-lg ${
           mine
-            ? "bg-gradient-to-br from-sage-500 to-sage-600 text-white"
+            ? "bg-[#111111] text-white"
             : "border-2 border-warm-200 bg-white text-warm-900"
         }`}
       >
