@@ -64,6 +64,7 @@ export default function PacientesPage() {
           )
           .eq("profissional_id", auth.user.id)
           .order("start_at", { ascending: false });
+        console.log("DEBUG Pacientes:", { userId: auth.user.id, data, error });
 
         if (error) throw error;
 
