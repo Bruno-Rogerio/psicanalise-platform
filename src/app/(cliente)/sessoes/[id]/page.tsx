@@ -61,7 +61,6 @@ export default function ClienteSessaoPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<number | null>(null);
   const videoWatchRef = useRef<number | null>(null);
 
@@ -95,10 +94,13 @@ export default function ClienteSessaoPage() {
     return isNowAllowedForVideo(room.start_at, room.end_at);
   }, [room]);
 
-  // Scroll automático chat
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // ✅ Scroll apenas quando VOCÊ envia mensagem
+  const scrollToBottom = () => {
+    const chatContainer = document.getElementById("chat-messages-container");
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  };
 
   // Load inicial
   useEffect(() => {
@@ -185,6 +187,9 @@ export default function ClienteSessaoPage() {
       setMsg("");
       const m = await listChatMessages(room.id);
       setMessages(m);
+
+      // ✅ Scroll automático apenas quando VOCÊ envia
+      setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
       alert(e?.message ?? "Erro ao enviar mensagem.");
     } finally {
@@ -522,8 +527,11 @@ export default function ClienteSessaoPage() {
                 </div>
               </div>
 
-              {/* Mensagens */}
-              <div className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5">
+              {/* Mensagens - ✅ ADICIONA ID AQUI */}
+              <div
+                id="chat-messages-container"
+                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
+              >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-warm-100">
@@ -539,17 +547,14 @@ export default function ClienteSessaoPage() {
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {messages.map((m) => (
-                      <ChatBubble
-                        key={m.id}
-                        mine={m.sender_role === "cliente"}
-                        body={m.message}
-                        at={m.created_at}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </>
+                  messages.map((m) => (
+                    <ChatBubble
+                      key={m.id}
+                      mine={m.sender_role === "cliente"}
+                      body={m.message}
+                      at={m.created_at}
+                    />
+                  ))
                 )}
               </div>
 
@@ -626,8 +631,11 @@ export default function ClienteSessaoPage() {
                 </p>
               </div>
 
-              {/* Mensagens */}
-              <div className="h-[400px] space-y-2 overflow-y-auto bg-warm-50/30 p-4">
+              {/* Mensagens - ✅ ADICIONA ID AQUI TAMBÉM */}
+              <div
+                id="chat-messages-container"
+                className="h-[400px] space-y-2 overflow-y-auto bg-warm-50/30 p-4"
+              >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-warm-300 bg-white/50 p-6 text-center">
                     <ChatBubbleIcon className="mb-3 h-10 w-10 text-warm-300" />
@@ -636,17 +644,14 @@ export default function ClienteSessaoPage() {
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {messages.map((m) => (
-                      <ChatBubbleCompact
-                        key={m.id}
-                        mine={m.sender_role === "cliente"}
-                        body={m.message}
-                        at={m.created_at}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </>
+                  messages.map((m) => (
+                    <ChatBubbleCompact
+                      key={m.id}
+                      mine={m.sender_role === "cliente"}
+                      body={m.message}
+                      at={m.created_at}
+                    />
+                  ))
                 )}
               </div>
 

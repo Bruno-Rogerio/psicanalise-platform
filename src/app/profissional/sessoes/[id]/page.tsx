@@ -1,7 +1,7 @@
 // src/app/profissional/sessoes/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
@@ -65,18 +65,19 @@ export default function SessaoDetailPage() {
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto scroll chat
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // ✅ Scroll apenas quando VOCÊ envia mensagem
+  const scrollToBottom = () => {
+    const chatContainer = document.getElementById("chat-messages-container");
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  };
 
   const canStart = useMemo(() => {
     if (!room) return false;
     if (room.status !== "scheduled") return false;
     const now = Date.now();
-    const start = new Date(room.start_at).getTime() - 10 * 60 * 1000; // 10 min antes
+    const start = new Date(room.start_at).getTime() - 10 * 60 * 1000;
     const end = new Date(room.end_at).getTime();
     return now >= start && now <= end;
   }, [room]);
@@ -107,10 +108,16 @@ export default function SessaoDetailPage() {
 
         if (error) throw error;
 
-        const normalized = {
+        // ✅ Normaliza corretamente (resolve problema do nome "--")
+        const normalized: SessionRoom = {
           ...data,
-          patient: data.patient?.[0] ?? null,
-          professional: data.professional?.[0] ?? null,
+          patient:
+            (Array.isArray(data.patient) ? data.patient[0] : data.patient) ??
+            null,
+          professional:
+            (Array.isArray(data.professional)
+              ? data.professional[0]
+              : data.professional) ?? null,
         };
 
         setRoom(normalized);
@@ -217,13 +224,12 @@ export default function SessaoDetailPage() {
 
     setChatBusy(true);
     try {
-      // 🔥 PEGA O USER ID PRIMEIRO
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user?.id) throw new Error("Não autenticado");
 
       const { error } = await supabase.from("chat_messages").insert({
         appointment_id: sessionId,
-        sender_id: auth.user.id, // ✅ ADICIONA ISSO!
+        sender_id: auth.user.id,
         sender_role: "profissional",
         message: msg.trim(),
       });
@@ -239,6 +245,9 @@ export default function SessaoDetailPage() {
         .order("created_at", { ascending: true });
 
       if (data) setMessages(data);
+
+      // ✅ Scroll automático apenas quando VOCÊ envia
+      setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
       alert(e?.message ?? "Erro ao enviar mensagem.");
     } finally {
@@ -277,8 +286,8 @@ export default function SessaoDetailPage() {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <div className="h-32 animate-pulse rounded-3xl bg-warm-200" />
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-96 animate-pulse rounded-3xl bg-warm-200 lg:col-span-2" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="h-96 animate-pulse rounded-3xl bg-warm-200" />
           <div className="h-96 animate-pulse rounded-3xl bg-warm-200" />
         </div>
       </div>
@@ -413,11 +422,11 @@ export default function SessaoDetailPage() {
       </header>
 
       {/* ==========================================
-          📋 ÁREA PRINCIPAL
+          📋 ÁREA PRINCIPAL - ✅ GRID 2 COLUNAS
       ========================================== */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* ========== COLUNA ESQUERDA: VÍDEO/CHAT + PRONTUÁRIO ========== */}
-        <section className="space-y-6 lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* ========== COLUNA 1: VÍDEO/CHAT ========== */}
+        <section className="space-y-6">
           {/* 🎥 PLAYER DE VÍDEO */}
           {isVideo && dailyUrl && (
             <div className="group animate-fade-in overflow-hidden rounded-3xl border-2 border-warm-200 bg-warm-900 shadow-soft-xl">
@@ -479,7 +488,11 @@ export default function SessaoDetailPage() {
                 </div>
               </div>
 
-              <div className="h-[400px] space-y-3 overflow-y-auto bg-warm-50/30 p-5">
+              {/* Mensagens - ✅ ADICIONA ID AQUI */}
+              <div
+                id="chat-messages-container"
+                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
+              >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-warm-100">
@@ -493,17 +506,14 @@ export default function SessaoDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {messages.map((m) => (
-                      <ChatBubble
-                        key={m.id}
-                        mine={m.sender_role === "profissional"}
-                        body={m.message}
-                        at={m.created_at}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </>
+                  messages.map((m) => (
+                    <ChatBubble
+                      key={m.id}
+                      mine={m.sender_role === "profissional"}
+                      body={m.message}
+                      at={m.created_at}
+                    />
+                  ))
                 )}
               </div>
 
@@ -536,6 +546,46 @@ export default function SessaoDetailPage() {
             </div>
           )}
 
+          {/* 📊 INFORMAÇÕES DA SESSÃO (mobile) */}
+          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:hidden">
+            <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
+              <InfoIcon className="h-4 w-4" />
+              Informações da sessão
+            </p>
+
+            <div className="space-y-3">
+              <InfoItem
+                icon={<UserIcon className="h-4 w-4" />}
+                label="Paciente"
+                value={room.patient?.nome || "Paciente não identificado"}
+              />
+              <InfoItem
+                icon={<CalendarIcon className="h-4 w-4" />}
+                label="Data"
+                value={fmtDate(startDate)}
+              />
+              <InfoItem
+                icon={<ClockIcon className="h-4 w-4" />}
+                label="Horário"
+                value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
+              />
+              <InfoItem
+                icon={
+                  isVideo ? (
+                    <VideoIcon className="h-4 w-4" />
+                  ) : (
+                    <ChatIcon className="h-4 w-4" />
+                  )
+                }
+                label="Tipo"
+                value={isVideo ? "Videochamada" : "Chat por texto"}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ========== COLUNA 2: PRONTUÁRIO ========== */}
+        <section className="space-y-6">
           {/* 📝 PRONTUÁRIO */}
           <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
             <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
@@ -565,30 +615,34 @@ export default function SessaoDetailPage() {
               </div>
             </div>
 
-            <div className="space-y-4 p-5">
+            <div className="max-h-[600px] space-y-4 overflow-y-auto p-5">
               <NoteField
                 label="Queixa"
                 placeholder="O que o paciente trouxe na sessão..."
                 value={notes.queixa}
                 onChange={(v) => setNotes({ ...notes, queixa: v })}
+                rows={3}
               />
               <NoteField
                 label="Associações"
                 placeholder="Associações livres, memórias..."
                 value={notes.associacoes}
                 onChange={(v) => setNotes({ ...notes, associacoes: v })}
+                rows={3}
               />
               <NoteField
                 label="Intervenções"
                 placeholder="Intervenções realizadas..."
                 value={notes.intervencoes}
                 onChange={(v) => setNotes({ ...notes, intervencoes: v })}
+                rows={3}
               />
               <NoteField
                 label="Plano"
                 placeholder="Plano para próximas sessões..."
                 value={notes.plano}
                 onChange={(v) => setNotes({ ...notes, plano: v })}
+                rows={3}
               />
               <NoteField
                 label="Observações"
@@ -599,12 +653,9 @@ export default function SessaoDetailPage() {
               />
             </div>
           </div>
-        </section>
 
-        {/* ========== COLUNA DIREITA: INFO + DICAS ========== */}
-        <aside className="space-y-6">
-          {/* 📊 INFORMAÇÕES DA SESSÃO */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft">
+          {/* 📊 INFORMAÇÕES DA SESSÃO (desktop) */}
+          <div className="hidden overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:block">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
               <InfoIcon className="h-4 w-4" />
               Informações da sessão
@@ -614,7 +665,7 @@ export default function SessaoDetailPage() {
               <InfoItem
                 icon={<UserIcon className="h-4 w-4" />}
                 label="Paciente"
-                value={room.patient?.nome || "—"}
+                value={room.patient?.nome || "Paciente não identificado"}
               />
               <InfoItem
                 icon={<CalendarIcon className="h-4 w-4" />}
@@ -653,7 +704,7 @@ export default function SessaoDetailPage() {
               <TipItem text="Salve o prontuário antes de sair" />
             </div>
           </div>
-        </aside>
+        </section>
       </div>
     </div>
   );
@@ -724,10 +775,7 @@ function ChatBubble({
         <p
           className={`mt-1.5 text-[11px] ${mine ? "text-white/80" : "text-warm-500"}`}
         >
-          {new Date(at).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {fmtTime(new Date(at))}
         </p>
       </div>
     </div>
