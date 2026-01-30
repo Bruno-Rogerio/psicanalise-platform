@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-browser";
 import { CalendarMonth } from "@/components/shared/agenda/CalendarMonth";
 import { SlotsGrid } from "@/components/shared/agenda/SlotsGrid";
+import { BuyCreditsSection } from "@/components/agenda/BuyCreditsSection";
 import {
   getProfessional,
   getSettings,
@@ -159,6 +160,13 @@ export default function AgendaPage() {
     } else if (step <= 2) {
       setPickedSlot(null);
     }
+  }
+
+  async function loadCreditsBalance() {
+    if (!professionalId || !type) return;
+
+    const balance = await getCreditsBalance(professionalId, type);
+    setCredits(balance);
   }
 
   async function onUseCredit() {
@@ -420,6 +428,32 @@ export default function AgendaPage() {
             </div>
           </div>
 
+          {/* ===== SEÇÃO: COMPRAR CRÉDITOS ===== */}
+          {credits.available === 0 && type && (
+            <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
+                  <AlertIcon className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-warm-900">Sem créditos</p>
+                  <p className="text-xs text-warm-600">
+                    Adquira um pacote para continuar
+                  </p>
+                </div>
+              </div>
+
+              <BuyCreditsSection
+                professionalId={professionalId!}
+                appointmentType={type}
+                onCreditsUpdated={() => {
+                  // Recarrega créditos após compra
+                  loadCreditsBalance();
+                }}
+              />
+            </div>
+          )}
+
           {/* Resumo da Sessão - aparece no step 3 */}
           {pickedSlot && (
             <div className="rounded-2xl border-2 border-sage-400 bg-white p-5 shadow-lg">
@@ -496,15 +530,18 @@ export default function AgendaPage() {
                     )}
                   </button>
                 ) : (
-                  <button
-                    onClick={() => {
-                      /* Redirect to plans */
-                    }}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#be123c] px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-[#9f1239] hover:shadow-xl"
-                  >
-                    <CreditIcon className="h-6 w-6" />
-                    <span>Comprar Créditos</span>
-                  </button>
+                  <div className="rounded-xl bg-rose-50 p-4">
+                    <p className="mb-3 text-sm font-semibold text-rose-900">
+                      Você não tem créditos disponíveis
+                    </p>
+                    <BuyCreditsSection
+                      professionalId={professionalId!}
+                      appointmentType={pickedSlot!.appointment_type}
+                      onCreditsUpdated={() => {
+                        loadCreditsBalance();
+                      }}
+                    />
+                  </div>
                 )}
 
                 <button
@@ -817,6 +854,24 @@ function fmtTime(d: Date) {
 }
 
 // ========== ICONS ==========
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+  );
+}
 
 function CalendarPlusIcon({ className }: { className?: string }) {
   return (

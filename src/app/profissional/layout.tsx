@@ -11,12 +11,66 @@ const navItems = [
   { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
   { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
   { label: "Financeiro", href: "/profissional/financeiro", icon: WalletIcon },
+  { label: "Produtos", href: "/profissional/produtos", icon: PackageIcon }, // ✅ ADICIONAR
+  { label: "Validar PIX", href: "/profissional/pagamentos-pix", icon: PixIcon }, // ✅ ADICIONAR
   {
     label: "Configurações",
     href: "/profissional/configuracoes",
     icon: SettingsIcon,
   },
 ];
+export function PendingPixAlert() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    loadPendingCount();
+
+    // Atualiza a cada 30 segundos
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadPendingCount() {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user?.id) return;
+
+    const { count } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("profissional_id", auth.user.id)
+      .eq("payment_method", "pix")
+      .eq("status", "pending_pix");
+
+    setCount(count || 0);
+  }
+
+  if (count === 0) return null;
+
+  return (
+    <Link
+      href="/profissional/pagamentos-pix"
+      className="block rounded-2xl border-2 border-amber-200 bg-amber-50 p-5 shadow-soft transition-all hover:shadow-soft-lg"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500">
+          <AlertIcon className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-amber-900">
+            {count} pagamento{count > 1 ? "s" : ""} PIX pendente
+            {count > 1 ? "s" : ""}
+          </p>
+          <p className="mt-1 text-sm text-amber-700">
+            Clique para validar e liberar créditos dos clientes
+          </p>
+        </div>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-sm font-bold text-white">
+          {count}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function ProfissionalLayout({
   children,
@@ -208,7 +262,14 @@ export default function ProfissionalLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8">
+          {/* Alerta de PIX pendente */}
+          <div className="mb-6">
+            <PendingPixAlert />
+          </div>
+
+          {children}
+        </main>
 
         {/* Footer */}
         <footer className="border-t border-warm-200/60 bg-white/60 px-4 py-4 sm:px-6">
@@ -223,6 +284,50 @@ export default function ProfissionalLayout({
 }
 
 // ========== ICONS ==========
+
+function PackageIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+      />
+    </svg>
+  );
+}
+
+function PixIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M15.2 6.4L12 9.6 8.8 6.4 6.4 8.8 9.6 12l-3.2 3.2 2.4 2.4L12 14.4l3.2 3.2 2.4-2.4L14.4 12l3.2-3.2z" />
+    </svg>
+  );
+}
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+  );
+}
 
 function DashboardIcon({ className }: { className?: string }) {
   return (
