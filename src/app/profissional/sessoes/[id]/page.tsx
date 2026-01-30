@@ -212,58 +212,18 @@ export default function SessaoDetailPage() {
     }
   }
 
-  useEffect(() => {
-    // 🔍 DEBUG AUTOMÁTICO
-    async function debugChat() {
-      if (!sessionId) return;
-
-      const { data: user } = await supabase.auth.getUser();
-      console.log("=== DEBUG PROFISSIONAL CHAT ===");
-      console.log("✅ Meu User ID:", user?.user?.id);
-      console.log("✅ Meu Email:", user?.user?.email);
-      console.log("✅ Session ID:", sessionId);
-
-      const { data: appt } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("id", sessionId)
-        .single();
-
-      console.log("✅ Appointment:", appt);
-      console.log("✅ Profissional ID:", appt?.profissional_id);
-      console.log("✅ User ID (cliente):", appt?.user_id);
-      console.log(
-        "✅ Sou o profissional?",
-        appt?.profissional_id === user?.user?.id,
-      );
-
-      // Testa inserir mensagem
-      const { data: msgData, error: msgError } = await supabase
-        .from("chat_messages")
-        .insert({
-          appointment_id: sessionId,
-          sender_id: user?.user?.id,
-          sender_role: "profissional",
-          message: "TESTE AUTOMÁTICO DO DEBUG",
-        });
-
-      if (msgError) {
-        console.error("❌ ERRO AO INSERIR:", msgError);
-      } else {
-        console.log("✅ SUCESSO! Mensagem inserida");
-      }
-      console.log("================================");
-    }
-
-    debugChat();
-  }, [sessionId]);
   async function handleSendMessage() {
     if (!sessionId || !msg.trim()) return;
 
     setChatBusy(true);
     try {
+      // 🔥 PEGA O USER ID PRIMEIRO
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) throw new Error("Não autenticado");
+
       const { error } = await supabase.from("chat_messages").insert({
         appointment_id: sessionId,
+        sender_id: auth.user.id, // ✅ ADICIONA ISSO!
         sender_role: "profissional",
         message: msg.trim(),
       });
