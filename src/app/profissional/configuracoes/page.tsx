@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
 type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type AppointmentType = "video" | "chat";
 
 type AvailabilityRule = {
   id?: string;
   weekday: WeekDay;
   start_time: string;
   end_time: string;
+  appointment_type: AppointmentType;
 };
 
 type Settings = {
@@ -18,14 +20,12 @@ type Settings = {
   session_duration_chat_min: number;
   buffer_before_min: number;
   buffer_after_min: number;
-  advance_booking_days: number;
 };
 
 type Profile = {
   nome: string;
   email: string;
   crp: string;
-  bio: string;
 };
 
 const weekDayLabels: Record<WeekDay, string> = {
@@ -47,6 +47,7 @@ export default function ConfiguracoesPage() {
 
   // Availability
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
+  const [newRuleType, setNewRuleType] = useState<AppointmentType>("video");
 
   // Settings
   const [settings, setSettings] = useState<Settings>({
@@ -54,7 +55,6 @@ export default function ConfiguracoesPage() {
     session_duration_chat_min: 50,
     buffer_before_min: 10,
     buffer_after_min: 10,
-    advance_booking_days: 30,
   });
 
   // Profile
@@ -62,7 +62,6 @@ export default function ConfiguracoesPage() {
     nome: "",
     email: "",
     crp: "",
-    bio: "",
   });
 
   const [profissionalId, setProfissionalId] = useState<string | null>(null);
@@ -77,26 +76,33 @@ export default function ConfiguracoesPage() {
 
         setProfissionalId(auth.user.id);
 
-        // Load profile
+        // Load profile (only columns that exist)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("nome, email, crp, bio")
+          .select("nome, crp")
           .eq("id", auth.user.id)
           .single();
 
         if (profileData) {
           setProfile({
             nome: profileData.nome || "",
-            email: profileData.email || auth.user.email || "",
+            email: auth.user.email || "",
             crp: profileData.crp || "",
-            bio: profileData.bio || "",
+          });
+        } else {
+          setProfile({
+            nome: "",
+            email: auth.user.email || "",
+            crp: "",
           });
         }
 
-        // Load settings
+        // Load settings (only columns that exist)
         const { data: settingsData } = await supabase
           .from("professional_settings")
-          .select("*")
+          .select(
+            "session_duration_video_min, session_duration_chat_min, buffer_before_min, buffer_after_min",
+          )
           .eq("profissional_id", auth.user.id)
           .single();
 
@@ -108,14 +114,13 @@ export default function ConfiguracoesPage() {
               settingsData.session_duration_chat_min || 50,
             buffer_before_min: settingsData.buffer_before_min || 10,
             buffer_after_min: settingsData.buffer_after_min || 10,
-            advance_booking_days: settingsData.advance_booking_days || 30,
           });
         }
 
         // Load availability rules
         const { data: rulesData } = await supabase
           .from("availability_rules")
-          .select("id, weekday, start_time, end_time")
+          .select("id, weekday, start_time, end_time, appointment_type")
           .eq("profissional_id", auth.user.id)
           .order("weekday", { ascending: true });
 
@@ -130,7 +135,15 @@ export default function ConfiguracoesPage() {
 
   // Add availability rule
   function addRule(weekday: WeekDay) {
-    setRules([...rules, { weekday, start_time: "08:00", end_time: "18:00" }]);
+    setRules([
+      ...rules,
+      {
+        weekday,
+        start_time: "08:00",
+        end_time: "18:00",
+        appointment_type: newRuleType,
+      },
+    ]);
   }
 
   // Remove availability rule
@@ -141,7 +154,7 @@ export default function ConfiguracoesPage() {
   // Update rule
   function updateRule(
     index: number,
-    field: "start_time" | "end_time",
+    field: keyof AvailabilityRule,
     value: string,
   ) {
     const newRules = [...rules];
@@ -170,6 +183,7 @@ export default function ConfiguracoesPage() {
             weekday: r.weekday,
             start_time: r.start_time,
             end_time: r.end_time,
+            appointment_type: r.appointment_type,
           })),
         );
 
@@ -193,7 +207,10 @@ export default function ConfiguracoesPage() {
 
       const { error } = await supabase.from("professional_settings").upsert({
         profissional_id: profissionalId,
-        ...settings,
+        session_duration_video_min: settings.session_duration_video_min,
+        session_duration_chat_min: settings.session_duration_chat_min,
+        buffer_before_min: settings.buffer_before_min,
+        buffer_after_min: settings.buffer_after_min,
       });
 
       if (error) throw error;
@@ -218,7 +235,6 @@ export default function ConfiguracoesPage() {
         .update({
           nome: profile.nome,
           crp: profile.crp,
-          bio: profile.bio,
         })
         .eq("id", profissionalId);
 
@@ -293,11 +309,39 @@ export default function ConfiguracoesPage() {
             </button>
           </div>
 
+          {/* Type selector for new rules */}
+          <div className="mt-4 flex items-center gap-3 rounded-xl bg-warm-50 p-3">
+            <span className="text-sm font-medium text-warm-700">
+              Tipo para novos horários:
+            </span>
+            <div className="flex rounded-lg border border-warm-200 bg-white p-1">
+              <button
+                onClick={() => setNewRuleType("video")}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                  newRuleType === "video"
+                    ? "bg-rose-100 text-rose-700"
+                    : "text-warm-600 hover:text-warm-900"
+                }`}
+              >
+                Vídeo
+              </button>
+              <button
+                onClick={() => setNewRuleType("chat")}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                  newRuleType === "chat"
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "text-warm-600 hover:text-warm-900"
+                }`}
+              >
+                Chat
+              </button>
+            </div>
+          </div>
+
           {/* Days */}
           <div className="mt-6 space-y-4">
             {([1, 2, 3, 4, 5, 6, 0] as WeekDay[]).map((weekday) => {
               const dayRules = rules.filter((r) => r.weekday === weekday);
-              const dayIndex = rules.findIndex((r) => r.weekday === weekday);
 
               return (
                 <div
@@ -308,14 +352,12 @@ export default function ConfiguracoesPage() {
                     <p className="font-semibold text-warm-900">
                       {weekDayLabels[weekday]}
                     </p>
-                    {dayRules.length === 0 && (
-                      <button
-                        onClick={() => addRule(weekday)}
-                        className="text-sm font-medium text-[#4A7C59] hover:underline"
-                      >
-                        + Adicionar horário
-                      </button>
-                    )}
+                    <button
+                      onClick={() => addRule(weekday)}
+                      className="text-sm font-medium text-[#4A7C59] hover:underline"
+                    >
+                      + Adicionar horário
+                    </button>
                   </div>
 
                   {dayRules.length > 0 ? (
@@ -324,7 +366,28 @@ export default function ConfiguracoesPage() {
                         if (rule.weekday !== weekday) return null;
 
                         return (
-                          <div key={index} className="flex items-center gap-3">
+                          <div
+                            key={index}
+                            className="flex flex-wrap items-center gap-3"
+                          >
+                            <select
+                              value={rule.appointment_type}
+                              onChange={(e) =>
+                                updateRule(
+                                  index,
+                                  "appointment_type",
+                                  e.target.value,
+                                )
+                              }
+                              className={`rounded-lg border px-2 py-2 text-xs font-semibold outline-none ${
+                                rule.appointment_type === "video"
+                                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                                  : "border-indigo-200 bg-indigo-50 text-indigo-700"
+                              }`}
+                            >
+                              <option value="video">Vídeo</option>
+                              <option value="chat">Chat</option>
+                            </select>
                             <input
                               type="time"
                               value={rule.start_time}
@@ -351,12 +414,6 @@ export default function ConfiguracoesPage() {
                           </div>
                         );
                       })}
-                      <button
-                        onClick={() => addRule(weekday)}
-                        className="text-sm font-medium text-[#4A7C59] hover:underline"
-                      >
-                        + Adicionar outro horário
-                      </button>
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-warm-500">
@@ -421,14 +478,6 @@ export default function ConfiguracoesPage() {
               value={settings.buffer_after_min}
               onChange={(v) =>
                 setSettings({ ...settings, buffer_after_min: v })
-              }
-            />
-            <SettingField
-              label="Antecedência máxima para agendamento"
-              suffix="dias"
-              value={settings.advance_booking_days}
-              onChange={(v) =>
-                setSettings({ ...settings, advance_booking_days: v })
               }
             />
           </div>
@@ -496,21 +545,6 @@ export default function ConfiguracoesPage() {
                   setProfile({ ...profile, crp: e.target.value })
                 }
                 placeholder="Ex: 06/12345"
-                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
-                Biografia
-              </label>
-              <textarea
-                value={profile.bio}
-                onChange={(e) =>
-                  setProfile({ ...profile, bio: e.target.value })
-                }
-                placeholder="Conte um pouco sobre você e sua abordagem..."
-                rows={4}
                 className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
               />
             </div>

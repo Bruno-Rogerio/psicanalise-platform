@@ -8,7 +8,6 @@ import { supabase } from "@/lib/supabase-browser";
 type Patient = {
   id: string;
   nome: string;
-  email?: string;
 };
 
 type Appointment = {
@@ -60,7 +59,7 @@ export default function PacientesPage() {
             status,
             start_at,
             end_at,
-            patient:profiles!appointments_user_id_fkey ( id, nome, email )
+            patient:profiles!appointments_user_id_fkey ( id, nome )
           `,
           )
           .eq("profissional_id", auth.user.id)
@@ -84,11 +83,7 @@ export default function PacientesPage() {
         for (const a of raw) {
           const p = a.patient?.[0];
           if (p?.id && !map.has(p.id)) {
-            map.set(p.id, {
-              id: p.id,
-              nome: p.nome ?? "Paciente",
-              email: p.email,
-            });
+            map.set(p.id, { id: p.id, nome: p.nome ?? "Paciente" });
           }
         }
         const uniquePatients = Array.from(map.values()).sort((a, b) =>
@@ -287,11 +282,6 @@ export default function PacientesPage() {
                       <p className="text-lg font-bold text-warm-900">
                         {selectedPatient.nome}
                       </p>
-                      {selectedPatient.email && (
-                        <p className="text-sm text-warm-500">
-                          {selectedPatient.email}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>

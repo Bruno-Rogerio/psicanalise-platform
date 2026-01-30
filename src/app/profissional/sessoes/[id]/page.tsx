@@ -12,7 +12,7 @@ type SessionRoom = {
   status: string;
   start_at: string;
   end_at: string;
-  patient: { id: string; nome: string; email?: string } | null;
+  patient: { id: string; nome: string } | null;
   professional: { id: string; nome: string } | null;
 };
 
@@ -58,7 +58,7 @@ export default function SessaoDetailPage() {
             status,
             start_at,
             end_at,
-            patient:profiles!appointments_user_id_fkey ( id, nome, email ),
+            patient:profiles!appointments_user_id_fkey ( id, nome ),
             professional:profiles!appointments_profissional_id_fkey ( id, nome )
           `,
           )
