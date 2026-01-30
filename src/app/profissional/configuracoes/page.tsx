@@ -205,13 +205,16 @@ export default function ConfiguracoesPage() {
     try {
       setSaving(true);
 
-      const { error } = await supabase.from("professional_settings").upsert({
-        profissional_id: profissionalId,
-        session_duration_video_min: settings.session_duration_video_min,
-        session_duration_chat_min: settings.session_duration_chat_min,
-        min_cancel_hours: settings.min_cancel_hours,
-        timezone: settings.timezone,
-      });
+      const { error } = await supabase.from("professional_settings").upsert(
+        {
+          profissional_id: profissionalId,
+          session_duration_video_min: settings.session_duration_video_min,
+          session_duration_chat_min: settings.session_duration_chat_min,
+          min_cancel_hours: settings.min_cancel_hours,
+          timezone: settings.timezone,
+        },
+        { onConflict: "profissional_id" },
+      );
 
       if (error) throw error;
 
