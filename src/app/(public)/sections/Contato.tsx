@@ -14,7 +14,7 @@ export function Contato() {
         <ContactCard
           icon={<MailIcon />}
           title="Email"
-          value="contato@seusite.com.br"
+          value="contato@raizaconvento.com.br"
           hint="Resposta em até 24h"
           gradient="from-rose-400/15 to-warm-500/10"
         />
