@@ -32,7 +32,7 @@ export default function PagamentosPixPage() {
           *,
           items:order_items(*),
           product:products(*),
-          user:profiles!orders_user_id_fkey(id, nome, email)
+          user:profiles!orders_user_id_fkey(id, nome)
         `,
         )
         .eq("profissional_id", auth.user.id)
@@ -251,7 +251,9 @@ function OrderCard({
               <p className="font-bold text-warm-900">
                 {user?.nome || "Cliente"}
               </p>
-              <p className="text-sm text-warm-600">{user?.email || "—"}</p>
+              <p className="text-sm text-warm-600">
+                ID: {order.user_id.substring(0, 8)}...
+              </p>
               <p className="mt-1 text-xs text-warm-500">
                 {createdAt.toLocaleString("pt-BR")}
               </p>
