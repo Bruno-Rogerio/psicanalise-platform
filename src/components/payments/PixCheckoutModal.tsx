@@ -44,7 +44,7 @@ export function PixCheckoutModal({
 
         // 🔥 Gera PIX VÁLIDO com função própria
         const pixCode = generatePixPayload({
-          pixKey: "57129530000151", // CNPJ sem pontos/traços
+          pixKey: "57.129.530/0001-51", // CNPJ sem pontos/traços
           merchantName: "RAIZA MARTINS CONVENTO",
           merchantCity: "SAO PAULO",
           amount: response.pixData!.amount,
@@ -329,9 +329,6 @@ function generatePixPayload({
   amount: number;
   txid: string;
 }): string {
-  // Remove caracteres especiais da chave PIX (se for CNPJ/CPF)
-  const cleanPixKey = pixKey.replace(/[^\d]/g, "");
-
   // Formata valores conforme padrão
   const amountStr = amount.toFixed(2);
   const merchantNameClean = merchantName.substring(0, 25).toUpperCase();
@@ -342,7 +339,7 @@ function generatePixPayload({
   const merchantAccountInfo = buildEMV(
     "26",
     buildEMV("00", "BR.GOV.BCB.PIX") +
-      buildEMV("01", cleanPixKey) +
+      buildEMV("01", pixKey) + // ← USA pixKey original, não cleanPixKey
       (txidClean ? buildEMV("02", txidClean) : ""),
   );
 
