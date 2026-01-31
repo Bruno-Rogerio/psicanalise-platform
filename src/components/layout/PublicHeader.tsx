@@ -23,7 +23,6 @@ export default function PublicHeader() {
           : "bg-warm-100/70 border-warm-300/40",
       ].join(" ")}
     >
-      //1
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
         <Link href="/" className="group inline-flex items-center gap-3">
           <Image
@@ -32,7 +31,7 @@ export default function PublicHeader() {
             width={140}
             height={40}
             priority
-            className="h-14 w-auto transition-opacity duration-300 group-hover:opacity-90"
+            className="h-15 w-auto transition-opacity duration-300 group-hover:opacity-90"
           />
         </Link>
 
