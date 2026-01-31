@@ -70,8 +70,19 @@ export default function PublicFooter() {
             <div className="space-y-3">
               <p className="font-semibold text-warm-900">Legal</p>
               <div className="flex flex-col gap-2.5 text-muted">
-                <span className="cursor-default">Política de privacidade</span>
-                <span className="cursor-default">Termos de uso</span>
+                <Link
+                  href="/politica-de-privacidade"
+                  className="transition-colors duration-300 hover:text-warm-500"
+                >
+                  Política de privacidade
+                </Link>
+
+                <Link
+                  href="/termos-de-uso"
+                  className="transition-colors duration-300 hover:text-warm-500"
+                >
+                  Termos de uso
+                </Link>
               </div>
             </div>
           </div>
