@@ -13,17 +13,9 @@ const items = [
     name: "LinkedIn",
     description: "Artigos e temas sobre saúde mental no cotidiano.",
     icon: LinkedInIcon,
-    href: "#",
+    href: "linkedin.com/in/raiza-convento",
     gradient: "from-soft-400/15 to-soft-500/10",
     iconColor: "text-soft-600",
-  },
-  {
-    name: "YouTube",
-    description: "Vídeos e conversas mais profundas, sem pressa.",
-    icon: YouTubeIcon,
-    href: "#",
-    gradient: "from-sage-400/15 to-sage-500/10",
-    iconColor: "text-sage-600",
   },
 ];
 
