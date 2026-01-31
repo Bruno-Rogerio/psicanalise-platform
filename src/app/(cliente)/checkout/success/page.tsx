@@ -8,6 +8,8 @@ import { getOrderById } from "@/services/payments";
 import type { OrderWithItems } from "@/types/payment";
 import { formatCents } from "@/services/products";
 
+export const dynamic = "force-dynamic";
+
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
