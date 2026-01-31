@@ -54,7 +54,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
   return (
     <section
       id="avaliacoes"
-      className="py-12 sm:py-14 md:py-16 overflow-hidden"
+      className="py-10 sm:py-12 md:py-14 overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
