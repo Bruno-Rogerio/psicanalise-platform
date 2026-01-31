@@ -28,15 +28,18 @@ export function Hero() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-500 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-sage-500" />
             </span>
-            Atendimento psicanalítico online • ética • sigilo
+            O que você sente faz sentido. Vamos olhar para isso com cuidado.
           </div>
 
           {/* Heading */}
           <h1 className="animate-slide-up mt-8 max-w-4xl text-4xl font-semibold leading-[1.1] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
-            Um espaço seguro para{" "}
-            <span className="text-gradient">falar, sentir</span>
+            Um espaço para você{" "}
+            <span className="text-gradient">falar do que sente</span>
             <br className="hidden sm:block" />
-            <span className="text-warm-700"> e se escutar.</span>
+            <span className="text-warm-700">
+              {" "}
+              sem medo, sem julgamentos e no seu tempo.
+            </span>
           </h1>
 
           {/* Subtitle */}

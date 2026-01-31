@@ -12,12 +12,11 @@ export default function PublicFooter() {
                 Ψ
               </span>
               <p className="text-base font-semibold tracking-tight text-warm-900">
-                Psicanálise Online
+                Psicanálise
               </p>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              Um espaço de escuta, cuidado e sigilo. Atendimento psicanalítico
-              online com organização e responsabilidade clínica.
+              Um lugar para falar do que dói e olhar para isso com cuidado.
             </p>
           </div>
 

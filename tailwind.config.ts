@@ -1,9 +1,14 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
+  darkMode: "class",
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/layouts/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/features/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
@@ -64,10 +69,12 @@ export default {
           foreground: "#3D3535", // Texto escuro para fundos claros
         },
       },
+
       borderRadius: {
         "4xl": "2rem",
         "5xl": "2.5rem",
       },
+
       boxShadow: {
         soft: "0 2px 8px -2px rgba(61, 53, 53, 0.08), 0 4px 16px -4px rgba(61, 53, 53, 0.04)",
         "soft-lg":
@@ -76,13 +83,16 @@ export default {
           "0 8px 24px -8px rgba(61, 53, 53, 0.12), 0 16px 48px -16px rgba(61, 53, 53, 0.1)",
         glow: "0 0 40px -10px rgba(212, 165, 165, 0.3)",
       },
+
       transitionDuration: {
-        "400": "400ms",
+        400: "400ms",
       },
+
       animation: {
         "fade-in": "fadeIn 0.6s ease-out",
         "slide-up": "slideUp 0.6s ease-out",
       },
+
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
@@ -96,4 +106,6 @@ export default {
     },
   },
   plugins: [],
-} satisfies Config;
+};
+
+export default config;

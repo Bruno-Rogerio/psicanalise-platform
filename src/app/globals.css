@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ========================================
    PALETA "ACOLHIMENTO SERENO"
@@ -131,6 +133,8 @@ body {
   }
 }
 
+/* Se você já usa essas classes no JSX, ok manter aqui.
+   (Também pode remover e usar as do Tailwind no config) */
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out;
 }
@@ -145,67 +149,64 @@ body {
 
 /* ========================================
    UTILITÁRIOS CUSTOMIZADOS
+   Colocados dentro de @layer utilities para não brigar com o Tailwind
    ======================================== */
 
-.bg-gradient-warm {
-  background: linear-gradient(
-    135deg,
-    var(--bg-primary) 0%,
-    var(--bg-secondary) 100%
-  );
-}
+@layer utilities {
+  .bg-gradient-warm {
+    background: linear-gradient(
+      135deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 100%
+    );
+  }
 
-.bg-gradient-soft {
-  background: linear-gradient(
-    180deg,
-    var(--bg-card) 0%,
-    var(--bg-primary) 100%
-  );
-}
+  .bg-gradient-soft {
+    background: linear-gradient(
+      180deg,
+      var(--bg-card) 0%,
+      var(--bg-primary) 100%
+    );
+  }
 
-.text-gradient {
-  background: linear-gradient(
-    135deg,
-    var(--accent-primary) 0%,
-    var(--accent-secondary) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--accent-primary) 0%,
+      var(--accent-secondary) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 
-.border-gradient {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
-    linear-gradient(135deg, var(--border-soft) 0%, var(--border-muted) 100%)
-      border-box;
-}
+  .border-gradient {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+      linear-gradient(135deg, var(--border-soft) 0%, var(--border-muted) 100%)
+        border-box;
+  }
 
-/* ========================================
-   GLASS EFFECT
-   ======================================== */
+  /* GLASS EFFECT */
+  .glass {
+    background: rgba(255, 253, 251, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
-.glass {
-  background: rgba(255, 253, 251, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
+  .glass-soft {
+    background: rgba(253, 248, 246, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
 
-.glass-soft {
-  background: rgba(253, 248, 246, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
+  /* TEXT UTILITIES (contraste garantido) */
+  .text-muted {
+    color: #7a7070;
+  }
 
-/* ========================================
-   TEXT UTILITIES (contraste garantido)
-   ======================================== */
-
-.text-muted {
-  color: #7a7070;
-}
-
-.text-muted-light {
-  color: #9a9090;
+  .text-muted-light {
+    color: #9a9090;
+  }
 }
