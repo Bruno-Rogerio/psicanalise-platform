@@ -140,9 +140,7 @@ export default function ProfissionalLayout({
               <span className="inline-flex w-fit items-center rounded-full border border-warm-200 bg-warm-50 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800">
                 Painel Profissional
               </span>
-              <span className="mt-1 text-xs text-warm-500">
-                Área profissional
-              </span>
+              <span className="mt-1 text-xs text-warm-500"></span>
             </div>
           </Link>
 
