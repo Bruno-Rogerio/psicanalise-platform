@@ -31,7 +31,7 @@ export default function PublicHeader() {
             width={140}
             height={40}
             priority
-            className="h-11 w-auto transition-opacity duration-300 group-hover:opacity-90"
+            className="h-14 w-auto transition-opacity duration-300 group-hover:opacity-90"
           />
         </Link>
 
