@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Review = {
   id: string;
@@ -23,7 +23,12 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
 
   useEffect(() => setMounted(true), []);
 
-  // --- Helpers
+  const getCards = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return [];
+    return Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
+  }, []);
+
   const clearAutoplay = useCallback(() => {
     if (autoplayRef.current) window.clearInterval(autoplayRef.current);
     autoplayRef.current = null;
@@ -40,100 +45,95 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
     clearAutoplay();
     clearResumeTimer();
 
-    // Retoma depois de um tempinho sem interação (sem botão chato)
     resumeTimerRef.current = window.setTimeout(() => {
       setIsInteracting(false);
-    }, 2500);
+    }, 2200);
   }, [clearAutoplay, clearResumeTimer, hasMany]);
 
-  // --- Track active slide (IntersectionObserver)
-  useEffect(() => {
-    if (!mounted) return;
-    const root = scrollerRef.current;
-    if (!root) return;
+  const scrollToIndex = useCallback(
+    (idx: number, behavior: ScrollBehavior = "smooth") => {
+      const el = scrollerRef.current;
+      if (!el) return;
 
-    const cards = Array.from(root.querySelectorAll<HTMLElement>("[data-card]"));
-    if (cards.length === 0) return;
+      const cards = getCards();
+      const target = cards[idx];
+      if (!target) return;
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        // pega o mais visível
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort(
-            (a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0),
-          )[0];
-
-        if (!visible) return;
-        const idx = Number((visible.target as HTMLElement).dataset.index ?? 0);
-        if (!Number.isNaN(idx)) setActive(idx);
-      },
-      {
-        root,
-        threshold: [0.35, 0.5, 0.65],
-      },
-    );
-
-    cards.forEach((c) => io.observe(c));
-    return () => io.disconnect();
-  }, [mounted, reviews?.length]);
-
-  // --- Autoplay (leve e discreto)
-  useEffect(() => {
-    if (!mounted) return;
-    if (!hasMany) return;
-    if (isInteracting) return;
-
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    clearAutoplay();
-
-    autoplayRef.current = window.setInterval(() => {
-      const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
-      if (cards.length === 0) return;
-
-      const next = (active + 1) % cards.length;
-      cards[next]?.scrollIntoView({
-        behavior: "smooth",
-        inline: "start",
-        block: "nearest",
-      });
-    }, 5200);
-
-    return () => clearAutoplay();
-  }, [active, mounted, hasMany, isInteracting, clearAutoplay]);
-
-  const scrollToIndex = useCallback((idx: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
-    cards[idx]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "start",
-      block: "nearest",
-    });
-  }, []);
+      el.scrollTo({ left: target.offsetLeft, behavior });
+    },
+    [getCards],
+  );
 
   const scrollByOne = useCallback(
     (dir: "prev" | "next") => {
-      const el = scrollerRef.current;
-      if (!el) return;
-      const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
+      const cards = getCards();
       if (cards.length === 0) return;
 
       const next =
         dir === "next"
           ? (active + 1) % cards.length
           : (active - 1 + cards.length) % cards.length;
-      cards[next]?.scrollIntoView({
-        behavior: "smooth",
-        inline: "start",
-        block: "nearest",
-      });
+
+      scrollToIndex(next);
     },
-    [active],
+    [active, getCards, scrollToIndex],
   );
+
+  // Track active card without causing vertical scroll
+  useEffect(() => {
+    if (!mounted) return;
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const cards = getCards();
+      if (cards.length === 0) return;
+
+      const left = el.scrollLeft;
+      let bestIdx = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+
+      for (let i = 0; i < cards.length; i++) {
+        const dist = Math.abs(cards[i].offsetLeft - left);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
+        }
+      }
+      setActive(bestIdx);
+    };
+
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [mounted, getCards, reviews?.length]);
+
+  // Autoplay only moves scrollLeft
+  useEffect(() => {
+    if (!mounted) return;
+    if (!hasMany) return;
+    if (isInteracting) return;
+
+    clearAutoplay();
+
+    autoplayRef.current = window.setInterval(() => {
+      const cards = getCards();
+      if (cards.length <= 1) return;
+
+      const next = (active + 1) % cards.length;
+      scrollToIndex(next, "smooth");
+    }, 5200);
+
+    return () => clearAutoplay();
+  }, [
+    active,
+    mounted,
+    hasMany,
+    isInteracting,
+    clearAutoplay,
+    getCards,
+    scrollToIndex,
+  ]);
 
   if (!reviews || reviews.length === 0) return null;
 
@@ -159,7 +159,10 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
           {reviews.length > 1 ? (
             <div className="hidden items-center gap-3 sm:flex">
               <button
-                onClick={() => scrollByOne("prev")}
+                onClick={() => {
+                  pauseAutoplayTemporarily();
+                  scrollByOne("prev");
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
                 aria-label="Anterior"
                 type="button"
@@ -167,7 +170,10 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => scrollByOne("next")}
+                onClick={() => {
+                  pauseAutoplayTemporarily();
+                  scrollByOne("next");
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
                 aria-label="Próximo"
                 type="button"
@@ -180,7 +186,6 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
 
         {/* Carousel */}
         <div className="relative">
-          {/* soft fade edges (mobile: smaller) */}
           <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-warm-100 to-transparent sm:w-14" />
           <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-warm-100 to-transparent sm:w-14" />
 
@@ -189,16 +194,12 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
           ) : (
             <div
               ref={scrollerRef}
-              className={[
-                "scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto",
-                "pb-3 sm:gap-5",
-                // mobile-first spacing to avoid cut + allow "peek"
-                "px-1",
-              ].join(" ")}
+              className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-3 sm:gap-5"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
                 WebkitOverflowScrolling: "touch",
+                scrollBehavior: "smooth",
               }}
               onTouchStart={pauseAutoplayTemporarily}
               onTouchMove={pauseAutoplayTemporarily}
@@ -212,14 +213,17 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
           )}
         </div>
 
-        {/* Dots (mobile-first) */}
+        {/* Dots (mobile) */}
         {reviews.length > 1 ? (
           <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
             {reviews.slice(0, 8).map((_, idx) => (
               <button
                 key={idx}
                 type="button"
-                onClick={() => scrollToIndex(idx)}
+                onClick={() => {
+                  pauseAutoplayTemporarily();
+                  scrollToIndex(idx);
+                }}
                 className={[
                   "h-1.5 rounded-full transition-all duration-300",
                   active === idx ? "w-6 bg-sage-500" : "w-1.5 bg-warm-300/70",
@@ -230,7 +234,6 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
           </div>
         ) : null}
 
-        {/* Small hint (mobile only) */}
         {reviews.length > 1 ? (
           <div className="mt-3 flex justify-center sm:hidden">
             <span className="text-xs text-muted">Deslize para ver mais</span>
@@ -247,11 +250,9 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
       data-card
       data-index={index}
       className={[
-        // Mobile-first width: fits cleanly, with a tiny peek of the next card
         "w-[92%] shrink-0 snap-start",
         "rounded-3xl border border-warm-300/50 bg-white/80 p-6 shadow-soft backdrop-blur-sm",
         "transition-all duration-300 hover:border-warm-400/60 hover:bg-white hover:shadow-soft-lg",
-        // Desktop sizing
         "sm:w-[420px]",
       ].join(" ")}
     >
