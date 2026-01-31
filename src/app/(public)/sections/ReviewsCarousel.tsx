@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Review = {
   id: string;
@@ -11,54 +11,137 @@ type Review = {
 };
 
 export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
-  const [paused, setPaused] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const autoplayRef = useRef<number | null>(null);
+  const resumeTimerRef = useRef<number | null>(null);
+
   const [mounted, setMounted] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [isInteracting, setIsInteracting] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+  const hasMany = (reviews?.length ?? 0) > 1;
+
+  useEffect(() => setMounted(true), []);
+
+  // --- Helpers
+  const clearAutoplay = useCallback(() => {
+    if (autoplayRef.current) window.clearInterval(autoplayRef.current);
+    autoplayRef.current = null;
   }, []);
 
-  // Autoplay scroll
-  useEffect(() => {
-    if (!mounted || paused || reviews.length < 3) return;
-
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const interval = setInterval(() => {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      const nextScroll = container.scrollLeft + 360;
-
-      if (nextScroll >= maxScroll) {
-        container.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        container.scrollBy({ left: 360, behavior: "smooth" });
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [mounted, paused, reviews.length]);
-
-  const scroll = useCallback((direction: "left" | "right") => {
-    const container = scrollRef.current;
-    if (!container) return;
-    const amount = direction === "left" ? -360 : 360;
-    container.scrollBy({ left: amount, behavior: "smooth" });
+  const clearResumeTimer = useCallback(() => {
+    if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = null;
   }, []);
 
-  if (!reviews || reviews.length === 0) {
-    return null;
-  }
+  const pauseAutoplayTemporarily = useCallback(() => {
+    if (!hasMany) return;
+    setIsInteracting(true);
+    clearAutoplay();
+    clearResumeTimer();
+
+    // Retoma depois de um tempinho sem interação (sem botão chato)
+    resumeTimerRef.current = window.setTimeout(() => {
+      setIsInteracting(false);
+    }, 2500);
+  }, [clearAutoplay, clearResumeTimer, hasMany]);
+
+  // --- Track active slide (IntersectionObserver)
+  useEffect(() => {
+    if (!mounted) return;
+    const root = scrollerRef.current;
+    if (!root) return;
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>("[data-card]"));
+    if (cards.length === 0) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        // pega o mais visível
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort(
+            (a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0),
+          )[0];
+
+        if (!visible) return;
+        const idx = Number((visible.target as HTMLElement).dataset.index ?? 0);
+        if (!Number.isNaN(idx)) setActive(idx);
+      },
+      {
+        root,
+        threshold: [0.35, 0.5, 0.65],
+      },
+    );
+
+    cards.forEach((c) => io.observe(c));
+    return () => io.disconnect();
+  }, [mounted, reviews?.length]);
+
+  // --- Autoplay (leve e discreto)
+  useEffect(() => {
+    if (!mounted) return;
+    if (!hasMany) return;
+    if (isInteracting) return;
+
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    clearAutoplay();
+
+    autoplayRef.current = window.setInterval(() => {
+      const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
+      if (cards.length === 0) return;
+
+      const next = (active + 1) % cards.length;
+      cards[next]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "start",
+        block: "nearest",
+      });
+    }, 5200);
+
+    return () => clearAutoplay();
+  }, [active, mounted, hasMany, isInteracting, clearAutoplay]);
+
+  const scrollToIndex = useCallback((idx: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
+    cards[idx]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "start",
+      block: "nearest",
+    });
+  }, []);
+
+  const scrollByOne = useCallback(
+    (dir: "prev" | "next") => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card]"));
+      if (cards.length === 0) return;
+
+      const next =
+        dir === "next"
+          ? (active + 1) % cards.length
+          : (active - 1 + cards.length) % cards.length;
+      cards[next]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "start",
+        block: "nearest",
+      });
+    },
+    [active],
+  );
+
+  if (!reviews || reviews.length === 0) return null;
 
   return (
-    <section
-      id="avaliacoes"
-      className="py-10 sm:py-12 md:py-14 overflow-hidden"
-    >
+    <section id="avaliacoes" className="py-10 sm:py-12 md:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
-        <div className="mb-10 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-warm-500">
               Avaliações
@@ -72,112 +155,115 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
             </p>
           </div>
 
-          {/* Navigation controls */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => scroll("left")}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
-              aria-label="Anterior"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          {/* Controls (desktop only) */}
+          {reviews.length > 1 ? (
+            <div className="hidden items-center gap-3 sm:flex">
+              <button
+                onClick={() => scrollByOne("prev")}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
+                aria-label="Anterior"
+                type="button"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
-              aria-label="Próximo"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => scrollByOne("next")}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
+                aria-label="Próximo"
+                type="button"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {/* Carousel */}
         <div className="relative">
-          {/* Fade edges */}
-          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-warm-100 to-transparent" />
-          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-warm-100 to-transparent" />
+          {/* soft fade edges (mobile: smaller) */}
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-warm-100 to-transparent sm:w-14" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-warm-100 to-transparent sm:w-14" />
 
-          {/* Scrollable container */}
           {!mounted ? (
             <ReviewsSkeleton />
           ) : (
             <div
-              ref={scrollRef}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-              className="scrollbar-hide flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              ref={scrollerRef}
+              className={[
+                "scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto",
+                "pb-3 sm:gap-5",
+                // mobile-first spacing to avoid cut + allow "peek"
+                "px-1",
+              ].join(" ")}
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                WebkitOverflowScrolling: "touch",
+              }}
+              onTouchStart={pauseAutoplayTemporarily}
+              onTouchMove={pauseAutoplayTemporarily}
+              onMouseDown={pauseAutoplayTemporarily}
+              onWheel={pauseAutoplayTemporarily}
             >
-              {reviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
+              {reviews.map((review, idx) => (
+                <ReviewCard key={review.id} review={review} index={idx} />
               ))}
             </div>
           )}
         </div>
 
-        {/* Autoplay control */}
-        {reviews.length > 2 && (
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setPaused((p) => !p)}
-              className="inline-flex items-center gap-2 text-xs text-muted transition-colors duration-300 hover:text-warm-700"
-            >
-              {paused ? (
-                <>
-                  <PlayIcon className="h-3.5 w-3.5" />
-                  Retomar autoplay
-                </>
-              ) : (
-                <>
-                  <PauseIcon className="h-3.5 w-3.5" />
-                  Pausar autoplay
-                </>
-              )}
-            </button>
+        {/* Dots (mobile-first) */}
+        {reviews.length > 1 ? (
+          <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
+            {reviews.slice(0, 8).map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => scrollToIndex(idx)}
+                className={[
+                  "h-1.5 rounded-full transition-all duration-300",
+                  active === idx ? "w-6 bg-sage-500" : "w-1.5 bg-warm-300/70",
+                ].join(" ")}
+                aria-label={`Ir para avaliação ${idx + 1}`}
+              />
+            ))}
           </div>
-        )}
+        ) : null}
+
+        {/* Small hint (mobile only) */}
+        {reviews.length > 1 ? (
+          <div className="mt-3 flex justify-center sm:hidden">
+            <span className="text-xs text-muted">Deslize para ver mais</span>
+          </div>
+        ) : null}
       </div>
     </section>
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, index }: { review: Review; index: number }) {
   return (
-    <div className="w-[88%] shrink-0 snap-start rounded-3xl border border-warm-300/50 bg-white/80 p-6 shadow-soft backdrop-blur-sm transition-all duration-400 hover:border-warm-400/60 hover:bg-white hover:shadow-soft-lg sm:w-[400px]">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <article
+      data-card
+      data-index={index}
+      className={[
+        // Mobile-first width: fits cleanly, with a tiny peek of the next card
+        "w-[92%] shrink-0 snap-start",
+        "rounded-3xl border border-warm-300/50 bg-white/80 p-6 shadow-soft backdrop-blur-sm",
+        "transition-all duration-300 hover:border-warm-400/60 hover:bg-white hover:shadow-soft-lg",
+        // Desktop sizing
+        "sm:w-[420px]",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          {/* Avatar */}
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-rose-400/20 to-warm-500/15 text-base font-semibold text-warm-700">
             {review.nome.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <p className="font-semibold text-warm-900">{review.nome}</p>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-warm-900">
+              {review.nome}
+            </p>
             <p className="text-xs text-muted">
               {new Date(review.created_at).toLocaleDateString("pt-BR", {
                 month: "short",
@@ -187,7 +273,6 @@ function ReviewCard({ review }: { review: Review }) {
           </div>
         </div>
 
-        {/* Stars */}
         <div className="flex gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <StarIcon
@@ -199,12 +284,12 @@ function ReviewCard({ review }: { review: Review }) {
         </div>
       </div>
 
-      {/* Quote */}
       <div className="mt-5">
         <svg
           className="mb-2 h-6 w-6 text-warm-300"
           fill="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
         </svg>
@@ -213,24 +298,23 @@ function ReviewCard({ review }: { review: Review }) {
         </p>
       </div>
 
-      {/* Decorative line */}
       <div className="mt-6 h-px w-full bg-gradient-to-r from-rose-300/40 via-warm-300/30 to-transparent" />
-    </div>
+    </article>
   );
 }
 
 function ReviewsSkeleton() {
   return (
-    <div className="flex gap-5 overflow-hidden">
-      {Array.from({ length: 3 }).map((_, i) => (
+    <div className="flex gap-4 overflow-hidden pb-3 sm:gap-5">
+      {Array.from({ length: 2 }).map((_, i) => (
         <div
           key={i}
-          className="w-[88%] shrink-0 rounded-3xl border border-warm-300/30 bg-white/60 p-6 sm:w-[400px]"
+          className="w-[92%] shrink-0 rounded-3xl border border-warm-300/30 bg-white/60 p-6 sm:w-[420px]"
         >
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 animate-pulse rounded-full bg-warm-200" />
             <div className="space-y-2">
-              <div className="h-4 w-24 animate-pulse rounded bg-warm-200" />
+              <div className="h-4 w-28 animate-pulse rounded bg-warm-200" />
               <div className="h-3 w-16 animate-pulse rounded bg-warm-200" />
             </div>
           </div>
@@ -259,6 +343,7 @@ function StarIcon({
       fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
       viewBox="0 0 24 24"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -270,18 +355,40 @@ function StarIcon({
   );
 }
 
-function PlayIcon({ className }: { className?: string }) {
+function ChevronLeft({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-      <path d="M8 5v14l11-7z" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 19l-7-7 7-7"
+      />
     </svg>
   );
 }
 
-function PauseIcon({ className }: { className?: string }) {
+function ChevronRight({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
     </svg>
   );
 }
