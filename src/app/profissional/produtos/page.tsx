@@ -179,7 +179,7 @@ export default function ProdutosPage() {
 
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-sage-500 px-6 py-3 text-sm font-semibold text-white shadow-soft transition-all hover:bg-sage-600 hover:shadow-soft-lg"
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-sage-500 bg-white px-6 py-3 text-sm font-semibold text-sage-600 transition-all hover:bg-sage-50"
         >
           <PlusIcon className="h-5 w-5" />
           Novo Produto
@@ -561,7 +561,7 @@ function ProductModal({
             <button
               type="submit"
               disabled={busy}
-              className="flex-1 rounded-xl border-2 border-sage-500 bg-white px-4 py-3 font-semibold text-sage-600 transition-all hover:bg-sage-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-sage-600 px-4 py-3 font-semibold text-white shadow-sm transition-all hover:bg-sage-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? "Salvando..." : product ? "Salvar" : "Criar"}
             </button>
