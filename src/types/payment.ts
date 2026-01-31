@@ -79,6 +79,7 @@ export interface CreateOrderResponse {
     qrCode: string;
     amount: number;
     orderId: string;
+    pixCopyPaste?: string;
   };
 }
 

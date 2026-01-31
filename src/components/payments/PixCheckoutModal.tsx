@@ -1,4 +1,3 @@
-// src/components/payments/PixCheckoutModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,12 +25,14 @@ export function PixCheckoutModal({
     amount: number;
     orderId: string;
     qrCodeUrl: string;
+    pixCopyPaste: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setPixData(null);
+      setCopied(false);
       return;
     }
 
@@ -41,20 +42,24 @@ export function PixCheckoutModal({
         setLoading(true);
         const response = await createOrder(product.id, "pix");
 
-        // Gera QR Code
-        const pixPayload = generatePixPayload({
-          reference: response.pixData!.reference,
+        // 🔥 Gera PIX VÁLIDO com função própria
+        const pixCode = generatePixPayload({
+          pixKey: "57129530000151", // CNPJ sem pontos/traços
+          merchantName: "RAIZA MARTINS CONVENTO",
+          merchantCity: "SAO PAULO",
           amount: response.pixData!.amount,
-          name: "Plataforma de Psicanálise", // Você pode pegar do perfil do profissional
+          txid: response.pixData!.reference,
         });
 
-        const qrCodeUrl = await QRCode.toDataURL(pixPayload, {
+        // Gera QR Code a partir do BR Code
+        const qrCodeUrl = await QRCode.toDataURL(pixCode, {
           width: 300,
           margin: 2,
           color: {
             dark: "#111111",
             light: "#FFFFFF",
           },
+          errorCorrectionLevel: "M",
         });
 
         setPixData({
@@ -62,6 +67,7 @@ export function PixCheckoutModal({
           amount: response.pixData!.amount,
           orderId: response.order.id,
           qrCodeUrl,
+          pixCopyPaste: pixCode,
         });
       } catch (error: any) {
         console.error("Error creating PIX order:", error);
@@ -74,20 +80,15 @@ export function PixCheckoutModal({
   }, [isOpen, product.id]);
 
   async function copyPixCode() {
-    if (!pixData) return;
-
-    const pixPayload = generatePixPayload({
-      reference: pixData.reference,
-      amount: pixData.amount,
-      name: "Plataforma de Psicanálise",
-    });
+    if (!pixData?.pixCopyPaste) return;
 
     try {
-      await navigator.clipboard.writeText(pixPayload);
+      await navigator.clipboard.writeText(pixData.pixCopyPaste);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy:", error);
+      alert("Erro ao copiar código PIX");
     }
   }
 
@@ -156,7 +157,9 @@ export function PixCheckoutModal({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-warm-200 border-t-emerald-500" />
-              <p className="mt-4 text-sm text-warm-600">Gerando QR Code...</p>
+              <p className="mt-4 text-sm text-warm-600">
+                Gerando QR Code PIX...
+              </p>
             </div>
           ) : pixData ? (
             <div className="space-y-6">
@@ -172,19 +175,22 @@ export function PixCheckoutModal({
                 <p className="mt-4 text-sm font-semibold text-warm-700">
                   Escaneie o QR Code para pagar
                 </p>
+                <p className="mt-1 text-xs text-warm-500">
+                  Válido para qualquer banco ou carteira digital
+                </p>
               </div>
 
               {/* Copy Code */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-warm-700">
-                  Ou copie o código PIX
+                  Ou copie o código PIX Copia e Cola
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value={pixData.reference}
+                    value={pixData.pixCopyPaste}
                     readOnly
-                    className="flex-1 rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-600"
+                    className="flex-1 overflow-hidden text-ellipsis rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 font-mono text-xs text-warm-600"
                   />
                   <button
                     onClick={copyPixCode}
@@ -212,7 +218,8 @@ export function PixCheckoutModal({
                     1
                   </div>
                   <p className="text-sm text-blue-900">
-                    Abra o app do seu banco e escolha pagar com PIX
+                    Abra o app do seu banco e escolha{" "}
+                    <strong>Pagar com PIX</strong>
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -220,7 +227,8 @@ export function PixCheckoutModal({
                     2
                   </div>
                   <p className="text-sm text-blue-900">
-                    Escaneie o QR Code ou cole o código PIX
+                    <strong>Escaneie o QR Code</strong> ou escolha{" "}
+                    <strong>PIX Copia e Cola</strong> e cole o código
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -228,19 +236,37 @@ export function PixCheckoutModal({
                     3
                   </div>
                   <p className="text-sm text-blue-900">
-                    Confirme o pagamento e aguarde a validação
+                    Confira os dados (<strong>RAIZA MARTINS CONVENTO</strong>) e
+                    confirme o pagamento
                   </p>
                 </div>
               </div>
 
-              {/* Reference */}
-              <div className="rounded-xl bg-warm-50 p-4">
-                <p className="text-xs font-semibold text-warm-500">
-                  Referência do pedido
-                </p>
-                <p className="mt-1 font-mono text-sm font-bold text-warm-900">
-                  {pixData.reference}
-                </p>
+              {/* Payment info */}
+              <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex items-start gap-3">
+                  <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-emerald-900">
+                      Dados do Pagamento
+                    </p>
+                    <div className="mt-2 space-y-1 text-xs text-emerald-700">
+                      <p>
+                        <strong>Favorecido:</strong> RAIZA MARTINS CONVENTO
+                      </p>
+                      <p>
+                        <strong>CNPJ:</strong> 57.129.530/0001-51
+                      </p>
+                      <p>
+                        <strong>Valor:</strong>{" "}
+                        {formatCents(product.price_cents)}
+                      </p>
+                      <p className="font-mono">
+                        <strong>Referência:</strong> {pixData.reference}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Actions */}
@@ -267,9 +293,9 @@ export function PixCheckoutModal({
                     Aguarde a validação
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-amber-700">
-                    Após o pagamento, o profissional validará manualmente e seus
-                    créditos serão liberados. Você receberá uma notificação
-                    quando isso acontecer.
+                    Após o pagamento, o profissional validará e seus créditos
+                    serão liberados em alguns minutos. Você receberá uma
+                    notificação quando isso acontecer.
                   </p>
                 </div>
               </div>
@@ -285,23 +311,87 @@ export function PixCheckoutModal({
   );
 }
 
-// Gera payload PIX (formato simplificado)
-// Em produção, use uma lib como pix-utils para gerar o payload correto
+// ========== FUNÇÃO GERADORA DE PIX ==========
+
+/**
+ * Gera payload PIX válido seguindo o padrão EMV/QRCPS
+ */
 function generatePixPayload({
-  reference,
+  pixKey,
+  merchantName,
+  merchantCity,
   amount,
-  name,
+  txid,
 }: {
-  reference: string;
+  pixKey: string;
+  merchantName: string;
+  merchantCity: string;
   amount: number;
-  name: string;
+  txid: string;
 }): string {
-  // Formato simplificado para demonstração
-  // Em produção, use uma biblioteca adequada
-  return `00020126580014br.gov.bcb.pix0136${reference}520400005303986540${amount.toFixed(2)}5802BR5925${name}6009SAO PAULO62070503***6304`;
+  // Remove caracteres especiais da chave PIX (se for CNPJ/CPF)
+  const cleanPixKey = pixKey.replace(/[^\d]/g, "");
+
+  // Formata valores conforme padrão
+  const amountStr = amount.toFixed(2);
+  const merchantNameClean = merchantName.substring(0, 25).toUpperCase();
+  const merchantCityClean = merchantCity.substring(0, 15).toUpperCase();
+  const txidClean = txid.substring(0, 25);
+
+  // Merchant Account Information (campo 26)
+  const merchantAccountInfo = buildEMV(
+    "26",
+    buildEMV("00", "BR.GOV.BCB.PIX") +
+      buildEMV("01", cleanPixKey) +
+      (txidClean ? buildEMV("02", txidClean) : ""),
+  );
+
+  // Constrói payload PIX (padrão EMV)
+  const payload = [
+    buildEMV("00", "01"), // Payload Format Indicator
+    merchantAccountInfo, // Merchant Account Information
+    buildEMV("52", "0000"), // Merchant Category Code
+    buildEMV("53", "986"), // Transaction Currency (986 = BRL)
+    buildEMV("54", amountStr), // Transaction Amount
+    buildEMV("58", "BR"), // Country Code
+    buildEMV("59", merchantNameClean), // Merchant Name
+    buildEMV("60", merchantCityClean), // Merchant City
+    "6304", // CRC16 placeholder
+  ].join("");
+
+  // Calcula e adiciona CRC16
+  const crc = calculateCRC16(payload);
+
+  return payload + crc;
 }
 
-// Icons
+/**
+ * Constrói campo EMV no formato ID + Tamanho + Valor
+ */
+function buildEMV(id: string, value: string): string {
+  const length = value.length.toString().padStart(2, "0");
+  return `${id}${length}${value}`;
+}
+
+/**
+ * Calcula CRC16 CCITT (padrão PIX)
+ */
+function calculateCRC16(payload: string): string {
+  const polynomial = 0x1021;
+  let crc = 0xffff;
+
+  for (let i = 0; i < payload.length; i++) {
+    crc ^= payload.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      crc = crc & 0x8000 ? (crc << 1) ^ polynomial : crc << 1;
+    }
+  }
+
+  return (crc & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
+// ========== ICONS ==========
+
 function XIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -377,6 +467,24 @@ function AlertIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+  );
+}
+
+function InfoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );
