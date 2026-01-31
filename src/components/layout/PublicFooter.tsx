@@ -10,7 +10,7 @@ export default function PublicFooter() {
           <div className="max-w-sm">
             <Link href="/" className="group inline-flex items-center">
               <Image
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Psicanálise"
                 width={140}
                 height={40}
