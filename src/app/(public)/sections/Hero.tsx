@@ -92,7 +92,7 @@ export function Hero() {
             <FeatureCard
               icon={<HeartIcon />}
               title="Psicanálise"
-              description="Escuta clínica e elaboração emocional, com profundidade e cuidado."
+              description="Um lugar para falar do que dói e olhar para isso com cuidado."
               accent="rose"
             />
             <FeatureCard
