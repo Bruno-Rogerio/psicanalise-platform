@@ -33,7 +33,7 @@ export function Hero() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
-        <div className="py-16 sm:py-20 md:py-28">
+        <div className="pt-10 pb-16 sm:pt-12 sm:pb-20 md:pt-14 md:pb-24">
           {/* Badge */}
           <div className="animate-fade-in inline-flex max-w-full items-center gap-2.5 rounded-full border border-warm-300/60 bg-white/70 px-4 py-2 text-sm text-muted shadow-soft backdrop-blur-sm">
             <span className="relative flex h-2 w-2 shrink-0">
@@ -46,7 +46,7 @@ export function Hero() {
           </div>
 
           {/* Heading */}
-          <h1 className="animate-slide-up mt-8 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="animate-slide-up mt-6 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
             Um espaço para você{" "}
             <span className="text-gradient">falar do que sente</span>
             <br className="hidden sm:block" />
@@ -67,7 +67,7 @@ export function Hero() {
 
           {/* CTA Buttons */}
           <div
-            className="animate-slide-up mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
+            className="animate-slide-up mt-08 flex flex-col gap-4 sm:flex-row sm:items-center"
             style={{ animationDelay: "0.16s" }}
           >
             <Link
@@ -116,7 +116,7 @@ export function Hero() {
 
           {/* Feature Cards */}
           <div
-            className="animate-slide-up mt-14 grid gap-4 sm:mt-16 sm:grid-cols-3"
+            className="animate-slide-up mt-12 grid gap-4 sm:mt-16 sm:grid-cols-3"
             style={{ animationDelay: "0.24s" }}
           >
             <FeatureCard
@@ -141,7 +141,7 @@ export function Hero() {
 
           {/* Tiny reassurance line (optional but classy) */}
           <div
-            className="animate-slide-up mt-10 flex items-center gap-3 text-sm text-muted"
+            className="animate-slide-up mt-08 flex items-center gap-3 text-sm text-muted"
             style={{ animationDelay: "0.28s" }}
           >
             <div className="h-px w-10 bg-gradient-to-r from-warm-300/60 to-transparent" />
