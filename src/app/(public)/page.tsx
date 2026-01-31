@@ -4,6 +4,7 @@ import { ComoFunciona } from "./sections/ComoFunciona";
 import { ReviewsCarousel } from "./sections/ReviewsCarousel";
 import { RedesSociais } from "./sections/RedesSociais";
 import { Contato } from "./sections/Contato";
+import { Sobre } from "./sections/Sobre";
 
 export const revalidate = 60;
 
@@ -18,6 +19,7 @@ export default async function PublicHomePage() {
   return (
     <>
       <Hero />
+      <Sobre />
       <ComoFunciona />
       <ReviewsCarousel reviews={reviews ?? []} />
       <RedesSociais />
