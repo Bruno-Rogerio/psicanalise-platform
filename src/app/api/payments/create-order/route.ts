@@ -15,15 +15,22 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("🔵 Starting create-order API");
+
     const body = await request.json();
+    console.log("📦 Request body:", body);
+
     const { productId, paymentMethod, userId } = body;
 
     if (!productId || !paymentMethod || !userId) {
+      console.error("❌ Missing fields:", { productId, paymentMethod, userId });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
+
+    console.log("🔍 Fetching product:", productId);
 
     // 1. Busca produto
     const { data: product, error: productError } = await supabase
@@ -34,8 +41,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (productError || !product) {
+      console.error("❌ Product error:", productError);
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
+
+    console.log("✅ Product found:", product);
+    console.log("💰 Creating order for:", paymentMethod);
 
     // 2. Cria order
     const { data: order, error: orderError } = await supabase
@@ -53,15 +64,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError || !order) {
-      console.error("Order creation error:", orderError);
+      console.error("❌ Order creation error:", orderError);
       return NextResponse.json(
-        { error: "Failed to create order" },
+        { error: "Failed to create order", details: orderError },
         { status: 500 },
       );
     }
 
+    console.log("✅ Order created:", order.id);
+
     // 3. Cria order item
-    await supabase.from("order_items").insert({
+    const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
       product_id: product.id,
       title: product.title,
@@ -69,9 +82,23 @@ export async function POST(request: NextRequest) {
       price_cents: product.price_cents,
     });
 
+    if (itemError) {
+      console.error("❌ Order item error:", itemError);
+    }
+
     // 4. Processa pagamento
     if (paymentMethod === "card") {
-      // STRIPE - Cria Payment Intent
+      console.log("💳 Creating Stripe Payment Intent");
+
+      // Verifica se a chave do Stripe existe
+      if (!process.env.STRIPE_SECRET_KEY) {
+        console.error("❌ STRIPE_SECRET_KEY not found!");
+        return NextResponse.json(
+          { error: "Stripe not configured" },
+          { status: 500 },
+        );
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: product.price_cents,
         currency: "brl",
@@ -85,6 +112,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      console.log("✅ Payment Intent created:", paymentIntent.id);
+
       // Salva payment intent ID
       await supabase
         .from("orders")
@@ -96,6 +125,8 @@ export async function POST(request: NextRequest) {
         clientSecret: paymentIntent.client_secret,
       });
     } else {
+      console.log("✅ PIX order created");
+
       // PIX - Retorna dados para gerar QR Code no frontend
       return NextResponse.json({
         order,
@@ -103,11 +134,13 @@ export async function POST(request: NextRequest) {
           reference: order.pix_reference,
           amount: product.price_cents / 100,
           orderId: order.id,
+          qrCode: "", // Placeholder
         },
       });
     }
   } catch (error: any) {
-    console.error("Create order error:", error);
+    console.error("💥 Fatal error in create-order:", error);
+    console.error("Stack trace:", error.stack);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 },
