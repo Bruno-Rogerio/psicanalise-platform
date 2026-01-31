@@ -28,7 +28,7 @@ export function Contato() {
       </div>
 
       {/* CTA Banner */}
-      <div className="mt-12 overflow-hidden rounded-4xl bg-gradient-to-br from-warm-900 via-warm-800 to-warm-900 shadow-soft-xl">
+      <div className="mt-10 overflow-hidden rounded-4xl bg-gradient-to-br from-warm-900 via-warm-800 to-warm-900 shadow-soft-xl">
         {/* Decorative elements */}
         <div className="relative">
           <div className="pointer-events-none absolute inset-0">

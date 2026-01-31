@@ -14,7 +14,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={`py-16 sm:py-20 ${className}`}>
+    <section id={id} className={`py-12 sm:py-14 md:py-16 ${className}`}>
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
         {title ? (
           <div className="mb-10 sm:mb-12">

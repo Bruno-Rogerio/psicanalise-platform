@@ -52,7 +52,10 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
   }
 
   return (
-    <section id="avaliacoes" className="py-16 sm:py-20 overflow-hidden">
+    <section
+      id="avaliacoes"
+      className="py-12 sm:py-14 md:py-16 overflow-hidden"
+    >
       <div className="mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
         <div className="mb-10 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">

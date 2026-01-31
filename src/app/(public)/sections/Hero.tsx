@@ -67,7 +67,7 @@ export function Hero() {
 
           {/* CTA Buttons */}
           <div
-            className="animate-slide-up mt-08 flex flex-col gap-4 sm:flex-row sm:items-center"
+            className="animate-slide-up mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
             style={{ animationDelay: "0.16s" }}
           >
             <Link
@@ -141,7 +141,7 @@ export function Hero() {
 
           {/* Tiny reassurance line (optional but classy) */}
           <div
-            className="animate-slide-up mt-08 flex items-center gap-3 text-sm text-muted"
+            className="animate-slide-up mt-8 flex items-center gap-3 text-sm text-muted"
             style={{ animationDelay: "0.28s" }}
           >
             <div className="h-px w-10 bg-gradient-to-r from-warm-300/60 to-transparent" />
