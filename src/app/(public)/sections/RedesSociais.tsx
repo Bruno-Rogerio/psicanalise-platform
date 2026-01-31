@@ -13,7 +13,7 @@ const items = [
     name: "LinkedIn",
     description: "Artigos e temas sobre saúde mental no cotidiano.",
     icon: LinkedInIcon,
-    href: "linkedin.com/in/raiza-convento",
+    href: "https://linkedin.com/in/raiza-convento",
     gradient: "from-soft-400/15 to-soft-500/10",
     iconColor: "text-soft-600",
   },
