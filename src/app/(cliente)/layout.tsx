@@ -69,12 +69,6 @@ export default function ClienteLayout({
               <span className="inline-flex w-fit items-center rounded-full border border-warm-300/60 bg-white/60 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800 shadow-soft backdrop-blur-sm">
                 Área do Cliente
               </span>
-
-              {firstName ? (
-                <span className="mt-1 hidden text-xs text-warm-600 sm:block">
-                  Olá, {firstName}
-                </span>
-              ) : null}
             </div>
           </Link>
 
