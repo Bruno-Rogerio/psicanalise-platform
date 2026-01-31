@@ -1,38 +1,52 @@
 import Link from "next/link";
+import React from "react";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* Background decorations */}
+      {/* Background */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Soft gradient orbs */}
-        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-rose-400/10 blur-3xl" />
-        <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-soft-400/15 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-warm-500/8 blur-3xl" />
+        {/* Base wash */}
+        <div className="absolute inset-0 bg-gradient-to-b from-warm-100 via-warm-100/90 to-warm-100" />
 
-        {/* Subtle pattern overlay */}
+        {/* Soft orbs with better placement */}
+        <div className="absolute -top-40 left-[-10%] h-[520px] w-[520px] rounded-full bg-rose-400/10 blur-3xl" />
+        <div className="absolute -bottom-44 right-[-12%] h-[560px] w-[560px] rounded-full bg-soft-400/12 blur-3xl" />
+        <div className="absolute top-[35%] left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-warm-500/8 blur-3xl" />
+
+        {/* Subtle grid dots with mask */}
         <div
-          className="absolute inset-0 opacity-[0.015]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, var(--accent-primary) 1px, transparent 0)`,
-            backgroundSize: "32px 32px",
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, var(--accent-primary) 1px, transparent 0)",
+            backgroundSize: "34px 34px",
+            maskImage:
+              "radial-gradient(ellipse at 50% 25%, black 40%, transparent 70%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse at 50% 25%, black 40%, transparent 70%)",
           }}
         />
+
+        {/* Gentle vignette for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-warm-100/90" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         <div className="py-16 sm:py-20 md:py-28">
           {/* Badge */}
-          <div className="animate-fade-in inline-flex items-center gap-2.5 rounded-full border border-warm-300/60 bg-white/60 px-4 py-2 text-sm text-muted backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-500 opacity-75" />
+          <div className="animate-fade-in inline-flex max-w-full items-center gap-2.5 rounded-full border border-warm-300/60 bg-white/70 px-4 py-2 text-sm text-muted shadow-soft backdrop-blur-sm">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-500 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-sage-500" />
             </span>
-            O que você sente faz sentido. Vamos olhar para isso com cuidado.
+            <span className="truncate sm:whitespace-nowrap">
+              O que você sente faz sentido. Vamos olhar para isso com cuidado.
+            </span>
           </div>
 
           {/* Heading */}
-          <h1 className="animate-slide-up mt-8 max-w-4xl text-4xl font-semibold leading-[1.1] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="animate-slide-up mt-8 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
             Um espaço para você{" "}
             <span className="text-gradient">falar do que sente</span>
             <br className="hidden sm:block" />
@@ -45,7 +59,7 @@ export function Hero() {
           {/* Subtitle */}
           <p
             className="animate-slide-up mt-6 max-w-2xl text-base leading-relaxed text-muted sm:text-lg md:text-xl"
-            style={{ animationDelay: "0.1s" }}
+            style={{ animationDelay: "0.08s" }}
           >
             A psicanálise não é sobre "consertar" você. É sobre criar um lugar
             de escuta onde aquilo que pesa ganha nome, sentido e caminho.
@@ -54,11 +68,18 @@ export function Hero() {
           {/* CTA Buttons */}
           <div
             className="animate-slide-up mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
-            style={{ animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.16s" }}
           >
             <Link
               href="/cadastro"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-sage-500 px-7 py-4 text-base font-medium text-warm-50 shadow-soft transition-all duration-400 hover:bg-sage-600 hover:shadow-soft-lg sm:w-auto"
+              className={[
+                "group inline-flex w-full items-center justify-center gap-2 rounded-2xl",
+                "bg-sage-600 px-7 py-4 text-base font-medium text-warm-50 shadow-soft",
+                "transition-all duration-300 hover:bg-sage-700 hover:shadow-soft-lg",
+                "active:scale-[0.99]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
+                "sm:w-auto",
+              ].join(" ")}
             >
               Começar agora
               <svg
@@ -66,6 +87,7 @@ export function Hero() {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -78,7 +100,15 @@ export function Hero() {
 
             <Link
               href="#como-funciona"
-              className="inline-flex w-full items-center justify-center rounded-2xl border border-warm-300/80 bg-white/60 px-7 py-4 text-base font-medium text-warm-900 backdrop-blur-sm transition-all duration-400 hover:border-warm-400 hover:bg-white/80 hover:shadow-soft sm:w-auto"
+              className={[
+                "inline-flex w-full items-center justify-center rounded-2xl",
+                "border border-warm-300/80 bg-white/70 px-7 py-4 text-base font-medium text-warm-900",
+                "backdrop-blur-sm shadow-soft",
+                "transition-all duration-300 hover:border-warm-400/80 hover:bg-white/85 hover:shadow-soft-lg",
+                "active:scale-[0.99]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
+                "sm:w-auto",
+              ].join(" ")}
             >
               Entender como funciona
             </Link>
@@ -86,8 +116,8 @@ export function Hero() {
 
           {/* Feature Cards */}
           <div
-            className="animate-slide-up mt-16 grid gap-4 sm:grid-cols-3"
-            style={{ animationDelay: "0.3s" }}
+            className="animate-slide-up mt-14 grid gap-4 sm:mt-16 sm:grid-cols-3"
+            style={{ animationDelay: "0.24s" }}
           >
             <FeatureCard
               icon={<HeartIcon />}
@@ -108,10 +138,19 @@ export function Hero() {
               accent="soft"
             />
           </div>
+
+          {/* Tiny reassurance line (optional but classy) */}
+          <div
+            className="animate-slide-up mt-10 flex items-center gap-3 text-sm text-muted"
+            style={{ animationDelay: "0.28s" }}
+          >
+            <div className="h-px w-10 bg-gradient-to-r from-warm-300/60 to-transparent" />
+            <span>Atendimento com acolhimento, clareza e presença.</span>
+          </div>
         </div>
       </div>
 
-      {/* Bottom gradient fade */}
+      {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-warm-100 to-transparent" />
     </section>
   );
@@ -128,23 +167,51 @@ function FeatureCard({
   description: string;
   accent: "rose" | "sage" | "soft";
 }) {
-  const accentColors = {
-    rose: "from-rose-400/20 to-rose-300/10 border-rose-300/30",
-    sage: "from-sage-400/20 to-sage-300/10 border-sage-300/30",
-    soft: "from-soft-400/20 to-soft-300/10 border-soft-300/30",
-  };
+  const accentOrb = {
+    rose: "from-rose-400/18 to-rose-300/10",
+    sage: "from-sage-400/18 to-sage-300/10",
+    soft: "from-soft-400/18 to-soft-300/10",
+  }[accent];
+
+  const accentRing = {
+    rose: "group-hover:ring-rose-400/15",
+    sage: "group-hover:ring-sage-400/15",
+    soft: "group-hover:ring-soft-400/15",
+  }[accent];
 
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-warm-300/50 bg-white/70 p-6 shadow-soft backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-warm-400/50 hover:bg-white/90 hover:shadow-soft-lg">
-      {/* Accent gradient background */}
+    <div
+      className={[
+        "group relative overflow-hidden rounded-3xl border border-warm-300/55 bg-white/70 p-6",
+        "shadow-soft backdrop-blur-sm transition-all duration-300",
+        "hover:border-warm-400/60 hover:bg-white/85 hover:shadow-soft-lg",
+        "hover:-translate-y-0.5",
+        "ring-1 ring-transparent",
+        accentRing,
+      ].join(" ")}
+    >
+      {/* Soft accent glow */}
       <div
-        className={`absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br ${accentColors[accent]} opacity-60 blur-2xl transition-all duration-400 group-hover:opacity-100`}
+        className={[
+          "absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br",
+          accentOrb,
+          "opacity-70 blur-2xl transition-opacity duration-300 group-hover:opacity-100",
+        ].join(" ")}
       />
+
+      {/* Subtle inner highlight */}
+      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+      </div>
 
       <div className="relative">
         {/* Icon */}
         <div
-          className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentColors[accent]} transition-transform duration-300 group-hover:scale-110`}
+          className={[
+            "inline-flex h-12 w-12 items-center justify-center rounded-2xl",
+            "bg-white/70 ring-1 ring-warm-300/50 backdrop-blur-sm",
+            "transition-transform duration-300 group-hover:scale-[1.05]",
+          ].join(" ")}
         >
           {icon}
         </div>
@@ -154,7 +221,7 @@ function FeatureCard({
         <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
 
         {/* Decorative line */}
-        <div className="mt-5 h-px w-full bg-gradient-to-r from-warm-300/60 via-warm-200/30 to-transparent" />
+        <div className="mt-5 h-px w-full bg-gradient-to-r from-warm-300/60 via-warm-200/25 to-transparent" />
       </div>
     </div>
   );
@@ -168,6 +235,7 @@ function HeartIcon() {
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -186,6 +254,7 @@ function CalendarIcon() {
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -204,6 +273,7 @@ function ShieldIcon() {
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
