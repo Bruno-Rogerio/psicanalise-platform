@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
+import { PendingPixAlert } from "./layout";
 
 type Appointment = {
   id: string;
@@ -114,6 +115,7 @@ export default function ProfissionalDashboard() {
 
   return (
     <div className="space-y-8">
+      <PendingPixAlert />
       {/* Welcome Header */}
       <header className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

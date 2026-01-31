@@ -5,7 +5,7 @@ const items = [
     name: "Instagram",
     description: "Conteúdos curtos, reflexões e avisos de agenda.",
     icon: InstagramIcon,
-    href: "#",
+    href: "https://www.instagram.com/raizaconvento.psicanalista",
     gradient: "from-rose-400/15 to-warm-500/10",
     iconColor: "text-rose-500",
   },
