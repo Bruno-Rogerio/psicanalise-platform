@@ -14,7 +14,7 @@ export default function PublicFooter() {
                 alt="Psicanálise"
                 width={140}
                 height={40}
-                className="h-14 w-auto transition-opacity duration-300 group-hover:opacity-90"
+                className="h-16 w-auto transition-opacity duration-300 group-hover:opacity-90"
               />
             </Link>
 
