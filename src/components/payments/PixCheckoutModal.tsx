@@ -44,8 +44,8 @@ export function PixCheckoutModal({
 
         // 🔥 Gera PIX VÁLIDO com função própria
         const pixCode = generatePixPayload({
-          pixKey: "57.129.530/0001-51", // CNPJ sem pontos/traços
-          merchantName: "RAIZA MARTINS CONVENTO",
+          pixKey: "57.129.530/0001-51",
+          merchantName: "57.129.530 RAIZA MARTINS CONVENTO", // ✅ NOME COMPLETO
           merchantCity: "SAO PAULO",
           amount: response.pixData!.amount,
           txid: response.pixData!.reference,
@@ -236,7 +236,8 @@ export function PixCheckoutModal({
                     3
                   </div>
                   <p className="text-sm text-blue-900">
-                    Confira os dados (<strong>RAIZA MARTINS CONVENTO</strong>) e
+                    Confira os dados (
+                    <strong>57.129.530 RAIZA MARTINS CONVENTO</strong>) e
                     confirme o pagamento
                   </p>
                 </div>
@@ -252,7 +253,8 @@ export function PixCheckoutModal({
                     </p>
                     <div className="mt-2 space-y-1 text-xs text-emerald-700">
                       <p>
-                        <strong>Favorecido:</strong> RAIZA MARTINS CONVENTO
+                        <strong>Favorecido:</strong> 57.129.530 RAIZA MARTINS
+                        CONVENTO
                       </p>
                       <p>
                         <strong>CNPJ:</strong> 57.129.530/0001-51
