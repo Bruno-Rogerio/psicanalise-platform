@@ -45,7 +45,7 @@ export function PixCheckoutModal({
         // 🔥 Gera PIX VÁLIDO com função própria
         const pixCode = generatePixPayload({
           pixKey: "57.129.530/0001-51",
-          merchantName: "57.129.530 RAIZA MARTINS CONVENTO", // ✅ NOME COMPLETO
+          merchantName: "RAIZA MARTINS CONVENTO", // ✅ NOME COMPLETO
           merchantCity: "SAO PAULO",
           amount: response.pixData!.amount,
           txid: response.pixData!.reference,
@@ -323,7 +323,7 @@ function generatePixPayload({
   merchantName,
   merchantCity,
   amount,
-  txid,
+  txid, // Não será usado
 }: {
   pixKey: string;
   merchantName: string;
@@ -331,18 +331,18 @@ function generatePixPayload({
   amount: number;
   txid: string;
 }): string {
+  // Remove formatação da chave PIX
+  const pixKeyClean = pixKey.replace(/[^\d]/g, "");
+
   // Formata valores conforme padrão
   const amountStr = amount.toFixed(2);
   const merchantNameClean = merchantName.substring(0, 25).toUpperCase();
   const merchantCityClean = merchantCity.substring(0, 15).toUpperCase();
-  const txidClean = txid.substring(0, 25);
 
-  // Merchant Account Information (campo 26)
+  // Merchant Account Information (campo 26) - SEM txid
   const merchantAccountInfo = buildEMV(
     "26",
-    buildEMV("00", "BR.GOV.BCB.PIX") +
-      buildEMV("01", pixKey) + // ← USA pixKey original, não cleanPixKey
-      (txidClean ? buildEMV("02", txidClean) : ""),
+    buildEMV("00", "BR.GOV.BCB.PIX") + buildEMV("01", pixKeyClean),
   );
 
   // Constrói payload PIX (padrão EMV)
@@ -355,6 +355,7 @@ function generatePixPayload({
     buildEMV("58", "BR"), // Country Code
     buildEMV("59", merchantNameClean), // Merchant Name
     buildEMV("60", merchantCityClean), // Merchant City
+    buildEMV("62", buildEMV("05", "***")), // Additional Data Field
     "6304", // CRC16 placeholder
   ].join("");
 
@@ -363,7 +364,6 @@ function generatePixPayload({
 
   return payload + crc;
 }
-
 /**
  * Constrói campo EMV no formato ID + Tamanho + Valor
  */
