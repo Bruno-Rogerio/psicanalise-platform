@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function PublicFooter() {
   return (
@@ -7,14 +8,16 @@ export default function PublicFooter() {
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
           {/* Brand */}
           <div className="max-w-sm">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-warm-500/20 text-lg font-semibold text-warm-900">
-                Ψ
-              </span>
-              <p className="text-base font-semibold tracking-tight text-warm-900">
-                Psicanálise
-              </p>
-            </div>
+            <Link href="/" className="group inline-flex items-center">
+              <Image
+                src="/logo.jpeg"
+                alt="Psicanálise"
+                width={140}
+                height={40}
+                className="h-10 w-auto transition-opacity duration-300 group-hover:opacity-90"
+              />
+            </Link>
+
             <p className="mt-4 text-sm leading-relaxed text-muted">
               Um lugar para falar do que dói e olhar para isso com cuidado.
             </p>
