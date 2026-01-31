@@ -15,7 +15,7 @@ export function Sobre() {
             <div className="absolute -inset-6 rounded-4xl bg-gradient-to-br from-rose-200/40 via-transparent to-soft-200/40 blur-2xl" />
             <div className="relative overflow-hidden rounded-4xl border border-warm-300/40 bg-white shadow-soft-lg">
               <Image
-                src="/raiza.jpg" // 👈 coloque sua foto na pasta /public
+                src="/raizaconvento.jpg" // 👈 coloque sua foto na pasta /public
                 alt="Psicanalista Raiza Convento"
                 width={600}
                 height={750}
