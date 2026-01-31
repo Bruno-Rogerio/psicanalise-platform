@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   "/recuperar",
   "/resetar-senha",
   "/auth/callback",
+  "/politica-de-privacidade",
+  "/termos-de-uso",
 ];
 
 // Rotas que começam com esses prefixos são sempre públicas
