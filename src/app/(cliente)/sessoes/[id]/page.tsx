@@ -4,6 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ReviewModal } from "@/components/avaliacoes/ReviewModal";
+import { supabase } from "@/lib/supabase";
 
 import {
   getSessionRoomById,
@@ -60,6 +62,11 @@ export default function ClienteSessaoPage() {
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
+  // Estados para avaliação
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ id: string; nome: string } | null>(
+    null,
+  );
 
   const pollRef = useRef<number | null>(null);
   const videoWatchRef = useRef<number | null>(null);
@@ -107,6 +114,23 @@ export default function ClienteSessaoPage() {
     (async () => {
       try {
         setLoading(true);
+
+        // Busca dados do usuário logado
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, nome")
+            .eq("id", user.id)
+            .single();
+
+          if (profile) {
+            setUserInfo(profile);
+          }
+        }
+
         const r = await getSessionRoomById(appointmentId);
         setRoom(r);
 
@@ -114,7 +138,6 @@ export default function ClienteSessaoPage() {
           getNotes(appointmentId),
           listChatMessages(appointmentId),
         ]);
-
         if (n) {
           setNotes({
             queixa: n.queixa ?? "",
@@ -152,25 +175,46 @@ export default function ClienteSessaoPage() {
     };
   }, [appointmentId, room]);
 
-  // Auto-encerrar vídeo
+  // Auto-encerrar sessão e mostrar avaliação
   useEffect(() => {
     if (!room) return;
-    if (room.appointment_type !== "video") return;
 
     if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
 
     videoWatchRef.current = window.setInterval(() => {
-      const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
-      if (!allowed && dailyUrl) {
-        setDailyUrl(null);
-        setJoinError("Sessão encerrada. O horário do atendimento terminou.");
+      const now = Date.now();
+      const endTime = new Date(room.end_at).getTime();
+      const sessionEnded = now > endTime;
+
+      // Para sessões de VÍDEO
+      if (room.appointment_type === "video") {
+        const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
+        if (!allowed && dailyUrl) {
+          setDailyUrl(null);
+          setJoinError("Sessão encerrada. O horário do atendimento terminou.");
+
+          // ✅ ABRE MODAL DE AVALIAÇÃO
+          setTimeout(() => {
+            setShowReviewModal(true);
+          }, 2000);
+        }
       }
-    }, 15000);
+
+      // Para sessões de CHAT
+      if (room.appointment_type === "chat") {
+        if (sessionEnded && !showReviewModal) {
+          // ✅ ABRE MODAL DE AVALIAÇÃO
+          setTimeout(() => {
+            setShowReviewModal(true);
+          }, 2000);
+        }
+      }
+    }, 15000); // Verifica a cada 15 segundos
 
     return () => {
       if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
     };
-  }, [room, dailyUrl]);
+  }, [room, dailyUrl, showReviewModal]);
 
   async function onSend() {
     if (!room || !senderRole) return;
@@ -693,6 +737,17 @@ export default function ClienteSessaoPage() {
           </div>
         </aside>
       </div>
+      {/* ========== MODAL DE AVALIAÇÃO ========== */}
+      {room && userInfo && (
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          appointmentId={appointmentId}
+          professionalId={room.profissional_id}
+          userId={userInfo.id}
+          userName={userInfo.nome}
+        />
+      )}
     </div>
   );
 }
