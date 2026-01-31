@@ -57,6 +57,8 @@ export default function PagamentosPixPage() {
     try {
       setValidating(orderId);
 
+      console.log("🔵 Validating PIX:", { orderId, professionalId });
+
       const response = await fetch("/api/payments/validate-pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,10 +68,33 @@ export default function PagamentosPixPage() {
         }),
       });
 
+      console.log("📡 Response status:", response.status);
+
+      // Verifica se a resposta tem conteúdo
+      const text = await response.text();
+      console.log("📄 Response text:", text);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao validar pagamento");
+        let errorMessage = "Erro ao validar pagamento";
+        try {
+          const error = JSON.parse(text);
+          errorMessage = error.error || errorMessage;
+        } catch (e) {
+          console.error("Failed to parse error response:", text);
+        }
+        throw new Error(errorMessage);
       }
+
+      // Tenta fazer parse do JSON
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error("Failed to parse success response:", text);
+        throw new Error("Resposta inválida do servidor");
+      }
+
+      console.log("✅ Validation successful:", data);
 
       alert("✅ Pagamento validado! Créditos liberados para o cliente.");
       loadOrders(); // Recarrega lista
