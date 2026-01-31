@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
 const navItems = [
@@ -11,21 +12,20 @@ const navItems = [
   { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
   { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
   { label: "Financeiro", href: "/profissional/financeiro", icon: WalletIcon },
-  { label: "Produtos", href: "/profissional/produtos", icon: PackageIcon }, // ✅ ADICIONAR
-  { label: "Validar PIX", href: "/profissional/pagamentos-pix", icon: PixIcon }, // ✅ ADICIONAR
+  { label: "Produtos", href: "/profissional/produtos", icon: PackageIcon },
+  { label: "Validar PIX", href: "/profissional/pagamentos-pix", icon: PixIcon },
   {
     label: "Configurações",
     href: "/profissional/configuracoes",
     icon: SettingsIcon,
   },
 ];
+
 export function PendingPixAlert() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     loadPendingCount();
-
-    // Atualiza a cada 30 segundos
     const interval = setInterval(loadPendingCount, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -99,6 +99,15 @@ export default function ProfissionalLayout({
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "P";
   const firstName = userName ? userName.split(" ")[0] : "Profissional";
 
+  const currentPageLabel = useMemo(() => {
+    const found = navItems.find((item) =>
+      item.href === "/profissional"
+        ? pathname === "/profissional"
+        : pathname.startsWith(item.href),
+    );
+    return found?.label || "Painel Profissional";
+  }, [pathname]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-50 to-soft-100/30">
       {/* Mobile sidebar overlay */}
@@ -117,18 +126,30 @@ export default function ProfissionalLayout({
       >
         {/* Sidebar Header */}
         <div className="flex h-20 items-center justify-between border-b border-warm-200 px-6">
-          <Link href="/profissional" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sage-500 to-sage-600 text-lg font-bold text-white shadow-md">
-              Ψ
-            </div>
-            <div>
-              <p className="text-sm font-bold text-warm-900">Painel</p>
-              <p className="text-xs text-warm-500">Área Profissional</p>
+          <Link href="/profissional" className="group flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="Raiza Convento Psicanálise"
+              width={180}
+              height={54}
+              priority
+              className="h-11 w-auto transition-opacity duration-300 group-hover:opacity-85"
+            />
+
+            <div className="flex flex-col">
+              <span className="inline-flex w-fit items-center rounded-full border border-warm-200 bg-warm-50 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800">
+                Painel Profissional
+              </span>
+              <span className="mt-1 text-xs text-warm-500">
+                Área profissional
+              </span>
             </div>
           </Link>
+
           <button
             onClick={() => setSidebarOpen(false)}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-warm-500 hover:bg-warm-100 lg:hidden"
+            aria-label="Fechar menu"
           >
             <XIcon className="h-5 w-5" />
           </button>
@@ -144,7 +165,7 @@ export default function ProfissionalLayout({
               <p className="truncate text-sm font-semibold text-warm-900">
                 {firstName}
               </p>
-              <p className="text-xs text-warm-500">Psicólogo(a)</p>
+              <p className="text-xs text-warm-500">Profissional</p>
             </div>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -155,13 +176,15 @@ export default function ProfissionalLayout({
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-warm-400">
-            Menu Principal
+            Menu
           </p>
+
           {navItems.map((item) => {
             const isActive =
               item.href === "/profissional"
                 ? pathname === "/profissional"
                 : pathname.startsWith(item.href);
+
             const Icon = item.icon;
 
             return (
@@ -169,18 +192,20 @@ export default function ProfissionalLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                className={[
+                  "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                   isActive
                     ? "bg-[#4A7C59] text-white shadow-md"
-                    : "text-warm-700 hover:bg-warm-100 hover:text-warm-900"
-                }`}
+                    : "text-warm-700 hover:bg-warm-100 hover:text-warm-900",
+                ].join(" ")}
               >
                 <Icon
-                  className={`h-5 w-5 transition-colors ${
+                  className={[
+                    "h-5 w-5 transition-colors",
                     isActive
                       ? "text-white"
-                      : "text-warm-400 group-hover:text-warm-600"
-                  }`}
+                      : "text-warm-400 group-hover:text-warm-600",
+                  ].join(" ")}
                 />
                 {item.label}
               </Link>
@@ -210,23 +235,25 @@ export default function ProfissionalLayout({
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 hover:bg-warm-100 lg:hidden"
+                aria-label="Abrir menu"
               >
                 <MenuIcon className="h-5 w-5" />
               </button>
 
-              {/* Page title - shows on mobile */}
+              {/* Mobile title */}
               <div className="lg:hidden">
                 <p className="text-sm font-semibold text-warm-900">
-                  {navItems.find((item) =>
-                    item.href === "/profissional"
-                      ? pathname === "/profissional"
-                      : pathname.startsWith(item.href),
-                  )?.label || "Painel"}
+                  {currentPageLabel}
                 </p>
+                <p className="text-xs text-warm-500">Painel Profissional</p>
               </div>
 
-              {/* Breadcrumb - shows on desktop */}
-              <div className="hidden lg:block">
+              {/* Desktop line */}
+              <div className="hidden lg:flex items-center gap-3">
+                <span className="inline-flex items-center rounded-full border border-warm-200 bg-warm-50 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800">
+                  Painel Profissional
+                </span>
+
                 <p className="text-sm text-warm-500">
                   Bem-vindo(a) de volta,{" "}
                   <span className="font-semibold text-warm-900">
@@ -239,7 +266,10 @@ export default function ProfissionalLayout({
             {/* Header actions */}
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <button className="relative flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-warm-100">
+              <button
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-warm-100"
+                aria-label="Notificações"
+              >
                 <BellIcon className="h-5 w-5" />
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
               </button>
@@ -263,11 +293,9 @@ export default function ProfissionalLayout({
 
         {/* Page Content */}
         <main className="p-4 sm:p-6 lg:p-8">
-          {/* Alerta de PIX pendente */}
           <div className="mb-6">
             <PendingPixAlert />
           </div>
-
           {children}
         </main>
 
