@@ -294,7 +294,7 @@ export default function ProfissionalLayout({
         <footer className="border-t border-warm-200/60 bg-white/60 px-4 py-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-warm-500 sm:flex-row">
             <p>Sigilo e ética profissional em todas as sessões</p>
-            <p>© {new Date().getFullYear()} • Psicanálise Online</p>
+            <p>© {new Date().getFullYear()} • Raiza Convento - Psicanalista</p>
           </div>
         </footer>
       </div>

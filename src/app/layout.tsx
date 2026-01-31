@@ -3,7 +3,7 @@ import "./globals.css";
 export const metadata = {
   title: "Psicanálise",
   description:
-    "Plataforma de psicanálise online - Um espaço seguro para falar, sentir e se escutar.",
+    "Plataforma de Raiza Convento - Psicanalista - Um espaço seguro para falar, sentir e se escutar.",
 };
 
 export default function RootLayout({

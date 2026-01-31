@@ -80,8 +80,8 @@ export default function PublicFooter() {
         {/* Bottom */}
         <div className="mt-12 flex flex-col gap-3 border-t border-warm-300/40 pt-8 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <span>
-            © {new Date().getFullYear()} Psicanálise Online. Todos os direitos
-            reservados.
+            © {new Date().getFullYear()} Raiza Convento - Psicanalista. Todos os
+            direitos reservados.
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-sage-500" />
