@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
@@ -35,7 +36,6 @@ export default function ClienteLayout({
     loadUser();
   }, []);
 
-  // Pega a inicial do nome
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "?";
   const firstName = userName ? userName.split(" ")[0] : null;
 
@@ -50,21 +50,31 @@ export default function ClienteLayout({
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-warm-300/40 bg-warm-100/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
-          {/*  */}
+          {/* Brand + Área do Cliente */}
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-3"
           >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-warm-500/20 text-lg font-semibold text-warm-900 transition-transform duration-300 group-hover:scale-105">
-              Ψ
-            </span>
-            <div className="hidden sm:block">
-              <span className="text-sm font-semibold tracking-tight text-warm-900">
+            <Image
+              src="/logo.png"
+              alt="Raiza Convento Psicanálise"
+              width={160}
+              height={48}
+              priority
+              className="h-11 w-auto transition-opacity duration-300 group-hover:opacity-85"
+            />
+
+            {/* Label: Área do Cliente (sempre presente, mas discreta) */}
+            <div className="flex flex-col">
+              <span className="inline-flex w-fit items-center rounded-full border border-warm-300/60 bg-white/60 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800 shadow-soft backdrop-blur-sm">
                 Área do Cliente
               </span>
-              {firstName && (
-                <p className="text-xs text-warm-600">Olá, {firstName}</p>
-              )}
+
+              {firstName ? (
+                <span className="mt-1 hidden text-xs text-warm-600 sm:block">
+                  Olá, {firstName}
+                </span>
+              ) : null}
             </div>
           </Link>
 
@@ -95,7 +105,6 @@ export default function ClienteLayout({
           <div className="flex items-center gap-3">
             {/* User menu - Desktop */}
             <div className="hidden items-center gap-3 md:flex">
-              {/* Avatar com círculo visível */}
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-sm font-bold text-sage-700 shadow-sm">
                   {userInitial}
@@ -110,7 +119,7 @@ export default function ClienteLayout({
               <div className="h-6 w-px bg-warm-300/50" />
 
               <Link
-                href="/ut"
+                href="/logout"
                 className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white px-4 py-2 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-warm-50 hover:text-warm-900 hover:shadow-soft"
               >
                 <LogoutIcon className="h-4 w-4" />
@@ -122,6 +131,8 @@ export default function ClienteLayout({
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-white/50 hover:text-warm-900 md:hidden"
+              aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+              type="button"
             >
               {menuOpen ? (
                 <XIcon className="h-5 w-5" />
@@ -200,7 +211,7 @@ export default function ClienteLayout({
               profissional.
             </p>
             <p className="text-xs text-warm-500">
-              © {new Date().getFullYear()} • Psicanálise Online
+              © {new Date().getFullYear()} • Raiza Convento - Psicanalista
             </p>
           </div>
         </div>
