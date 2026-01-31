@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -17,13 +18,15 @@ export default function AuthLayout({
       {/* Header */}
       <header className="relative z-10 border-b border-warm-300/40 bg-warm-100/60 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
-          <Link href="/" className="group inline-flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-warm-500/20 text-lg font-semibold text-warm-900 transition-transform duration-300 group-hover:scale-105">
-              Ψ
-            </span>
-            <span className="text-base font-semibold tracking-tight text-warm-900">
-              Psicanálise
-            </span>
+          <Link href="/" className="group inline-flex items-center">
+            <Image
+              src="/logo.png" // ou o nome correto do seu arquivo
+              alt="Raiza Convento Psicanálise"
+              width={160}
+              height={48}
+              priority
+              className="h-12 w-auto transition-opacity duration-300 group-hover:opacity-80"
+            />
           </Link>
 
           <Link
@@ -51,12 +54,10 @@ export default function AuthLayout({
       {/* Content */}
       <main className="relative z-10 flex min-h-[calc(100vh-4rem)] items-center justify-center px-5 py-12 sm:px-6">
         <div className="w-full max-w-md">
-          {/* Card */}
           <div className="overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 p-8 shadow-soft-lg backdrop-blur-sm sm:p-10">
             {children}
           </div>
 
-          {/* Footer text */}
           <p className="mt-6 text-center text-xs text-muted">
             Seus dados estão protegidos com criptografia e sigilo profissional.
           </p>
