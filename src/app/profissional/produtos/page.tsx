@@ -561,7 +561,7 @@ function ProductModal({
             <button
               type="submit"
               disabled={busy}
-              className="flex-1 rounded-xl bg-sage-500 px-4 py-3 font-semibold text-white transition-all hover:bg-sage-600 disabled:opacity-50"
+              className="flex-1 rounded-xl border-2 border-sage-500 bg-white px-4 py-3 font-semibold text-sage-600 transition-all hover:bg-sage-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? "Salvando..." : product ? "Salvar" : "Criar"}
             </button>
