@@ -21,6 +21,7 @@ const PUBLIC_PREFIXES = [
   "/favicon",
   "/robots",
   "/sitemap",
+  "/sessoes", // ⚠️ TEMPORÁRIO
 ];
 
 function isPublicPath(pathname: string): boolean {
