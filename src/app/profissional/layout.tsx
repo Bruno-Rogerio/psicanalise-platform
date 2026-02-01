@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationBell } from "@/components/notifications";
 
 const navItems = [
   { label: "Dashboard", href: "/profissional", icon: DashboardIcon },
@@ -109,6 +111,7 @@ export default function ProfissionalLayout({
   }, [pathname]);
 
   return (
+    <NotificationProvider>
     <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-50 to-soft-100/30">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -257,13 +260,7 @@ export default function ProfissionalLayout({
             {/* Header actions */}
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <button
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-warm-100"
-                aria-label="Notificações"
-              >
-                <BellIcon className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
-              </button>
+              <NotificationBell />
 
               {/* Quick action */}
               <Link
@@ -299,6 +296,7 @@ export default function ProfissionalLayout({
         </footer>
       </div>
     </div>
+    </NotificationProvider>
   );
 }
 

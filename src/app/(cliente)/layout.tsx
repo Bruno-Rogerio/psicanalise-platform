@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationBell } from "@/components/notifications";
 
 const navItems = [
   { label: "Início", href: "/dashboard", icon: HomeIcon },
@@ -40,6 +42,7 @@ export default function ClienteLayout({
   const firstName = userName ? userName.split(" ")[0] : null;
 
   return (
+    <NotificationProvider>
     <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-100 to-soft-100/30">
       {/* Decorative background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -97,6 +100,9 @@ export default function ClienteLayout({
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* User menu - Desktop */}
             <div className="hidden items-center gap-3 md:flex">
               <div className="flex items-center gap-2">
@@ -211,6 +217,7 @@ export default function ClienteLayout({
         </div>
       </footer>
     </div>
+    </NotificationProvider>
   );
 }
 
