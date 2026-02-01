@@ -13,8 +13,7 @@ export default async function PublicHomePage() {
     .from("avaliacoes")
     .select("id,nome,estrelas,comentario,created_at")
     .eq("publicada", true)
-    .order("created_at", { ascending: false })
-    .limit(24);
+    .order("created_at", { ascending: false });
 
   return (
     <>
