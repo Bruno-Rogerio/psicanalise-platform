@@ -401,6 +401,20 @@ export default function ClienteSessaoPage() {
               Voltar
             </Link>
 
+            {/* ⚠️ BOTÃO DE TESTE - ADICIONAR AQUI */}
+            <button
+              onClick={() => {
+                console.log("🧪 Teste: Abrindo modal");
+                console.log("Room:", room);
+                console.log("UserInfo:", userInfo);
+                setShowReviewModal(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700"
+            >
+              🧪 Testar
+            </button>
+            {/* FIM DO BOTÃO DE TESTE */}
+
             {/* Botão Entrar (quando disponível) */}
             {room.status === "scheduled" && canEnterSession && (
               <button
