@@ -1,7 +1,7 @@
 // src/app/profissional/sessoes/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
@@ -64,6 +64,12 @@ export default function SessaoDetailPage() {
   const [statusBusy, setStatusBusy] = useState(false);
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
+
+  // ✅ AUTOSAVE
+  const [autosaveStatus, setAutosaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const autosaveFirstHydrationRef = useRef(true);
 
   // ✅ Scroll apenas quando VOCÊ envia mensagem
   const scrollToBottom = () => {
@@ -153,6 +159,8 @@ export default function SessaoDetailPage() {
         console.error(e);
       } finally {
         setLoading(false);
+        // ✅ evita autosave disparar logo após carregar dados do banco
+        autosaveFirstHydrationRef.current = false;
       }
     })();
   }, [sessionId]);
@@ -177,6 +185,54 @@ export default function SessaoDetailPage() {
 
     return () => clearInterval(interval);
   }, [room, sessionId]);
+
+  // ✅ AUTOSAVE (debounce)
+  useEffect(() => {
+    if (!room) return;
+    if (!sessionId) return;
+
+    // não dispara durante o "hydrate" inicial
+    if (autosaveFirstHydrationRef.current) return;
+
+    const timeout = window.setTimeout(async () => {
+      // evita autosave enquanto o usuário está apertando "Salvar"
+      if (notesBusy) return;
+
+      setAutosaveStatus("saving");
+      try {
+        const { data: sess, error: sessErr } = await supabase.auth.getSession();
+        if (sessErr) throw sessErr;
+
+        const profId = sess.session?.user?.id;
+        if (!profId) throw new Error("Não autenticado");
+
+        const payload = {
+          appointment_id: sessionId,
+          profissional_id: room?.professional?.id ?? profId,
+          user_id: room?.patient?.id,
+          ...notes,
+        };
+
+        if (!payload.user_id) {
+          throw new Error(
+            "Paciente não identificado para salvar o prontuário.",
+          );
+        }
+
+        const { error } = await supabase.from("session_notes").upsert(payload);
+        if (error) throw error;
+
+        setAutosaveStatus("saved");
+        window.setTimeout(() => setAutosaveStatus("idle"), 2000);
+      } catch (e) {
+        console.error("Autosave error:", e);
+        setAutosaveStatus("error");
+        window.setTimeout(() => setAutosaveStatus("idle"), 2500);
+      }
+    }, 1500); // 1.5s após parar de digitar
+
+    return () => window.clearTimeout(timeout);
+  }, [notes, room, sessionId, notesBusy]);
 
   async function handleSaveNotes() {
     if (!sessionId) return;
@@ -204,8 +260,12 @@ export default function SessaoDetailPage() {
 
       if (error) throw error;
       alert("Prontuário salvo com sucesso!");
+      setAutosaveStatus("saved");
+      window.setTimeout(() => setAutosaveStatus("idle"), 1500);
     } catch (e: any) {
       alert(e?.message ?? "Erro ao salvar prontuário.");
+      setAutosaveStatus("error");
+      window.setTimeout(() => setAutosaveStatus("idle"), 2500);
     } finally {
       setNotesBusy(false);
     }
@@ -618,14 +678,24 @@ export default function SessaoDetailPage() {
                   </div>
                 </div>
 
-                <button
-                  disabled={notesBusy}
-                  onClick={handleSaveNotes}
-                  className="inline-flex items-center gap-2 rounded-lg bg-sage-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
-                >
-                  <SaveIcon className="h-4 w-4" />
-                  {notesBusy ? "Salvando..." : "Salvar"}
-                </button>
+                {/* ✅ status autosave + botão salvar */}
+                <div className="flex items-center gap-3">
+                  <div className="min-w-[150px] text-right text-xs text-warm-500">
+                    {autosaveStatus === "saving" && "Salvando..."}
+                    {autosaveStatus === "saved" && "✓ Salvo automaticamente"}
+                    {autosaveStatus === "error" && "Falha ao salvar"}
+                    {autosaveStatus === "idle" && ""}
+                  </div>
+
+                  <button
+                    disabled={notesBusy}
+                    onClick={handleSaveNotes}
+                    className="inline-flex items-center gap-2 rounded-lg bg-sage-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
+                  >
+                    <SaveIcon className="h-4 w-4" />
+                    {notesBusy ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
               </div>
             </div>
 

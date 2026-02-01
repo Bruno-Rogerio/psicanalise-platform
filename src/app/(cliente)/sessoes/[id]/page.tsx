@@ -1,29 +1,28 @@
-// src/app/(cliente)/sessoes/[id]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { ReviewModal } from "@/components/avaliacoes/ReviewModal";
 import { supabase } from "@/lib/supabase-browser";
 
-import {
-  getSessionRoomById,
-  isNowWithinSessionWithMargin,
-  SessionRoom,
-  fmtDate,
-  fmtTime,
-} from "@/services/session-room";
+type AppointmentStatus =
+  | "scheduled"
+  | "completed"
+  | "cancelled"
+  | "rescheduled";
+type AppointmentType = "video" | "chat";
 
-import { getNotes } from "@/services/session-notes";
-import {
-  listChatMessages,
-  sendChatMessage,
-  ChatMessage,
-  SenderRole,
-} from "@/services/session-chat";
+type SessionRoom = {
+  id: string;
+  appointment_type: AppointmentType;
+  status: AppointmentStatus | string;
+  start_at: string;
+  end_at: string;
+  patient: { id: string; nome: string } | null;
+  professional: { id: string; nome: string } | null;
+};
 
-type NotesReadOnly = {
+type SessionNotes = {
   queixa: string;
   associacoes: string;
   intervencoes: string;
@@ -31,7 +30,14 @@ type NotesReadOnly = {
   observacoes: string;
 };
 
-const EMPTY_NOTES: NotesReadOnly = {
+type ChatMessage = {
+  id: string;
+  message: string;
+  sender_role: "cliente" | "profissional";
+  created_at: string;
+};
+
+const EMPTY_NOTES: SessionNotes = {
   queixa: "",
   associacoes: "",
   intervencoes: "",
@@ -40,158 +46,190 @@ const EMPTY_NOTES: NotesReadOnly = {
 };
 
 const ENTER_EARLY_MIN = 10;
-const VIDEO_END_GRACE_MIN = 0;
 
-function isNowAllowedForVideo(startISO: string, endISO: string) {
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+
+const fmtTime = (d: Date) =>
+  d.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+function isNowWithinSessionWithMargin(
+  startISO: string,
+  endISO: string,
+  earlyMin: number,
+) {
   const now = Date.now();
-  const start = new Date(startISO).getTime() - ENTER_EARLY_MIN * 60 * 1000;
-  const end = new Date(endISO).getTime() + VIDEO_END_GRACE_MIN * 60 * 1000;
+  const start = new Date(startISO).getTime() - earlyMin * 60 * 1000;
+  const end = new Date(endISO).getTime();
   return now >= start && now <= end;
 }
 
-export default function ClienteSessaoPage() {
-  const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const appointmentId = params.id;
+export default function SessaoDetailPage() {
+  const params = useParams();
+  const sessionId = params?.id as string;
 
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState<SessionRoom | null>(null);
-  const [notes, setNotes] = useState<NotesReadOnly>(EMPTY_NOTES);
+
+  const [notes, setNotes] = useState<SessionNotes>(EMPTY_NOTES);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [msg, setMsg] = useState("");
+
   const [chatBusy, setChatBusy] = useState(false);
-  const [joinBusy, setJoinBusy] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
+  const [notesBusy, setNotesBusy] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
+
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
+  const [joinBusy, setJoinBusy] = useState(false);
 
-  // Estados para avaliação
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  // Autosave status
+  const [autoState, setAutoState] = useState<
+    "idle" | "dirty" | "saving" | "saved" | "error"
+  >("idle");
+  const [autoError, setAutoError] = useState<string | null>(null);
 
-  // ✅ trava pós-sessão: impede reentrar no vídeo/chat após encerrar
-  const [sessionLocked, setSessionLocked] = useState(false);
-
-  const [userInfo, setUserInfo] = useState<{ id: string; nome: string } | null>(
-    null,
-  );
-
+  const lastSavedHashRef = useRef<string>("");
+  const autosaveTimerRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
-  const videoWatchRef = useRef<number | null>(null);
 
-  const senderRole: SenderRole | null = useMemo(() => {
-    if (!room) return null;
-    return "cliente";
-  }, [room]);
+  const isVideo = room?.appointment_type === "video";
+  const isChat = room?.appointment_type === "chat";
 
-  // ✅ encerra e manda para dashboard (replace evita voltar e reabrir)
-  function finishAndGoDashboard() {
-    setSessionLocked(true);
-    setDailyUrl(null);
-    setShowReviewModal(false);
-    router.replace("/dashboard");
-  }
-
-  const canEnterSession = useMemo(() => {
+  const canEnter = useMemo(() => {
     if (!room) return false;
-    if (sessionLocked) return false;
     if (room.status !== "scheduled" && room.status !== "rescheduled")
       return false;
-
     return isNowWithinSessionWithMargin(
       room.start_at,
       room.end_at,
       ENTER_EARLY_MIN,
     );
-  }, [room, sessionLocked]);
+  }, [room]);
 
-  const canChat = useMemo(() => {
+  const canStartVideo = useMemo(() => {
+    if (!room) return false;
+    if (room.appointment_type !== "video") return false;
+    if (!canEnter) return false;
+    return true;
+  }, [room, canEnter]);
+
+  const canChatNow = useMemo(() => {
     if (!room) return false;
     if (room.appointment_type !== "chat") return false;
-    if (!canEnterSession) return false;
+    if (!canEnter) return false;
     return true;
-  }, [room, canEnterSession]);
+  }, [room, canEnter]);
 
-  const canVideo = useMemo(() => {
-    if (!room) return false;
-    if (sessionLocked) return false;
-    if (room.appointment_type !== "video") return false;
-    if (room.status === "cancelled") return false;
-    return isNowAllowedForVideo(room.start_at, room.end_at);
-  }, [room, sessionLocked]);
-
-  // ✅ Scroll apenas quando VOCÊ envia mensagem
+  // ✅ Scroll apenas quando VOCÊ envia
   const scrollToBottom = () => {
-    const containerId =
-      room?.appointment_type === "video"
-        ? "chat-messages-container-video"
-        : "chat-messages-container-main";
-
-    const chatContainer = document.getElementById(containerId);
-    if (chatContainer) {
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
+    const chatContainer = document.getElementById("chat-messages-container");
+    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
   };
 
-  // Load inicial
+  // Load session data
   useEffect(() => {
+    if (!sessionId) return;
+
     (async () => {
       try {
         setLoading(true);
 
-        const { data: authData } = await supabase.auth.getUser();
-        const user = authData?.user;
+        const { data, error } = await supabase
+          .from("appointments")
+          .select(
+            `
+              id,
+              appointment_type,
+              status,
+              start_at,
+              end_at,
+              patient:profiles!appointments_user_id_fkey ( id, nome ),
+              professional:profiles!appointments_profissional_id_fkey ( id, nome )
+            `,
+          )
+          .eq("id", sessionId)
+          .single();
 
-        if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, nome")
-            .eq("id", user.id)
-            .single();
+        if (error) throw error;
 
-          if (profile) {
-            setUserInfo(profile);
-          } else {
-            setUserInfo({
-              id: user.id,
-              nome: user.email?.split("@")[0] || "Usuário",
-            });
-          }
-        }
+        const normalized: SessionRoom = {
+          ...data,
+          patient:
+            (Array.isArray(data.patient) ? data.patient[0] : data.patient) ??
+            null,
+          professional:
+            (Array.isArray(data.professional)
+              ? data.professional[0]
+              : data.professional) ?? null,
+        };
 
-        const r = await getSessionRoomById(appointmentId);
-        setRoom(r);
+        setRoom(normalized);
 
-        const [n, m] = await Promise.all([
-          getNotes(appointmentId),
-          listChatMessages(appointmentId),
-        ]);
+        // Load notes (se não tiver, mantém vazio)
+        const { data: notesData, error: notesErr } = await supabase
+          .from("session_notes")
+          .select("*")
+          .eq("appointment_id", sessionId)
+          .maybeSingle();
 
-        if (n) {
-          setNotes({
-            queixa: n.queixa ?? "",
-            associacoes: n.associacoes ?? "",
-            intervencoes: n.intervencoes ?? "",
-            plano: n.plano ?? "",
-            observacoes: n.observacoes ?? "",
-          });
+        if (!notesErr && notesData) {
+          const loaded: SessionNotes = {
+            queixa: notesData.queixa ?? "",
+            associacoes: notesData.associacoes ?? "",
+            intervencoes: notesData.intervencoes ?? "",
+            plano: notesData.plano ?? "",
+            observacoes: notesData.observacoes ?? "",
+          };
+          setNotes(loaded);
+
+          const hash = JSON.stringify(loaded);
+          lastSavedHashRef.current = hash;
+          setAutoState("saved");
         } else {
           setNotes(EMPTY_NOTES);
+          lastSavedHashRef.current = JSON.stringify(EMPTY_NOTES);
+          setAutoState("idle");
         }
 
-        setMessages(m);
+        // Load chat messages
+        const { data: messagesData } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("appointment_id", sessionId)
+          .order("created_at", { ascending: true });
+
+        setMessages(messagesData ?? []);
+      } catch (e: any) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
     })();
-  }, [appointmentId]);
+  }, [sessionId]);
 
-  // Poll mensagens
+  // Poll messages
   useEffect(() => {
     if (!room) return;
 
+    if (pollRef.current) window.clearInterval(pollRef.current);
+
     pollRef.current = window.setInterval(async () => {
       try {
-        const m = await listChatMessages(appointmentId);
-        setMessages(m);
+        const { data } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("appointment_id", sessionId)
+          .order("created_at", { ascending: true });
+
+        if (data) setMessages(data);
       } catch {
         // ignore
       }
@@ -200,69 +238,121 @@ export default function ClienteSessaoPage() {
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
-  }, [appointmentId, room]);
+  }, [room, sessionId]);
 
-  // Auto-encerrar sessão e mostrar avaliação
+  // ======= SAVE NOTES (manual e autosave usam a mesma função) =======
+  async function saveNotes({ showToast }: { showToast: boolean }) {
+    if (!sessionId) return;
+    if (!room) return;
+
+    try {
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr) throw sessErr;
+
+      const profId = sess.session?.user?.id;
+      if (!profId) throw new Error("Não autenticado");
+
+      const payload = {
+        appointment_id: sessionId,
+        profissional_id: room.professional?.id ?? profId,
+        user_id: room.patient?.id,
+        ...notes,
+      };
+
+      if (!payload.user_id) {
+        throw new Error("Paciente não identificado para salvar o prontuário.");
+      }
+
+      const { error } = await supabase
+        .from("session_notes")
+        .upsert(payload, { onConflict: "appointment_id" });
+
+      if (error) throw error;
+
+      const hash = JSON.stringify(notes);
+      lastSavedHashRef.current = hash;
+      setAutoState("saved");
+      setAutoError(null);
+
+      if (showToast) alert("Prontuário salvo com sucesso!");
+    } catch (e: any) {
+      console.error(e);
+      setAutoState("error");
+      setAutoError(e?.message ?? "Erro ao salvar.");
+      if (showToast) alert(e?.message ?? "Erro ao salvar prontuário.");
+    }
+  }
+
+  async function handleSaveNotes() {
+    setNotesBusy(true);
+    try {
+      setAutoState("saving");
+      await saveNotes({ showToast: true });
+    } finally {
+      setNotesBusy(false);
+    }
+  }
+
+  // ======= AUTOSAVE (debounce) =======
   useEffect(() => {
     if (!room) return;
 
-    if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+    const currentHash = JSON.stringify(notes);
 
-    videoWatchRef.current = window.setInterval(() => {
-      const now = Date.now();
-      const endTime = new Date(room.end_at).getTime();
-      const sessionEnded = now > endTime;
+    if (currentHash === lastSavedHashRef.current) {
+      // sem mudanças reais
+      if (autoState === "dirty") setAutoState("saved");
+      return;
+    }
 
-      // ✅ se já passou do fim, trava
-      if (sessionEnded && !sessionLocked) {
-        setSessionLocked(true);
-      }
+    // marca como "tem alterações"
+    setAutoState("dirty");
+    setAutoError(null);
 
-      // Para sessões de VÍDEO
-      if (room.appointment_type === "video") {
-        const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
-        if (!allowed && dailyUrl) {
-          setDailyUrl(null);
-          setJoinError("Sessão encerrada. O horário do atendimento terminou.");
+    if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
 
-          setTimeout(() => {
-            setShowReviewModal(true);
-          }, 2000);
-        }
-      }
-
-      // Para sessões de CHAT
-      if (room.appointment_type === "chat") {
-        if (sessionEnded && !showReviewModal) {
-          setTimeout(() => {
-            setShowReviewModal(true);
-          }, 2000);
-        }
-      }
-    }, 15000);
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      setAutoState("saving");
+      await saveNotes({ showToast: false });
+    }, 900);
 
     return () => {
-      if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
+      if (autosaveTimerRef.current)
+        window.clearTimeout(autosaveTimerRef.current);
     };
-  }, [room, dailyUrl, showReviewModal, sessionLocked]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notes, room]);
 
-  async function onSend() {
-    if (!room || !senderRole) return;
-    if (sessionLocked) return;
+  // ======= CHAT SEND =======
+  async function handleSendMessage() {
+    if (!sessionId || !msg.trim()) return;
 
-    const text = msg.trim();
-    if (!text) return;
+    // Para sessão por chat, respeita horário
+    if (isChat && !canChatNow) return;
 
     setChatBusy(true);
     try {
-      await sendChatMessage({
-        appointmentId: room.id,
-        senderRole,
-        message: text,
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) throw new Error("Não autenticado");
+
+      const { error } = await supabase.from("chat_messages").insert({
+        appointment_id: sessionId,
+        sender_id: auth.user.id,
+        sender_role: "profissional",
+        message: msg.trim(),
       });
+
+      if (error) throw error;
+
       setMsg("");
-      const m = await listChatMessages(room.id);
-      setMessages(m);
+
+      const { data } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("appointment_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (data) setMessages(data);
 
       setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
@@ -272,65 +362,52 @@ export default function ClienteSessaoPage() {
     }
   }
 
-  async function onJoinSession() {
-    if (!room) return;
-    if (room.status === "cancelled") return;
-
-    if (sessionLocked) {
-      setJoinError("Sessão encerrada.");
-      return;
-    }
-
-    if (!canEnterSession) return;
-
-    setJoinError(null);
-
-    if (room.appointment_type === "chat") {
-      const el = document.getElementById("chat-area");
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
-    if (!canVideo) {
-      setJoinError("Vídeo indisponível fora do horário da sessão.");
-      return;
-    }
+  // ======= VIDEO JOIN =======
+  async function handleJoinVideo() {
+    if (!sessionId || !room) return;
+    if (!canStartVideo) return;
 
     setJoinBusy(true);
     try {
       const resp = await fetch("/api/daily/ensure-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId: room.id }),
+        body: JSON.stringify({ appointmentId: sessionId }),
       });
 
-      const json = (await resp.json().catch(() => ({}))) as any;
-
-      if (!resp.ok) {
-        console.error("ensure-room failed", { status: resp.status, json });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok)
         throw new Error(json?.error || "Falha ao abrir sala de vídeo.");
-      }
 
-      const url: string | undefined = json?.url;
-      const token: string | undefined = json?.token;
-
-      if (!url) throw new Error("Resposta inválida do servidor (sem url).");
-      if (!token) throw new Error("Resposta inválida do servidor (sem token).");
-
-      const u = new URL(url);
-      u.searchParams.set("t", token);
-
-      setDailyUrl(u.toString());
-
-      setTimeout(() => {
-        const el = document.getElementById("video-player");
-        el?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 150);
+      const url = new URL(json.url);
+      url.searchParams.set("t", json.token);
+      setDailyUrl(url.toString());
     } catch (e: any) {
-      console.error(e);
-      setJoinError(e?.message ?? "Erro ao entrar na sessão de vídeo.");
+      alert(e?.message ?? "Erro ao entrar na sessão.");
     } finally {
       setJoinBusy(false);
+    }
+  }
+
+  async function handleCompleteSession() {
+    if (!sessionId) return;
+    if (!confirm("Marcar esta sessão como realizada?")) return;
+
+    setStatusBusy(true);
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "completed" })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+
+      setRoom((prev) => (prev ? { ...prev, status: "completed" } : null));
+      alert("Sessão marcada como realizada!");
+    } catch (e: any) {
+      alert(e?.message ?? "Erro ao atualizar status.");
+    } finally {
+      setStatusBusy(false);
     }
   }
 
@@ -339,7 +416,8 @@ export default function ClienteSessaoPage() {
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <div className="h-32 animate-pulse rounded-3xl bg-warm-200" />
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-96 animate-pulse rounded-3xl bg-warm-200 lg:col-span-2" />
+          <div className="h-96 animate-pulse rounded-3xl bg-warm-200" />
+          <div className="h-96 animate-pulse rounded-3xl bg-warm-200" />
           <div className="h-96 animate-pulse rounded-3xl bg-warm-200" />
         </div>
       </div>
@@ -356,64 +434,68 @@ export default function ClienteSessaoPage() {
           Sessão não encontrada
         </h1>
         <p className="mt-2 text-warm-600">
-          Não conseguimos localizar esta sessão. Verifique o link ou volte para
-          suas sessões.
+          Verifique o ID ou volte para suas sessões.
         </p>
         <Link
-          href="/minhas-sessoes"
+          href="/profissional/sessoes"
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sage-500 px-6 py-3 text-sm font-semibold text-white shadow-soft-lg transition-all hover:bg-sage-600"
         >
-          Ver minhas sessões
+          Ver sessões
         </Link>
       </div>
     );
   }
 
-  const start = new Date(room.start_at);
-  const end = new Date(room.end_at);
-  const isVideo = room.appointment_type === "video";
+  const startDate = new Date(room.start_at);
+  const endDate = new Date(room.end_at);
+
+  // Layout:
+  // - vídeo: 3 colunas [vídeo] [chat aux] [anotações]
+  // - chat: 2 colunas [chat] [anotações]
+  const gridColsLg = isVideo ? "lg:grid-cols-3" : "lg:grid-cols-2";
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      {/* HEADER */}
       <header className="overflow-hidden rounded-3xl border-2 border-warm-200/60 bg-gradient-to-br from-white/90 to-warm-50/60 p-6 shadow-soft-lg backdrop-blur-sm sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <div
               className={`group flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl shadow-soft-lg transition-transform duration-300 hover:scale-105 ${
                 isVideo
-                  ? "bg-gradient-to-br from-rose-400 to-rose-500"
-                  : "bg-gradient-to-br from-indigo-400 to-indigo-500"
+                  ? "bg-gradient-to-br from-rose-500 to-rose-600"
+                  : "bg-gradient-to-br from-indigo-500 to-indigo-600"
               }`}
             >
               {isVideo ? (
                 <VideoIcon className="h-8 w-8 text-white transition-transform group-hover:scale-110" />
               ) : (
-                <ChatBubbleIcon className="h-8 w-8 text-white transition-transform group-hover:scale-110" />
+                <ChatIcon className="h-8 w-8 text-white transition-transform group-hover:scale-110" />
               )}
             </div>
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-warm-900 sm:text-3xl">
-                Sua Sessão
+                Sessão de {isVideo ? "Vídeo" : "Chat"}
               </h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-warm-600">
                 <span className="inline-flex items-center gap-1">
                   <CalendarIcon className="h-4 w-4" />
-                  {fmtDate(start)}
+                  {fmtDate(startDate)}
                 </span>
                 <span className="text-warm-400">•</span>
                 <span className="inline-flex items-center gap-1">
                   <ClockIcon className="h-4 w-4" />
-                  {fmtTime(start)}–{fmtTime(end)}
+                  {fmtTime(startDate)}–{fmtTime(endDate)}
                 </span>
               </p>
 
-              {room.professional?.nome && (
+              {room.patient?.nome && (
                 <p className="mt-2 flex items-center gap-2 text-sm text-warm-700">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-sage-100 to-sage-200 text-xs font-semibold text-sage-700">
-                    {room.professional.nome.charAt(0)}
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-rose-100 to-rose-200 text-xs font-semibold text-rose-700">
+                    {room.patient.nome.charAt(0)}
                   </div>
-                  <span className="font-medium">{room.professional.nome}</span>
+                  <span className="font-medium">{room.patient.nome}</span>
                 </p>
               )}
             </div>
@@ -423,188 +505,143 @@ export default function ClienteSessaoPage() {
             <StatusBadge status={room.status} />
 
             <Link
-              href="/minhas-sessoes"
+              href="/profissional/sessoes"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-warm-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-warm-700 shadow-soft backdrop-blur-sm transition-all hover:bg-warm-50 hover:shadow-soft-lg"
             >
               <ArrowLeftIcon className="h-4 w-4" />
               Voltar
             </Link>
 
-            {room.status === "scheduled" && canEnterSession && (
+            {room.status === "scheduled" && (
               <button
-                disabled={joinBusy}
-                onClick={onJoinSession}
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 px-6 py-2.5 text-sm font-semibold text-white shadow-soft-lg transition-all hover:shadow-soft-xl disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={statusBusy}
+                onClick={handleCompleteSession}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-soft transition-all hover:bg-emerald-100 hover:shadow-soft-lg disabled:opacity-50"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  {joinBusy ? (
-                    <>
-                      <SpinnerIcon className="h-4 w-4 animate-spin" />
-                      Preparando...
-                    </>
-                  ) : (
-                    <>
-                      <PlayIcon className="h-4 w-4" />
-                      {isVideo ? "Iniciar vídeo" : "Abrir chat"}
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                      </span>
-                    </>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-sage-600 to-sage-700 opacity-0 transition-opacity group-hover:opacity-100" />
+                <CheckCircleIcon className="h-4 w-4" />
+                {statusBusy ? "Salvando..." : "Marcar como realizada"}
               </button>
             )}
           </div>
         </div>
-
-        {joinError && (
-          <div className="mt-6 animate-slide-up overflow-hidden rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 shadow-soft">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-                <AlertIcon className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-amber-800">Atenção</p>
-                <p className="mt-1 text-sm text-amber-700">{joinError}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <section className="space-y-6 lg:col-span-2">
-          {isVideo && dailyUrl && (
-            <div
-              id="video-player"
-              className="group animate-fade-in overflow-hidden rounded-3xl border-2 border-warm-200 bg-warm-900 shadow-soft-xl transition-all"
-            >
-              <div className="flex items-center justify-between border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
-                    <VideoIcon className="h-5 w-5 text-white" />
-                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-                    </span>
+      {/* GRID */}
+      <div className={`grid gap-6 ${gridColsLg}`}>
+        {/* =========================
+            COLUNA 1 (VÍDEO ou CHAT)
+        ========================= */}
+        <section className="space-y-6">
+          {/* VÍDEO */}
+          {isVideo ? (
+            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
+                      <VideoIcon className="h-5 w-5 text-white" />
+                      {dailyUrl && (
+                        <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-warm-900">
+                        {dailyUrl ? "Sala ativa • Ao vivo" : "Vídeo"}
+                      </p>
+                      <p className="text-xs text-warm-600">
+                        {dailyUrl
+                          ? "Conexão segura"
+                          : "Inicie no horário da sessão"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-warm-900">
-                      Sala ativa • Ao vivo
-                    </p>
-                    <p className="text-xs text-warm-600">
-                      Conexão segura e criptografada
-                    </p>
-                  </div>
-                </div>
 
-                <button
-                  onClick={() => setDailyUrl(null)}
-                  className="group/btn rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-xs font-semibold text-warm-700 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
-                >
-                  <span className="flex items-center gap-2">
-                    <XIcon className="h-4 w-4 transition-transform group-hover/btn:rotate-90" />
-                    Sair
-                  </span>
-                </button>
+                  {!dailyUrl ? (
+                    <button
+                      disabled={joinBusy || !canStartVideo}
+                      onClick={handleJoinVideo}
+                      className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {joinBusy ? "Preparando..." : "Iniciar"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setDailyUrl(null)}
+                      className="rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-xs font-semibold text-warm-700 transition-all hover:bg-warm-50"
+                    >
+                      Sair
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="relative aspect-video w-full bg-warm-900">
-                <iframe
-                  title="Sessão de vídeo"
-                  src={dailyUrl}
-                  allow="camera; microphone; fullscreen; speaker; display-capture"
-                  className="h-full w-full"
-                />
-              </div>
-            </div>
-          )}
-
-          {isVideo && !dailyUrl && (
-            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-gradient-to-br from-white to-warm-50/30 p-8 shadow-soft-lg sm:p-10">
-              <div className="mx-auto max-w-md text-center">
-                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-500 shadow-soft-lg">
-                  <VideoIcon className="h-12 w-12 text-white" />
-                </div>
-
-                <h3 className="text-xl font-bold text-warm-900">
-                  {canVideo ? "Pronto para começar" : "Sessão encerrada"}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-warm-600">
-                  {canVideo
-                    ? "Clique no botão acima para entrar na sala e iniciar sua sessão."
-                    : "Esta sessão já foi encerrada. Você será direcionado após finalizar a avaliação."}
-                </p>
-
-                {!canVideo && sessionLocked && (
-                  <button
-                    onClick={() => router.replace("/dashboard")}
-                    className="mt-6 inline-flex items-center justify-center rounded-xl bg-sage-500 px-6 py-3 text-sm font-semibold text-white shadow-soft-lg transition-all hover:bg-sage-600"
-                  >
-                    Ir para o Dashboard
-                  </button>
-                )}
-
-                {canVideo && (
-                  <div className="mt-8 space-y-3 rounded-2xl bg-warm-50 p-6 text-left">
+              <div className="bg-warm-50/30 p-4">
+                {dailyUrl ? (
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-warm-900">
+                    <iframe
+                      title="Sessão de vídeo"
+                      src={dailyUrl}
+                      allow="camera; microphone; fullscreen; speaker; display-capture"
+                      className="h-full w-full"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-video w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/60 p-6 text-center">
                     <p className="text-sm font-semibold text-warm-700">
-                      Antes de começar:
+                      Vídeo ainda não iniciado
                     </p>
-                    <CheckListItem text="Encontre um local tranquilo e privado" />
-                    <CheckListItem text="Verifique sua câmera e microfone" />
-                    <CheckListItem text="Mantenha uma conexão estável" />
+                    <p className="mt-1 text-xs text-warm-500">
+                      {canStartVideo
+                        ? "Clique em Iniciar para abrir a sala"
+                        : "Disponível apenas no horário da sessão"}
+                    </p>
                   </div>
                 )}
               </div>
             </div>
-          )}
-
-          {!isVideo && (
-            <div
-              id="chat-area"
-              className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg"
-            >
+          ) : (
+            /* CHAT PRINCIPAL (sessão por chat) */
+            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
               <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg">
-                    <ChatBubbleIcon className="h-5 w-5 text-white" />
+                    <ChatIcon className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-warm-900">
-                      Chat da Sessão
+                      Chat da sessão
                     </p>
                     <p className="text-xs text-warm-600">
-                      Espaço seguro para conversar
+                      Mensagens com o paciente
                     </p>
                   </div>
                 </div>
               </div>
 
               <div
-                id="chat-messages-container-main"
+                id="chat-messages-container"
                 className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
               >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-warm-100">
-                      <ChatBubbleIcon className="h-8 w-8 text-warm-400" />
+                      <ChatIcon className="h-8 w-8 text-warm-400" />
                     </div>
                     <p className="font-semibold text-warm-700">
-                      Nenhuma mensagem ainda
+                      Nenhuma mensagem
                     </p>
                     <p className="mt-1 text-sm text-warm-500">
-                      {canChat
-                        ? "Comece a conversar quando quiser."
-                        : "O chat estará disponível durante a sessão."}
+                      O chat aparecerá aqui durante a sessão
                     </p>
                   </div>
                 ) : (
                   messages.map((m) => (
                     <ChatBubble
                       key={m.id}
-                      mine={m.sender_role === "cliente"}
+                      mine={m.sender_role === "profissional"}
                       body={m.message}
                       at={m.created_at}
                     />
@@ -613,11 +650,9 @@ export default function ClienteSessaoPage() {
               </div>
 
               <div className="border-t-2 border-warm-200 bg-white p-4">
-                {!canChat ? (
+                {!canChatNow ? (
                   <div className="rounded-xl bg-warm-50 p-3 text-center text-xs text-warm-600">
-                    {sessionLocked
-                      ? "Sessão encerrada."
-                      : "Chat disponível apenas durante o horário da sessão."}
+                    Chat disponível apenas durante o horário da sessão.
                   </div>
                 ) : (
                   <div className="flex items-end gap-3">
@@ -631,16 +666,15 @@ export default function ClienteSessaoPage() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            onSend();
+                            handleSendMessage();
                           }
                         }}
-                        disabled={sessionLocked}
                       />
                     </div>
                     <button
-                      disabled={sessionLocked || chatBusy || !msg.trim()}
-                      onClick={onSend}
-                      className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={chatBusy || !msg.trim()}
+                      onClick={handleSendMessage}
+                      className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
                     >
                       <SendIcon className="h-5 w-5 text-white transition-transform group-hover:translate-x-0.5" />
                     </button>
@@ -650,56 +684,87 @@ export default function ClienteSessaoPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-warm-50/50 p-6 backdrop-blur-sm">
+          {/* Informações (opcional) */}
+          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
               <InfoIcon className="h-4 w-4" />
-              Informações importantes
+              Informações da sessão
             </p>
-            <div className="space-y-2 text-sm text-warm-600">
-              <InfoRow
-                icon="✓"
-                text="Sigilo profissional e privacidade garantidos"
+
+            <div className="space-y-3">
+              <InfoItem
+                icon={<UserIcon className="h-4 w-4" />}
+                label="Paciente"
+                value={room.patient?.nome || "Paciente não identificado"}
               />
-              <InfoRow
-                icon="✓"
-                text="Cancelamento com reembolso até 24h antes"
+              <InfoItem
+                icon={<CalendarIcon className="h-4 w-4" />}
+                label="Data"
+                value={fmtDate(startDate)}
               />
-              <InfoRow
-                icon="✓"
-                text="Gravações não são permitidas por ambas as partes"
+              <InfoItem
+                icon={<ClockIcon className="h-4 w-4" />}
+                label="Horário"
+                value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
+              />
+              <InfoItem
+                icon={
+                  isVideo ? (
+                    <VideoIcon className="h-4 w-4" />
+                  ) : (
+                    <ChatIcon className="h-4 w-4" />
+                  )
+                }
+                label="Tipo"
+                value={isVideo ? "Videochamada" : "Chat por texto"}
               />
             </div>
           </div>
         </section>
 
-        <aside className="space-y-6">
-          {isVideo && (
+        {/* =========================
+            COLUNA 2 (somente no VÍDEO): CHAT AUX
+        ========================= */}
+        {isVideo && (
+          <section className="space-y-6">
             <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
-              <div className="border-b border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3">
-                <p className="text-sm font-semibold text-warm-900">
-                  Chat auxiliar
-                </p>
-                <p className="text-xs text-warm-600">
-                  Mensagens durante a sessão
-                </p>
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg">
+                    <ChatIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-warm-900">
+                      Chat auxiliar
+                    </p>
+                    <p className="text-xs text-warm-600">
+                      Mensagens com o paciente
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div
-                id="chat-messages-container-video"
-                className="h-[400px] space-y-2 overflow-y-auto bg-warm-50/30 p-4"
+                id="chat-messages-container"
+                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
               >
                 {messages.length === 0 ? (
-                  <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-warm-300 bg-white/50 p-6 text-center">
-                    <ChatBubbleIcon className="mb-3 h-10 w-10 text-warm-300" />
-                    <p className="text-xs text-warm-500">
-                      Use o chat para complementar a conversa, se necessário.
+                  <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-warm-100">
+                      <ChatIcon className="h-8 w-8 text-warm-400" />
+                    </div>
+                    <p className="font-semibold text-warm-700">
+                      Nenhuma mensagem
+                    </p>
+                    <p className="mt-1 text-sm text-warm-500">
+                      Use o chat para complementar durante o vídeo
                     </p>
                   </div>
                 ) : (
                   messages.map((m) => (
-                    <ChatBubbleCompact
+                    <ChatBubble
                       key={m.id}
-                      mine={m.sender_role === "cliente"}
+                      mine={m.sender_role === "profissional"}
                       body={m.message}
                       at={m.created_at}
                     />
@@ -707,61 +772,171 @@ export default function ClienteSessaoPage() {
                 )}
               </div>
 
-              <div className="border-t border-warm-200 bg-white p-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    value={msg}
-                    onChange={(e) => setMsg(e.target.value)}
-                    placeholder="Mensagem..."
-                    className="h-10 flex-1 rounded-lg border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-2 focus:ring-sage-100"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") onSend();
-                    }}
-                    disabled={sessionLocked}
-                  />
+              <div className="border-t-2 border-warm-200 bg-white p-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <textarea
+                      value={msg}
+                      onChange={(e) => setMsg(e.target.value)}
+                      placeholder="Digite sua mensagem..."
+                      rows={2}
+                      className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                  </div>
                   <button
-                    disabled={sessionLocked || chatBusy || !msg.trim()}
-                    onClick={onSend}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sage-500 shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
+                    disabled={chatBusy || !msg.trim()}
+                    onClick={handleSendMessage}
+                    className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
                   >
-                    <SendIcon className="h-4 w-4 text-white" />
+                    <SendIcon className="h-5 w-5 text-white transition-transform group-hover:translate-x-0.5" />
                   </button>
                 </div>
               </div>
             </div>
-          )}
+          </section>
+        )}
+
+        {/* =========================
+            ÚLTIMA COLUNA: ANOTAÇÕES
+            - vídeo: é a 3ª coluna
+            - chat: é a 2ª coluna
+        ========================= */}
+        <section className="space-y-6">
+          <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
+            <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg">
+                    <FileTextIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-warm-900">Anotações</p>
+                    <p className="text-xs text-warm-600">
+                      Registro confidencial
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <AutoSavePill state={autoState} error={autoError} />
+
+                  <button
+                    disabled={notesBusy}
+                    onClick={handleSaveNotes}
+                    className="inline-flex items-center gap-2 rounded-lg bg-sage-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
+                  >
+                    <SaveIcon className="h-4 w-4" />
+                    {notesBusy ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="max-h-[600px] space-y-4 overflow-y-auto p-5">
+              <NoteField
+                label="Queixa"
+                placeholder="O que o paciente trouxe na sessão..."
+                value={notes.queixa}
+                onChange={(v) => setNotes({ ...notes, queixa: v })}
+                rows={3}
+              />
+              <NoteField
+                label="Associações"
+                placeholder="Associações livres, memórias..."
+                value={notes.associacoes}
+                onChange={(v) => setNotes({ ...notes, associacoes: v })}
+                rows={3}
+              />
+              <NoteField
+                label="Intervenções"
+                placeholder="Intervenções realizadas..."
+                value={notes.intervencoes}
+                onChange={(v) => setNotes({ ...notes, intervencoes: v })}
+                rows={3}
+              />
+              <NoteField
+                label="Plano"
+                placeholder="Plano para próximas sessões..."
+                value={notes.plano}
+                onChange={(v) => setNotes({ ...notes, plano: v })}
+                rows={3}
+              />
+              <NoteField
+                label="Observações"
+                placeholder="Outras observações relevantes..."
+                value={notes.observacoes}
+                onChange={(v) => setNotes({ ...notes, observacoes: v })}
+                rows={4}
+              />
+            </div>
+          </div>
 
           <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-soft-50 to-warm-50 p-6 shadow-soft">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
-              <SparklesIcon className="h-4 w-4" />
-              Dicas para aproveitar melhor
+              <LightbulbIcon className="h-4 w-4" />
+              Lembretes importantes
             </p>
             <div className="space-y-3 text-sm text-warm-600">
-              <TipItem text="Seja autêntico e fale o que vier à mente" />
-              <TipItem text="Não há julgamentos neste espaço" />
-              <TipItem text="O silêncio também faz parte" />
+              <TipItem text="Mantenha o sigilo profissional" />
+              <TipItem text="Registre pontos-chave no prontuário" />
+              <TipItem text="Salve antes de sair, se fizer grandes alterações" />
             </div>
           </div>
-        </aside>
+        </section>
       </div>
-
-      {room && (
-        <ReviewModal
-          isOpen={showReviewModal}
-          onClose={finishAndGoDashboard}
-          appointmentId={appointmentId}
-          professionalId={room.profissional_id}
-          userId={userInfo?.id || room.user_id}
-          userName={userInfo?.nome || "Usuário"}
-        />
-      )}
     </div>
   );
 }
 
-// ==========================================
-// 🎨 COMPONENTES AUXILIARES
-// ==========================================
+/* =========================================================
+   COMPONENTES AUXILIARES
+========================================================= */
+
+function AutoSavePill({
+  state,
+  error,
+}: {
+  state: "idle" | "dirty" | "saving" | "saved" | "error";
+  error: string | null;
+}) {
+  const cfg =
+    state === "saving"
+      ? {
+          label: "Salvando...",
+          cls: "bg-amber-50 text-amber-700 border-amber-200",
+        }
+      : state === "dirty"
+        ? {
+            label: "Alterações",
+            cls: "bg-indigo-50 text-indigo-700 border-indigo-200",
+          }
+        : state === "saved"
+          ? {
+              label: "Salvo",
+              cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+            }
+          : state === "error"
+            ? { label: "Erro", cls: "bg-rose-50 text-rose-700 border-rose-200" }
+            : {
+                label: " ",
+                cls: "bg-transparent text-transparent border-transparent",
+              };
+
+  return (
+    <span
+      title={state === "error" ? (error ?? "Erro ao salvar") : undefined}
+      className={`inline-flex min-w-[86px] items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold ${cfg.cls}`}
+    >
+      {cfg.label}
+    </span>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const configs: Record<
@@ -815,9 +990,7 @@ function ChatBubble({
   at: string;
 }) {
   return (
-    <div
-      className={`flex animate-slide-up ${mine ? "justify-end" : "justify-start"}`}
-    >
+    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
       <div
         className={`group max-w-[85%] rounded-2xl px-4 py-3 shadow-soft transition-all hover:shadow-soft-lg ${
           mine
@@ -836,51 +1009,55 @@ function ChatBubble({
   );
 }
 
-function ChatBubbleCompact({
-  mine,
-  body,
-  at,
+function NoteField({
+  label,
+  placeholder,
+  value,
+  onChange,
+  rows = 3,
 }: {
-  mine: boolean;
-  body: string;
-  at: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
 }) {
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[90%] rounded-xl px-3 py-2 text-xs ${
-          mine
-            ? "bg-sage-500 text-white"
-            : "border border-warm-200 bg-white text-warm-900"
-        }`}
-      >
-        <p className="whitespace-pre-wrap leading-relaxed">{body}</p>
-        <p
-          className={`mt-0.5 text-[10px] ${mine ? "text-white/70" : "text-warm-500"}`}
-        >
-          {fmtTime(new Date(at))}
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-warm-700">
+        {label}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
+      />
+    </div>
+  );
+}
+
+function InfoItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl bg-white/60 p-3">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sage-100 text-sage-600">
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-warm-500">{label}</p>
+        <p className="mt-0.5 truncate text-sm font-medium text-warm-900">
+          {value}
         </p>
       </div>
-    </div>
-  );
-}
-
-function CheckListItem({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sage-100">
-        <CheckIcon className="h-3 w-3 text-sage-600" />
-      </div>
-      <p className="text-sm text-warm-700">{text}</p>
-    </div>
-  );
-}
-
-function InfoRow({ icon, text }: { icon: string; text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className="text-sage-600">{icon}</span>
-      <p>{text}</p>
     </div>
   );
 }
@@ -894,9 +1071,9 @@ function TipItem({ text }: { text: string }) {
   );
 }
 
-// ==========================================
-// 🎯 ÍCONES SVG
-// ==========================================
+/* =========================================================
+   ÍCONES
+========================================================= */
 
 function VideoIcon({ className }: { className?: string }) {
   return (
@@ -916,7 +1093,7 @@ function VideoIcon({ className }: { className?: string }) {
   );
 }
 
-function ChatBubbleIcon({ className }: { className?: string }) {
+function ChatIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -988,176 +1165,6 @@ function ArrowLeftIcon({ className }: { className?: string }) {
   );
 }
 
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function SpinnerIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  );
-}
-
-function AlertIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-      />
-    </svg>
-  );
-}
-
-function AlertTriangleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-      />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
-    </svg>
-  );
-}
-
-function SendIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-      />
-    </svg>
-  );
-}
-
-function InfoIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function SparklesIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
-    </svg>
-  );
-}
-
 function CheckCircleIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -1207,6 +1214,132 @@ function RefreshIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
+    </svg>
+  );
+}
+
+function FileTextIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+  );
+}
+
+function SaveIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+      />
+    </svg>
+  );
+}
+
+function InfoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+}
+
+function LightbulbIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+      />
+    </svg>
+  );
+}
+
+function AlertTriangleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+  );
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
       />
     </svg>
   );
