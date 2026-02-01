@@ -64,6 +64,10 @@ export default function ClienteSessaoPage() {
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
   // Estados para avaliação
   const [showReviewModal, setShowReviewModal] = useState(false);
+  // ⚠️ DEBUG - Monitora mudanças no estado
+  useEffect(() => {
+    console.log("🔄 showReviewModal mudou para:", showReviewModal);
+  }, [showReviewModal]);
   const [userInfo, setUserInfo] = useState<{ id: string; nome: string } | null>(
     null,
   );
@@ -119,18 +123,29 @@ export default function ClienteSessaoPage() {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+
+        console.log("👤 Usuário autenticado:", user);
+
         if (user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("id, nome")
             .eq("id", user.id)
             .single();
 
+          console.log("📋 Profile carregado:", profile);
+          console.log("❌ Erro ao carregar profile:", profileError);
+
           if (profile) {
             setUserInfo(profile);
+          } else {
+            // Fallback: usa dados do próprio user
+            setUserInfo({
+              id: user.id,
+              nome: user.email?.split("@")[0] || "Usuário",
+            });
           }
         }
-
         const r = await getSessionRoomById(appointmentId);
         setRoom(r);
 
@@ -754,14 +769,17 @@ export default function ClienteSessaoPage() {
         </aside>
       </div>
       {/* ========== MODAL DE AVALIAÇÃO ========== */}
-      {room && userInfo && (
+      {room && (
         <ReviewModal
           isOpen={showReviewModal}
-          onClose={() => setShowReviewModal(false)}
+          onClose={() => {
+            console.log("❌ Fechando modal");
+            setShowReviewModal(false);
+          }}
           appointmentId={appointmentId}
           professionalId={room.profissional_id}
-          userId={userInfo.id}
-          userName={userInfo.nome}
+          userId={userInfo?.id || room.user_id}
+          userName={userInfo?.nome || "Usuário"}
         />
       )}
     </div>
