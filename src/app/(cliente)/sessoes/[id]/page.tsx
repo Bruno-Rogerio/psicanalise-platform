@@ -62,12 +62,10 @@ export default function ClienteSessaoPage() {
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
+
   // Estados para avaliação
   const [showReviewModal, setShowReviewModal] = useState(false);
-  // ⚠️ DEBUG - Monitora mudanças no estado
-  useEffect(() => {
-    console.log("🔄 showReviewModal mudou para:", showReviewModal);
-  }, [showReviewModal]);
+
   const [userInfo, setUserInfo] = useState<{ id: string; nome: string } | null>(
     null,
   );
@@ -107,7 +105,12 @@ export default function ClienteSessaoPage() {
 
   // ✅ Scroll apenas quando VOCÊ envia mensagem
   const scrollToBottom = () => {
-    const chatContainer = document.getElementById("chat-messages-container");
+    const containerId =
+      room?.appointment_type === "video"
+        ? "chat-messages-container-video"
+        : "chat-messages-container-main";
+
+    const chatContainer = document.getElementById(containerId);
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -120,27 +123,15 @@ export default function ClienteSessaoPage() {
         setLoading(true);
 
         // Busca dados do usuário logado
-        console.log("🔍 ANTES de getUser");
-        console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-        const { data: authData, error: authError } =
-          await supabase.auth.getUser();
+        const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
 
-        console.log("👤 Usuário autenticado:", user);
-        console.log("❌ Erro de autenticação:", authError);
-
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log("🍪 Session:", sessionData);
-
         if (user) {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile } = await supabase
             .from("profiles")
             .select("id, nome")
             .eq("id", user.id)
             .single();
-
-          console.log("📋 Profile carregado:", profile);
-          console.log("❌ Erro ao carregar profile:", profileError);
 
           if (profile) {
             setUserInfo(profile);
@@ -152,6 +143,7 @@ export default function ClienteSessaoPage() {
             });
           }
         }
+
         const r = await getSessionRoomById(appointmentId);
         setRoom(r);
 
@@ -159,6 +151,7 @@ export default function ClienteSessaoPage() {
           getNotes(appointmentId),
           listChatMessages(appointmentId),
         ]);
+
         if (n) {
           setNotes({
             queixa: n.queixa ?? "",
@@ -214,7 +207,6 @@ export default function ClienteSessaoPage() {
           setDailyUrl(null);
           setJoinError("Sessão encerrada. O horário do atendimento terminou.");
 
-          // ✅ ABRE MODAL DE AVALIAÇÃO
           setTimeout(() => {
             setShowReviewModal(true);
           }, 2000);
@@ -224,7 +216,6 @@ export default function ClienteSessaoPage() {
       // Para sessões de CHAT
       if (room.appointment_type === "chat") {
         if (sessionEnded && !showReviewModal) {
-          // ✅ ABRE MODAL DE AVALIAÇÃO
           setTimeout(() => {
             setShowReviewModal(true);
           }, 2000);
@@ -359,14 +350,9 @@ export default function ClienteSessaoPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      {/* ==========================================
-          ✨ HEADER MODERNO COM GLASSMORPHISM
-      ========================================== */}
       <header className="overflow-hidden rounded-3xl border-2 border-warm-200/60 bg-gradient-to-br from-white/90 to-warm-50/60 p-6 shadow-soft-lg backdrop-blur-sm sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          {/* Left: Info da sessão */}
           <div className="flex items-start gap-4">
-            {/* Ícone gradiente animado */}
             <div
               className={`group flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl shadow-soft-lg transition-transform duration-300 hover:scale-105 ${
                 isVideo
@@ -408,12 +394,9 @@ export default function ClienteSessaoPage() {
             </div>
           </div>
 
-          {/* Right: Ações */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Status Badge */}
             <StatusBadge status={room.status} />
 
-            {/* Botão Voltar */}
             <Link
               href="/minhas-sessoes"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-warm-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-warm-700 shadow-soft backdrop-blur-sm transition-all hover:bg-warm-50 hover:shadow-soft-lg"
@@ -422,23 +405,6 @@ export default function ClienteSessaoPage() {
               Voltar
             </Link>
 
-            {/* ⚠️ BOTÃO DE TESTE - ADICIONAR AQUI */}
-            <button
-              onClick={() => {
-                console.log("🧪 Teste: Abrindo modal");
-                console.log("Room:", room);
-                console.log("UserInfo:", userInfo);
-                console.log("UserInfo:", userInfo); // ← Veja o que aparece
-                console.log("ShowReviewModal:", showReviewModal);
-                setShowReviewModal(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700"
-            >
-              🧪 Testar
-            </button>
-            {/* FIM DO BOTÃO DE TESTE */}
-
-            {/* Botão Entrar (quando disponível) */}
             {room.status === "scheduled" && canEnterSession && (
               <button
                 disabled={joinBusy}
@@ -455,7 +421,6 @@ export default function ClienteSessaoPage() {
                     <>
                       <PlayIcon className="h-4 w-4" />
                       {isVideo ? "Iniciar vídeo" : "Abrir chat"}
-                      {/* Indicator pulsante */}
                       <span className="relative flex h-2 w-2">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -469,7 +434,6 @@ export default function ClienteSessaoPage() {
           </div>
         </div>
 
-        {/* Error Alert */}
         {joinError && (
           <div className="mt-6 animate-slide-up overflow-hidden rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 shadow-soft">
             <div className="flex items-start gap-3">
@@ -485,24 +449,17 @@ export default function ClienteSessaoPage() {
         )}
       </header>
 
-      {/* ==========================================
-          📹 ÁREA PRINCIPAL: VÍDEO + CHAT
-      ========================================== */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* ========== COLUNA ESQUERDA: VÍDEO/INFO ========== */}
         <section className="space-y-6 lg:col-span-2">
-          {/* 🎥 PLAYER DE VÍDEO (quando ativo) */}
           {isVideo && dailyUrl && (
             <div
               id="video-player"
               className="group animate-fade-in overflow-hidden rounded-3xl border-2 border-warm-200 bg-warm-900 shadow-soft-xl transition-all"
             >
-              {/* Header do player */}
               <div className="flex items-center justify-between border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
                     <VideoIcon className="h-5 w-5 text-white" />
-                    {/* Indicador "ao vivo" */}
                     <span className="absolute -right-1 -top-1 flex h-3 w-3">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                       <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
@@ -529,7 +486,6 @@ export default function ClienteSessaoPage() {
                 </button>
               </div>
 
-              {/* Iframe do vídeo */}
               <div className="relative aspect-video w-full bg-warm-900">
                 <iframe
                   title="Sessão de vídeo"
@@ -541,11 +497,9 @@ export default function ClienteSessaoPage() {
             </div>
           )}
 
-          {/* 📝 INSTRUÇÕES (quando vídeo não iniciado) */}
           {isVideo && !dailyUrl && (
             <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-gradient-to-br from-white to-warm-50/30 p-8 shadow-soft-lg sm:p-10">
               <div className="mx-auto max-w-md text-center">
-                {/* Ícone central */}
                 <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-500 shadow-soft-lg">
                   <VideoIcon className="h-12 w-12 text-white" />
                 </div>
@@ -586,7 +540,6 @@ export default function ClienteSessaoPage() {
             </div>
           )}
 
-          {/* 💬 ÁREA DE CHAT (apenas para tipo chat) */}
           {!isVideo && (
             <div
               id="chat-area"
@@ -608,9 +561,8 @@ export default function ClienteSessaoPage() {
                 </div>
               </div>
 
-              {/* Mensagens - ✅ ADICIONA ID AQUI */}
               <div
-                id="chat-messages-container"
+                id="chat-messages-container-main"
                 className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
               >
                 {messages.length === 0 ? (
@@ -639,7 +591,6 @@ export default function ClienteSessaoPage() {
                 )}
               </div>
 
-              {/* Input de mensagem */}
               <div className="border-t-2 border-warm-200 bg-white p-4">
                 {!canChat ? (
                   <div className="rounded-xl bg-warm-50 p-3 text-center text-xs text-warm-600">
@@ -675,7 +626,6 @@ export default function ClienteSessaoPage() {
             </div>
           )}
 
-          {/* ℹ️ INFORMAÇÕES ADICIONAIS */}
           <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-warm-50/50 p-6 backdrop-blur-sm">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
               <InfoIcon className="h-4 w-4" />
@@ -698,9 +648,7 @@ export default function ClienteSessaoPage() {
           </div>
         </section>
 
-        {/* ========== COLUNA DIREITA: CHAT AUXILIAR ========== */}
         <aside className="space-y-6">
-          {/* 💬 CHAT (para sessões de vídeo) */}
           {isVideo && (
             <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
               <div className="border-b border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3">
@@ -712,9 +660,8 @@ export default function ClienteSessaoPage() {
                 </p>
               </div>
 
-              {/* Mensagens - ✅ ADICIONA ID AQUI TAMBÉM */}
               <div
-                id="chat-messages-container"
+                id="chat-messages-container-video"
                 className="h-[400px] space-y-2 overflow-y-auto bg-warm-50/30 p-4"
               >
                 {messages.length === 0 ? (
@@ -736,7 +683,6 @@ export default function ClienteSessaoPage() {
                 )}
               </div>
 
-              {/* Input */}
               <div className="border-t border-warm-200 bg-white p-3">
                 <div className="flex items-center gap-2">
                   <input
@@ -760,7 +706,6 @@ export default function ClienteSessaoPage() {
             </div>
           )}
 
-          {/* 📋 DICAS E AJUDA */}
           <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-soft-50 to-warm-50 p-6 shadow-soft">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
               <SparklesIcon className="h-4 w-4" />
@@ -774,14 +719,11 @@ export default function ClienteSessaoPage() {
           </div>
         </aside>
       </div>
-      {/* ========== MODAL DE AVALIAÇÃO ========== */}
+
       {room && (
         <ReviewModal
           isOpen={showReviewModal}
-          onClose={() => {
-            console.log("❌ Fechando modal");
-            setShowReviewModal(false);
-          }}
+          onClose={() => setShowReviewModal(false)}
           appointmentId={appointmentId}
           professionalId={room.profissional_id}
           userId={userInfo?.id || room.user_id}
