@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Psicanálise",
+  title: "Raiza Convento - Psicanalista",
   description:
     "Plataforma de Raiza Convento - Psicanalista - Um espaço seguro para falar, sentir e se escutar.",
 };
