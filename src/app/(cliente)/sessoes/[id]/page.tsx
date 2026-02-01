@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ReviewModal } from "@/components/avaliacoes/ReviewModal";
 import { supabase } from "@/lib/supabase-browser";
 
@@ -50,6 +50,7 @@ function isNowAllowedForVideo(startISO: string, endISO: string) {
 }
 
 export default function ClienteSessaoPage() {
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const appointmentId = params.id;
 
@@ -66,6 +67,9 @@ export default function ClienteSessaoPage() {
   // Estados para avaliação
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  // ✅ trava pós-sessão: impede reentrar no vídeo/chat após encerrar
+  const [sessionLocked, setSessionLocked] = useState(false);
+
   const [userInfo, setUserInfo] = useState<{ id: string; nome: string } | null>(
     null,
   );
@@ -78,16 +82,26 @@ export default function ClienteSessaoPage() {
     return "cliente";
   }, [room]);
 
+  // ✅ encerra e manda para dashboard (replace evita voltar e reabrir)
+  function finishAndGoDashboard() {
+    setSessionLocked(true);
+    setDailyUrl(null);
+    setShowReviewModal(false);
+    router.replace("/dashboard");
+  }
+
   const canEnterSession = useMemo(() => {
     if (!room) return false;
+    if (sessionLocked) return false;
     if (room.status !== "scheduled" && room.status !== "rescheduled")
       return false;
+
     return isNowWithinSessionWithMargin(
       room.start_at,
       room.end_at,
       ENTER_EARLY_MIN,
     );
-  }, [room]);
+  }, [room, sessionLocked]);
 
   const canChat = useMemo(() => {
     if (!room) return false;
@@ -98,10 +112,11 @@ export default function ClienteSessaoPage() {
 
   const canVideo = useMemo(() => {
     if (!room) return false;
+    if (sessionLocked) return false;
     if (room.appointment_type !== "video") return false;
     if (room.status === "cancelled") return false;
     return isNowAllowedForVideo(room.start_at, room.end_at);
-  }, [room]);
+  }, [room, sessionLocked]);
 
   // ✅ Scroll apenas quando VOCÊ envia mensagem
   const scrollToBottom = () => {
@@ -122,7 +137,6 @@ export default function ClienteSessaoPage() {
       try {
         setLoading(true);
 
-        // Busca dados do usuário logado
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
 
@@ -136,7 +150,6 @@ export default function ClienteSessaoPage() {
           if (profile) {
             setUserInfo(profile);
           } else {
-            // Fallback: usa dados do próprio user
             setUserInfo({
               id: user.id,
               nome: user.email?.split("@")[0] || "Usuário",
@@ -200,6 +213,11 @@ export default function ClienteSessaoPage() {
       const endTime = new Date(room.end_at).getTime();
       const sessionEnded = now > endTime;
 
+      // ✅ se já passou do fim, trava
+      if (sessionEnded && !sessionLocked) {
+        setSessionLocked(true);
+      }
+
       // Para sessões de VÍDEO
       if (room.appointment_type === "video") {
         const allowed = isNowAllowedForVideo(room.start_at, room.end_at);
@@ -221,15 +239,17 @@ export default function ClienteSessaoPage() {
           }, 2000);
         }
       }
-    }, 15000); // Verifica a cada 15 segundos
+    }, 15000);
 
     return () => {
       if (videoWatchRef.current) window.clearInterval(videoWatchRef.current);
     };
-  }, [room, dailyUrl, showReviewModal]);
+  }, [room, dailyUrl, showReviewModal, sessionLocked]);
 
   async function onSend() {
     if (!room || !senderRole) return;
+    if (sessionLocked) return;
+
     const text = msg.trim();
     if (!text) return;
 
@@ -244,7 +264,6 @@ export default function ClienteSessaoPage() {
       const m = await listChatMessages(room.id);
       setMessages(m);
 
-      // ✅ Scroll automático apenas quando VOCÊ envia
       setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
       alert(e?.message ?? "Erro ao enviar mensagem.");
@@ -256,6 +275,12 @@ export default function ClienteSessaoPage() {
   async function onJoinSession() {
     if (!room) return;
     if (room.status === "cancelled") return;
+
+    if (sessionLocked) {
+      setJoinError("Sessão encerrada.");
+      return;
+    }
+
     if (!canEnterSession) return;
 
     setJoinError(null);
@@ -505,13 +530,22 @@ export default function ClienteSessaoPage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-warm-900">
-                  {canVideo ? "Pronto para começar" : "Aguardando horário"}
+                  {canVideo ? "Pronto para começar" : "Sessão encerrada"}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-warm-600">
                   {canVideo
                     ? "Clique no botão acima para entrar na sala e iniciar sua sessão."
-                    : `A sala de vídeo estará disponível ${ENTER_EARLY_MIN} minutos antes do horário agendado.`}
+                    : "Esta sessão já foi encerrada. Você será direcionado após finalizar a avaliação."}
                 </p>
+
+                {!canVideo && sessionLocked && (
+                  <button
+                    onClick={() => router.replace("/dashboard")}
+                    className="mt-6 inline-flex items-center justify-center rounded-xl bg-sage-500 px-6 py-3 text-sm font-semibold text-white shadow-soft-lg transition-all hover:bg-sage-600"
+                  >
+                    Ir para o Dashboard
+                  </button>
+                )}
 
                 {canVideo && (
                   <div className="mt-8 space-y-3 rounded-2xl bg-warm-50 p-6 text-left">
@@ -521,19 +555,6 @@ export default function ClienteSessaoPage() {
                     <CheckListItem text="Encontre um local tranquilo e privado" />
                     <CheckListItem text="Verifique sua câmera e microfone" />
                     <CheckListItem text="Mantenha uma conexão estável" />
-                  </div>
-                )}
-
-                {!canVideo && (
-                  <div className="mt-6 rounded-xl bg-warm-100 p-4">
-                    <p className="text-xs text-warm-600">
-                      A sessão inicia em {fmtTime(start)}. Você poderá entrar a
-                      partir de{" "}
-                      {fmtTime(
-                        new Date(start.getTime() - ENTER_EARLY_MIN * 60000),
-                      )}
-                      .
-                    </p>
                   </div>
                 )}
               </div>
@@ -594,7 +615,9 @@ export default function ClienteSessaoPage() {
               <div className="border-t-2 border-warm-200 bg-white p-4">
                 {!canChat ? (
                   <div className="rounded-xl bg-warm-50 p-3 text-center text-xs text-warm-600">
-                    Chat disponível apenas durante o horário da sessão.
+                    {sessionLocked
+                      ? "Sessão encerrada."
+                      : "Chat disponível apenas durante o horário da sessão."}
                   </div>
                 ) : (
                   <div className="flex items-end gap-3">
@@ -611,10 +634,11 @@ export default function ClienteSessaoPage() {
                             onSend();
                           }
                         }}
+                        disabled={sessionLocked}
                       />
                     </div>
                     <button
-                      disabled={chatBusy || !msg.trim()}
+                      disabled={sessionLocked || chatBusy || !msg.trim()}
                       onClick={onSend}
                       className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -693,9 +717,10 @@ export default function ClienteSessaoPage() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") onSend();
                     }}
+                    disabled={sessionLocked}
                   />
                   <button
-                    disabled={chatBusy || !msg.trim()}
+                    disabled={sessionLocked || chatBusy || !msg.trim()}
                     onClick={onSend}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sage-500 shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
                   >
@@ -723,7 +748,7 @@ export default function ClienteSessaoPage() {
       {room && (
         <ReviewModal
           isOpen={showReviewModal}
-          onClose={() => setShowReviewModal(false)}
+          onClose={finishAndGoDashboard}
           appointmentId={appointmentId}
           professionalId={room.profissional_id}
           userId={userInfo?.id || room.user_id}
