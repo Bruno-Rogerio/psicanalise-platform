@@ -120,11 +120,17 @@ export default function ClienteSessaoPage() {
         setLoading(true);
 
         // Busca dados do usuário logado
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        console.log("🔍 ANTES de getUser");
+        console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+        const { data: authData, error: authError } =
+          await supabase.auth.getUser();
+        const user = authData?.user;
 
         console.log("👤 Usuário autenticado:", user);
+        console.log("❌ Erro de autenticação:", authError);
+
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log("🍪 Session:", sessionData);
 
         if (user) {
           const { data: profile, error: profileError } = await supabase
