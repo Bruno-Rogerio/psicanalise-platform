@@ -183,10 +183,24 @@ export default function SessaoDetailPage() {
 
     setNotesBusy(true);
     try {
-      const { error } = await supabase.from("session_notes").upsert({
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr) throw sessErr;
+
+      const profId = sess.session?.user?.id;
+      if (!profId) throw new Error("Não autenticado");
+
+      const payload = {
         appointment_id: sessionId,
+        profissional_id: room?.professional?.id ?? profId,
+        user_id: room?.patient?.id, // obrigatório no schema
         ...notes,
-      });
+      };
+
+      if (!payload.user_id) {
+        throw new Error("Paciente não identificado para salvar o prontuário.");
+      }
+
+      const { error } = await supabase.from("session_notes").upsert(payload);
 
       if (error) throw error;
       alert("Prontuário salvo com sucesso!");
