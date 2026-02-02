@@ -1,7 +1,7 @@
 // src/app/profissional/configuracoes/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
 type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -38,12 +38,19 @@ const weekDayLabels: Record<WeekDay, string> = {
   6: "Sábado",
 };
 
+type TabKey = "availability" | "settings" | "profile";
+
+type BreakEditorState = {
+  index: number; // index in rules array
+  start: string;
+  end: string;
+  error?: string;
+} | null;
+
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "availability" | "settings" | "profile"
-  >("availability");
+  const [activeTab, setActiveTab] = useState<TabKey>("availability");
 
   // Availability
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
@@ -66,6 +73,9 @@ export default function ConfiguracoesPage() {
 
   const [profissionalId, setProfissionalId] = useState<string | null>(null);
 
+  // ✅ Pausa inline editor
+  const [breakEditor, setBreakEditor] = useState<BreakEditorState>(null);
+
   // Load data
   useEffect(() => {
     (async () => {
@@ -76,7 +86,7 @@ export default function ConfiguracoesPage() {
 
         setProfissionalId(auth.user.id);
 
-        // Load profile (only columns that exist)
+        // Load profile
         const { data: profileData } = await supabase
           .from("profiles")
           .select("nome, crp")
@@ -97,7 +107,7 @@ export default function ConfiguracoesPage() {
           });
         }
 
-        // Load settings (only columns that exist)
+        // Load settings
         const { data: settingsData } = await supabase
           .from("professional_settings")
           .select(
@@ -135,6 +145,7 @@ export default function ConfiguracoesPage() {
 
   // Add availability rule
   function addRule(weekday: WeekDay) {
+    setBreakEditor(null);
     setRules([
       ...rules,
       {
@@ -148,6 +159,7 @@ export default function ConfiguracoesPage() {
 
   // Remove availability rule
   function removeRule(index: number) {
+    setBreakEditor((cur) => (cur?.index === index ? null : cur));
     setRules(rules.filter((_, i) => i !== index));
   }
 
@@ -157,9 +169,123 @@ export default function ConfiguracoesPage() {
     field: keyof AvailabilityRule,
     value: string,
   ) {
-    const newRules = [...rules];
-    newRules[index] = { ...newRules[index], [field]: value };
-    setRules(newRules);
+    setRules((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+
+    // se estava editando pausa nessa regra, atualiza limites e limpa erro
+    setBreakEditor((cur) => {
+      if (!cur || cur.index !== index) return cur;
+      return { ...cur, error: undefined };
+    });
+  }
+
+  // ======= ✅ PAUSA / SPLIT INTELIGENTE =======
+
+  function openBreakEditor(index: number) {
+    const r = rules[index];
+    if (!r) return;
+
+    // default: 12:00-13:00 mas ajusta se ficar fora do range
+    const defaultStart = clampTime("12:00", r.start_time, r.end_time);
+    const defaultEnd = clampTime("13:00", r.start_time, r.end_time);
+
+    setBreakEditor({
+      index,
+      start: defaultStart,
+      end: defaultEnd,
+      error: undefined,
+    });
+  }
+
+  function closeBreakEditor() {
+    setBreakEditor(null);
+  }
+
+  function applyBreakSplit() {
+    if (!breakEditor) return;
+
+    const idx = breakEditor.index;
+    const r = rules[idx];
+    if (!r) return;
+
+    const breakStart = breakEditor.start;
+    const breakEnd = breakEditor.end;
+
+    // validações
+    if (!isTimeLess(breakStart, breakEnd)) {
+      setBreakEditor((cur) =>
+        cur
+          ? { ...cur, error: "A pausa precisa ter início antes do fim." }
+          : cur,
+      );
+      return;
+    }
+
+    // break precisa estar dentro do range original
+    // regra: start_time <= breakStart < breakEnd <= end_time
+    if (
+      isTimeLess(breakStart, r.start_time) ||
+      isTimeLess(r.end_time, breakEnd) ||
+      breakStart === r.end_time ||
+      breakEnd === r.start_time
+    ) {
+      setBreakEditor((cur) =>
+        cur
+          ? {
+              ...cur,
+              error:
+                "A pausa precisa estar dentro do intervalo do atendimento.",
+            }
+          : cur,
+      );
+      return;
+    }
+
+    // se pausa encosta no início ou no fim, vira apenas 1 segmento
+    const parts: AvailabilityRule[] = [];
+
+    if (isTimeLess(r.start_time, breakStart)) {
+      parts.push({
+        weekday: r.weekday,
+        appointment_type: r.appointment_type,
+        start_time: r.start_time,
+        end_time: breakStart,
+      });
+    }
+
+    if (isTimeLess(breakEnd, r.end_time)) {
+      parts.push({
+        weekday: r.weekday,
+        appointment_type: r.appointment_type,
+        start_time: breakEnd,
+        end_time: r.end_time,
+      });
+    }
+
+    if (parts.length === 0) {
+      setBreakEditor((cur) =>
+        cur
+          ? {
+              ...cur,
+              error:
+                "Essa pausa remove todo o intervalo. Ajuste os horários da pausa.",
+            }
+          : cur,
+      );
+      return;
+    }
+
+    // aplica split substituindo a regra original
+    setRules((prev) => {
+      const next = [...prev];
+      next.splice(idx, 1, ...parts);
+      return sortRules(next);
+    });
+
+    setBreakEditor(null);
   }
 
   // Save availability
@@ -168,6 +294,18 @@ export default function ConfiguracoesPage() {
 
     try {
       setSaving(true);
+
+      // fecha editor de pausa (evita estado confuso)
+      setBreakEditor(null);
+
+      // validações simples antes de salvar
+      for (const r of rules) {
+        if (!isTimeLess(r.start_time, r.end_time)) {
+          throw new Error(
+            `Existe um horário inválido em ${weekDayLabels[r.weekday]} (${r.start_time}–${r.end_time}).`,
+          );
+        }
+      }
 
       // Delete existing rules
       await supabase
@@ -251,6 +389,33 @@ export default function ConfiguracoesPage() {
     }
   }
 
+  const rulesByWeekday = useMemo(() => {
+    const map: Record<WeekDay, { rule: AvailabilityRule; index: number }[]> = {
+      0: [],
+      1: [],
+      2: [],
+      3: [],
+      4: [],
+      5: [],
+      6: [],
+    };
+    rules.forEach((r, index) => {
+      map[r.weekday].push({ rule: r, index });
+    });
+
+    // ordena por tipo e start_time (só pra ficar bonito e previsível)
+    (Object.keys(map) as unknown as WeekDay[]).forEach((wd) => {
+      map[wd].sort((a, b) => {
+        if (a.rule.appointment_type !== b.rule.appointment_type) {
+          return a.rule.appointment_type.localeCompare(b.rule.appointment_type);
+        }
+        return a.rule.start_time.localeCompare(b.rule.start_time);
+      });
+    });
+
+    return map;
+  }, [rules]);
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -300,7 +465,7 @@ export default function ConfiguracoesPage() {
                 Horários de Atendimento
               </h2>
               <p className="text-sm text-warm-500">
-                Defina os horários em que você está disponível para sessões
+                Defina o intervalo e adicione pausas dentro dele com um clique
               </p>
             </div>
             <button
@@ -344,7 +509,7 @@ export default function ConfiguracoesPage() {
           {/* Days */}
           <div className="mt-6 space-y-4">
             {([1, 2, 3, 4, 5, 6, 0] as WeekDay[]).map((weekday) => {
-              const dayRules = rules.filter((r) => r.weekday === weekday);
+              const dayRules = rulesByWeekday[weekday];
 
               return (
                 <div
@@ -359,61 +524,199 @@ export default function ConfiguracoesPage() {
                       onClick={() => addRule(weekday)}
                       className="text-sm font-medium text-[#4A7C59] hover:underline"
                     >
-                      + Adicionar horário
+                      + Adicionar intervalo
                     </button>
                   </div>
 
                   {dayRules.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      {rules.map((rule, index) => {
-                        if (rule.weekday !== weekday) return null;
+                    <div className="mt-3 space-y-3">
+                      {dayRules.map(({ rule, index }) => {
+                        const isEditingBreak = breakEditor?.index === index;
 
                         return (
                           <div
-                            key={index}
-                            className="flex flex-wrap items-center gap-3"
+                            key={`${weekday}-${index}`}
+                            className="rounded-xl border border-warm-200 bg-white p-3"
                           >
-                            <select
-                              value={rule.appointment_type}
-                              onChange={(e) =>
-                                updateRule(
-                                  index,
-                                  "appointment_type",
-                                  e.target.value,
-                                )
-                              }
-                              className={`rounded-lg border px-2 py-2 text-xs font-semibold outline-none ${
-                                rule.appointment_type === "video"
-                                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                                  : "border-indigo-200 bg-indigo-50 text-indigo-700"
-                              }`}
-                            >
-                              <option value="video">Vídeo</option>
-                              <option value="chat">Chat</option>
-                            </select>
-                            <input
-                              type="time"
-                              value={rule.start_time}
-                              onChange={(e) =>
-                                updateRule(index, "start_time", e.target.value)
-                              }
-                              className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                            />
-                            <span className="text-warm-500">até</span>
-                            <input
-                              type="time"
-                              value={rule.end_time}
-                              onChange={(e) =>
-                                updateRule(index, "end_time", e.target.value)
-                              }
-                              className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                            />
-                            <button
-                              onClick={() => removeRule(index)}
-                              className="rounded-lg bg-rose-100 p-2 text-rose-600 hover:bg-rose-200"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <select
+                                value={rule.appointment_type}
+                                onChange={(e) =>
+                                  updateRule(
+                                    index,
+                                    "appointment_type",
+                                    e.target.value,
+                                  )
+                                }
+                                className={`rounded-lg border px-2 py-2 text-xs font-semibold outline-none ${
+                                  rule.appointment_type === "video"
+                                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                                    : "border-indigo-200 bg-indigo-50 text-indigo-700"
+                                }`}
+                              >
+                                <option value="video">Vídeo</option>
+                                <option value="chat">Chat</option>
+                              </select>
+
+                              <input
+                                type="time"
+                                value={rule.start_time}
+                                onChange={(e) =>
+                                  updateRule(
+                                    index,
+                                    "start_time",
+                                    e.target.value,
+                                  )
+                                }
+                                className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
+                              />
+
+                              <span className="text-warm-500">até</span>
+
+                              <input
+                                type="time"
+                                value={rule.end_time}
+                                onChange={(e) =>
+                                  updateRule(index, "end_time", e.target.value)
+                                }
+                                className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
+                              />
+
+                              {/* ✅ Pausa inteligente */}
+                              <button
+                                onClick={() =>
+                                  isEditingBreak
+                                    ? closeBreakEditor()
+                                    : openBreakEditor(index)
+                                }
+                                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+                                  isEditingBreak
+                                    ? "bg-warm-200 text-warm-800"
+                                    : "bg-sage-100 text-sage-700 hover:bg-sage-200"
+                                }`}
+                              >
+                                {isEditingBreak ? "Fechar pausa" : "Pausa"}
+                              </button>
+
+                              <button
+                                onClick={() => removeRule(index)}
+                                className="ml-auto rounded-lg bg-rose-100 p-2 text-rose-600 hover:bg-rose-200"
+                                title="Remover intervalo"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            {/* Editor de pausa */}
+                            {isEditingBreak && breakEditor && (
+                              <div className="mt-3 rounded-xl border border-warm-200 bg-warm-50 p-3">
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <span className="text-sm font-semibold text-warm-700">
+                                    Bloquear intervalo:
+                                  </span>
+
+                                  <input
+                                    type="time"
+                                    value={breakEditor.start}
+                                    onChange={(e) =>
+                                      setBreakEditor((cur) =>
+                                        cur
+                                          ? {
+                                              ...cur,
+                                              start: e.target.value,
+                                              error: undefined,
+                                            }
+                                          : cur,
+                                      )
+                                    }
+                                    className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
+                                  />
+
+                                  <span className="text-warm-500">até</span>
+
+                                  <input
+                                    type="time"
+                                    value={breakEditor.end}
+                                    onChange={(e) =>
+                                      setBreakEditor((cur) =>
+                                        cur
+                                          ? {
+                                              ...cur,
+                                              end: e.target.value,
+                                              error: undefined,
+                                            }
+                                          : cur,
+                                      )
+                                    }
+                                    className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
+                                  />
+
+                                  {/* presets */}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                      onClick={() =>
+                                        setBreakEditor((cur) =>
+                                          cur
+                                            ? {
+                                                ...cur,
+                                                start: "12:00",
+                                                end: "13:00",
+                                                error: undefined,
+                                              }
+                                            : cur,
+                                        )
+                                      }
+                                      className="rounded-lg bg-white border border-warm-200 px-3 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
+                                    >
+                                      Almoço 12–13
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        setBreakEditor((cur) =>
+                                          cur
+                                            ? {
+                                                ...cur,
+                                                start: "11:00",
+                                                end: "12:00",
+                                                error: undefined,
+                                              }
+                                            : cur,
+                                        )
+                                      }
+                                      className="rounded-lg bg-white border border-warm-200 px-3 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
+                                    >
+                                      11–12
+                                    </button>
+                                  </div>
+
+                                  <div className="ml-auto flex items-center gap-2">
+                                    <button
+                                      onClick={closeBreakEditor}
+                                      className="rounded-lg bg-white border border-warm-200 px-4 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={applyBreakSplit}
+                                      className="rounded-lg bg-[#4A7C59] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3d6649]"
+                                    >
+                                      Aplicar pausa
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {breakEditor.error && (
+                                  <p className="mt-2 text-sm font-semibold text-rose-700">
+                                    {breakEditor.error}
+                                  </p>
+                                )}
+
+                                <p className="mt-2 text-xs text-warm-600">
+                                  Ao aplicar, o sistema divide automaticamente
+                                  seu intervalo em dois blocos.
+                                </p>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -438,7 +741,7 @@ export default function ConfiguracoesPage() {
                 Configurações de Sessão
               </h2>
               <p className="text-sm text-warm-500">
-                Defina duração e intervalos entre sessões
+                Defina duração e regras gerais
               </p>
             </div>
             <button
@@ -606,6 +909,42 @@ function PageSkeleton() {
       <div className="h-96 animate-pulse rounded-2xl bg-warm-200" />
     </div>
   );
+}
+
+// ======= helpers de horário (string HH:mm) =======
+
+function isTimeLess(a: string, b: string) {
+  return toMinutes(a) < toMinutes(b);
+}
+
+function toMinutes(t: string) {
+  const [hh, mm] = t.split(":").map((n) => parseInt(n, 10));
+  return hh * 60 + mm;
+}
+
+// garante que um time fique dentro do [min, max]
+function clampTime(t: string, min: string, max: string) {
+  const x = toMinutes(t);
+  const a = toMinutes(min);
+  const b = toMinutes(max);
+  const clamped = Math.max(a, Math.min(b, x));
+  const hh = String(Math.floor(clamped / 60)).padStart(2, "0");
+  const mm = String(clamped % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function sortRules(arr: AvailabilityRule[]) {
+  const next = [...arr];
+  next.sort((a, b) => {
+    if (a.weekday !== b.weekday) return a.weekday - b.weekday;
+    if (a.appointment_type !== b.appointment_type) {
+      return a.appointment_type.localeCompare(b.appointment_type);
+    }
+    if (a.start_time !== b.start_time)
+      return a.start_time.localeCompare(b.start_time);
+    return a.end_time.localeCompare(b.end_time);
+  });
+  return next;
 }
 
 // Icons
