@@ -1,4 +1,6 @@
 import "./globals.css";
+import Script from "next/script";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 export const metadata = {
   title: "Raiza Convento - Psicanalista",
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-warm-100 text-warm-900 antialiased">{children}</body>
+      <body className="bg-warm-100 text-warm-900 antialiased">
+        {children}
+
+        {/* Google Analytics GLOBAL */}
+        <GoogleAnalytics />
+      </body>
     </html>
   );
 }
