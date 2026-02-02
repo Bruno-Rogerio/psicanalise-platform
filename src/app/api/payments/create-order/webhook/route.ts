@@ -6,12 +6,26 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// ✅ Aceitar métodos auxiliares evita 405 em checks/HEAD/OPTIONS
+export async function GET() {
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
+
+export async function HEAD() {
+  return new Response(null, { status: 200 });
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 200 });
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  // Pode alinhar com o dashboard depois, mas isso não causa 405
   apiVersion: "2026-01-28.clover",
 });
 
@@ -27,7 +41,6 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event;
 
-  // ✅ 400 só para erro de assinatura (Stripe NÃO deve retentar isso se a config estiver errada)
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: any) {
@@ -38,7 +51,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // ✅ Aqui: se der erro no processamento, retornar 500 para Stripe retentar
   try {
     switch (event.type) {
       case "payment_intent.succeeded":
@@ -56,6 +68,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: any) {
     console.error("Webhook handler error:", err);
+    // ✅ 500 faz a Stripe retentar corretamente
     return NextResponse.json(
       { error: err?.message ?? "Webhook handler error" },
       { status: 500 },
@@ -65,12 +78,9 @@ export async function POST(request: Request) {
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   const orderId = paymentIntent.metadata?.order_id;
+  if (!orderId) throw new Error("No order_id in payment intent metadata");
 
-  if (!orderId) {
-    throw new Error("No order_id in payment intent metadata");
-  }
-
-  // ✅ Idempotência: se já está paid, não roda de novo
+  // Idempotência (se já pagou, não repete)
   const { data: existingOrder, error: readErr } = await supabase
     .from("orders")
     .select("id, status")
@@ -78,29 +88,23 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
     .maybeSingle();
 
   if (readErr) throw readErr;
-
-  if (!existingOrder) {
-    throw new Error(`Order not found: ${orderId}`);
-  }
+  if (!existingOrder) throw new Error(`Order not found: ${orderId}`);
 
   if (existingOrder.status === "paid") {
     console.log(`ℹ️ Order already paid, skipping: ${orderId}`);
     return;
   }
 
-  // 1) Atualiza order para paid
   const { error: updateError } = await supabase
     .from("orders")
     .update({
       status: "paid",
-      paid_at: new Date().toISOString(),
       stripe_payment_intent_id: paymentIntent.id,
     })
     .eq("id", orderId);
 
   if (updateError) throw updateError;
 
-  // 2) Adiciona créditos via RPC
   const { error: creditsError } = await supabase.rpc("add_credits_from_order", {
     p_order_id: orderId,
   });
@@ -112,17 +116,13 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   const orderId = paymentIntent.metadata?.order_id;
-
-  if (!orderId) {
-    throw new Error("No order_id in payment intent metadata");
-  }
+  if (!orderId) throw new Error("No order_id in payment intent metadata");
 
   const { error } = await supabase
     .from("orders")
     .update({
       status: "failed",
       stripe_payment_intent_id: paymentIntent.id,
-      failed_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 

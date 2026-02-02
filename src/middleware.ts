@@ -24,6 +24,7 @@ const PUBLIC_PREFIXES = [
   "/robots",
   "/sitemap",
   "/sessoes", // ⚠️ TEMPORÁRIO
+  "/api/payments/webhook",
 ];
 
 function isPublicPath(pathname: string): boolean {
