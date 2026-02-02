@@ -13,7 +13,7 @@ const PUBLIC_PATHS = [
   "/politica-de-privacidade",
   "/termos-de-uso",
   "/blog",
-  "/api/payments/webhook",
+  "/api/payments/create-order/webhook",
 ];
 
 // Rotas que começam com esses prefixos são sempre públicas
@@ -24,7 +24,7 @@ const PUBLIC_PREFIXES = [
   "/robots",
   "/sitemap",
   "/sessoes", // ⚠️ TEMPORÁRIO
-  "/api/payments/webhook",
+  "/api/payments/create-order/webhook",
 ];
 
 function isPublicPath(pathname: string): boolean {
