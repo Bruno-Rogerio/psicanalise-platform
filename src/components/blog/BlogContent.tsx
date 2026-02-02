@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import type { Components } from 'react-markdown';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
 
 interface BlogContentProps {
   content: string;
@@ -50,8 +50,8 @@ export function BlogContent({ content }: BlogContentProps) {
       <a
         href={href}
         className="text-sage-600 underline decoration-sage-300 underline-offset-4 transition-colors hover:text-sage-700 hover:decoration-sage-500"
-        target={href?.startsWith('http') ? '_blank' : undefined}
-        rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+        target={href?.startsWith("http") ? "_blank" : undefined}
+        rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
       >
         {children}
       </a>
@@ -60,13 +60,19 @@ export function BlogContent({ content }: BlogContentProps) {
       <strong className="font-semibold text-warm-900">{children}</strong>
     ),
     em: ({ children }) => <em className="italic text-warm-700">{children}</em>,
-    hr: () => (
-      <hr className="my-10 border-t border-warm-200" />
-    ),
+    hr: () => <hr className="my-10 border-t border-warm-200" />,
+
     img: ({ src, alt }) => {
-      // Verifica se é um link de vídeo do YouTube
-      if (src && (src.includes('youtube.com') || src.includes('youtu.be'))) {
-        const videoId = extractYouTubeId(src);
+      // ✅ react-markdown tipa src como string | Blob
+      // Para não quebrar o build (Vercel/SSR), normalizamos para string.
+      const srcStr = typeof src === "string" ? src : "";
+
+      // YouTube
+      if (
+        srcStr &&
+        (srcStr.includes("youtube.com") || srcStr.includes("youtu.be"))
+      ) {
+        const videoId = extractYouTubeId(srcStr);
         if (videoId) {
           return (
             <div className="my-8 aspect-video overflow-hidden rounded-2xl">
@@ -75,16 +81,16 @@ export function BlogContent({ content }: BlogContentProps) {
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                title={alt || 'Vídeo do YouTube'}
+                title={alt || "Vídeo do YouTube"}
               />
             </div>
           );
         }
       }
 
-      // Verifica se é um link de vídeo do Vimeo
-      if (src && src.includes('vimeo.com')) {
-        const videoId = extractVimeoId(src);
+      // Vimeo
+      if (srcStr && srcStr.includes("vimeo.com")) {
+        const videoId = extractVimeoId(srcStr);
         if (videoId) {
           return (
             <div className="my-8 aspect-video overflow-hidden rounded-2xl">
@@ -93,7 +99,7 @@ export function BlogContent({ content }: BlogContentProps) {
                 className="h-full w-full"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
-                title={alt || 'Vídeo do Vimeo'}
+                title={alt || "Vídeo do Vimeo"}
               />
             </div>
           );
@@ -103,11 +109,7 @@ export function BlogContent({ content }: BlogContentProps) {
       // Imagem normal
       return (
         <span className="my-8 block overflow-hidden rounded-2xl">
-          <img
-            src={src}
-            alt={alt || ''}
-            className="w-full object-cover"
-          />
+          <img src={srcStr} alt={alt || ""} className="w-full object-cover" />
           {alt && (
             <span className="mt-2 block text-center text-sm text-warm-500">
               {alt}
@@ -116,6 +118,7 @@ export function BlogContent({ content }: BlogContentProps) {
         </span>
       );
     },
+
     code: ({ className, children }) => {
       const isInline = !className;
       if (isInline) {
@@ -131,6 +134,7 @@ export function BlogContent({ content }: BlogContentProps) {
         </code>
       );
     },
+
     pre: ({ children }) => (
       <pre className="my-6 overflow-hidden rounded-xl">{children}</pre>
     ),
