@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/politica-de-privacidade",
   "/termos-de-uso",
+  "/blog",
 ];
 
 // Rotas que começam com esses prefixos são sempre públicas
