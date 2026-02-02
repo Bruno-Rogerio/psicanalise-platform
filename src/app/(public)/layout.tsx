@@ -1,6 +1,7 @@
 import PublicHeader from "@/components/layout/PublicHeader";
 import PublicFooter from "@/components/layout/PublicFooter";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import EmailButton from "@/components/layout/EmailButton";
 
 export default function PublicLayout({
   children,
@@ -13,6 +14,7 @@ export default function PublicLayout({
       <main className="min-h-[calc(100vh-8rem)]">{children}</main>
       <PublicFooter />
       <WhatsAppButton />
+      <EmailButton />
     </div>
   );
 }

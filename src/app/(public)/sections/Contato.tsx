@@ -21,7 +21,7 @@ export function Contato() {
         <ContactCard
           icon={<PhoneIcon />}
           title="WhatsApp"
-          value="(11) 96302-7847"
+          value="(11) 91329-9115"
           hint="Seg a Sex • 9h às 18h"
           gradient="from-sage-400/15 to-sage-500/10"
         />
