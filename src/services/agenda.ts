@@ -131,7 +131,8 @@ export async function getBookedAppointments(
     .select("id,profissional_id,start_at,end_at,status,appointment_type")
     .eq("profissional_id", professionalId)
     .in("status", ["scheduled", "rescheduled"])
-    .gte("start_at", fromISO)
+    // ✅ pega tudo que sobrepõe [fromISO, toISO]
+    .gte("end_at", fromISO)
     .lte("start_at", toISO);
 
   if (error) throw new Error(error.message);
@@ -207,7 +208,6 @@ export function generateSlotsForDay(params: {
     .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
 
   const bookedRanges = booked
-    .filter((a) => a.appointment_type === type)
     .map((a) => ({ start: new Date(a.start_at), end: new Date(a.end_at) }))
     .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
 

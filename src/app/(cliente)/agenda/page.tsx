@@ -55,6 +55,9 @@ export default function AgendaPage() {
     return 1;
   }, [type, selectedDay, pickedSlot]);
 
+  // ✅ helper: quando precisa comprar créditos
+  const needsCredits = !!type && credits.available === 0;
+
   // Load initial data
   useEffect(() => {
     (async () => {
@@ -105,8 +108,12 @@ export default function AgendaPage() {
       const bal = await getCreditsBalance(professionalId, type);
       setCredits(bal);
 
+      await refreshBooked();
+
       setPickedSlot(null);
+      setSelectedDay(new Date());
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [professionalId, type]);
 
   // Generate slots for selected day
@@ -162,11 +169,29 @@ export default function AgendaPage() {
     }
   }
 
-  async function loadCreditsBalance() {
-    if (!professionalId || !type) return;
+  async function loadCreditsBalance(t?: AppointmentType) {
+    if (!professionalId) return;
 
-    const balance = await getCreditsBalance(professionalId, type);
+    const effectiveType = t ?? type;
+    if (!effectiveType) return;
+
+    const balance = await getCreditsBalance(professionalId, effectiveType);
     setCredits(balance);
+  }
+
+  async function refreshBooked() {
+    if (!professionalId) return;
+
+    const from = startOfDay(new Date());
+    const to = addDays(from, 45);
+
+    const a = await getBookedAppointments(
+      professionalId,
+      from.toISOString(),
+      to.toISOString(),
+    );
+
+    setBooked(a);
   }
 
   async function onUseCredit() {
@@ -189,6 +214,30 @@ export default function AgendaPage() {
 
       router.push("/minhas-sessoes?success=1");
     } catch (e: any) {
+      const msg = String(e?.message ?? "");
+
+      // ✅ conflito de agenda (alguém pegou antes / overlap)
+      if (msg.includes("SLOT_TAKEN")) {
+        alert("Esse horário acabou de ser reservado. Escolha outro.");
+
+        await refreshBooked();
+        setPickedSlot(null);
+
+        await loadCreditsBalance(pickedSlot.appointment_type);
+        return;
+      }
+
+      if (msg.includes("NO_CREDITS")) {
+        alert("Você não tem créditos disponíveis para agendar.");
+        await loadCreditsBalance(pickedSlot.appointment_type);
+        return;
+      }
+
+      if (msg.includes("NOT_AUTHENTICATED")) {
+        alert("Você precisa estar logado.");
+        return;
+      }
+
       alert(e?.message ?? "Erro ao agendar.");
     } finally {
       setConfirming(false);
@@ -338,7 +387,9 @@ export default function AgendaPage() {
               isCompleted={currentStep > 2}
               selectedValue={
                 pickedSlot
-                  ? `${fmtDateFull(pickedSlot.start)} às ${fmtTime(pickedSlot.start)}`
+                  ? `${fmtDateFull(pickedSlot.start)} às ${fmtTime(
+                      pickedSlot.start,
+                    )}`
                   : null
               }
               onEdit={() => resetToStep(2)}
@@ -418,7 +469,7 @@ export default function AgendaPage() {
                 <span className="text-warm-500">sessão(ões)</span>
               </div>
 
-              {credits.available === 0 && (
+              {needsCredits && (
                 <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3">
                   <p className="text-sm font-medium text-amber-800">
                     ⚠️ Você precisa de créditos para agendar
@@ -428,8 +479,8 @@ export default function AgendaPage() {
             </div>
           </div>
 
-          {/* ===== SEÇÃO: COMPRAR CRÉDITOS ===== */}
-          {credits.available === 0 && type && (
+          {/* ✅ Compra de créditos aparece UMA vez só (sem duplicar no resumo) */}
+          {needsCredits && type && (
             <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
@@ -446,9 +497,10 @@ export default function AgendaPage() {
               <BuyCreditsSection
                 professionalId={professionalId!}
                 appointmentType={type}
-                onCreditsUpdated={() => {
-                  // Recarrega créditos após compra
-                  loadCreditsBalance();
+                onCreditsUpdated={async () => {
+                  await loadCreditsBalance(type);
+                  // opcional: recarrega agenda (se sua compra liberar algo no fluxo)
+                  await refreshBooked();
                 }}
               />
             </div>
@@ -511,36 +563,42 @@ export default function AgendaPage() {
 
               {/* Botões de Ação */}
               <div className="mt-6 space-y-3">
-                {credits.available > 0 ? (
-                  <button
-                    onClick={onUseCredit}
-                    disabled={confirming}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#4A7C59] px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-[#3d6649] hover:shadow-xl disabled:opacity-60"
-                  >
-                    {confirming ? (
-                      <>
-                        <LoadingSpinner />
-                        <span>Confirmando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircleIcon className="h-6 w-6" />
-                        <span>Confirmar Sessão</span>
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="rounded-xl bg-rose-50 p-4">
-                    <p className="mb-3 text-sm font-semibold text-rose-900">
-                      Você não tem créditos disponíveis
+                {/* ✅ aqui NÃO duplica mais compra; só confirma (ou explica que precisa comprar acima) */}
+                <button
+                  onClick={onUseCredit}
+                  disabled={confirming || needsCredits}
+                  className={`flex w-full items-center justify-center gap-3 rounded-xl px-6 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 disabled:opacity-60 ${
+                    needsCredits
+                      ? "bg-warm-400"
+                      : "bg-[#4A7C59] hover:bg-[#3d6649] hover:shadow-xl"
+                  }`}
+                >
+                  {confirming ? (
+                    <>
+                      <LoadingSpinner />
+                      <span>Confirmando...</span>
+                    </>
+                  ) : needsCredits ? (
+                    <>
+                      <AlertIcon className="h-6 w-6" />
+                      <span>Compre créditos para confirmar</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-6 w-6" />
+                      <span>Confirmar Sessão</span>
+                    </>
+                  )}
+                </button>
+
+                {needsCredits && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm font-semibold text-amber-900">
+                      Você está sem créditos.
                     </p>
-                    <BuyCreditsSection
-                      professionalId={professionalId!}
-                      appointmentType={pickedSlot!.appointment_type}
-                      onCreditsUpdated={() => {
-                        loadCreditsBalance();
-                      }}
-                    />
+                    <p className="mt-1 text-sm text-amber-800">
+                      Compre um pacote acima e depois confirme este horário.
+                    </p>
                   </div>
                 )}
 
@@ -607,7 +665,9 @@ function StepBubble({
     <button
       onClick={canClick ? onClick : undefined}
       disabled={disabled || !canClick}
-      className={`flex flex-col items-center gap-2 ${canClick ? "cursor-pointer" : "cursor-default"}`}
+      className={`flex flex-col items-center gap-2 ${
+        canClick ? "cursor-pointer" : "cursor-default"
+      }`}
     >
       {/* Círculo */}
       <div
