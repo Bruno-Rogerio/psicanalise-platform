@@ -275,7 +275,7 @@ export async function getCreditsBalance(
     .eq("user_id", userId)
     .eq("profissional_id", profissionalId)
     .eq("appointment_type", type)
-    .single();
+    .maybeSingle();
 
   if (error) {
     // se não existir linha, saldo = 0

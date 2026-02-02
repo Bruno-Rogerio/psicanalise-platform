@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   "/politica-de-privacidade",
   "/termos-de-uso",
   "/blog",
+  "/api/payments/webhook",
 ];
 
 // Rotas que começam com esses prefixos são sempre públicas
