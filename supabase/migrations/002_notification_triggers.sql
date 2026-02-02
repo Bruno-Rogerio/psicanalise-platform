@@ -13,6 +13,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_client_name TEXT;
+  v_appointment_type_raw TEXT;
   v_appointment_type TEXT;
   v_start_formatted TEXT;
 BEGIN
@@ -21,11 +22,14 @@ BEGIN
   FROM public.profiles
   WHERE id = NEW.user_id;
 
-  -- Formata tipo de sessão
-  v_appointment_type := CASE NEW.appointment_type
+  -- Converte ENUM para TEXT primeiro
+  v_appointment_type_raw := NEW.appointment_type::TEXT;
+
+  -- Formata tipo de sessão para exibição
+  v_appointment_type := CASE v_appointment_type_raw
     WHEN 'video' THEN 'Videochamada'
     WHEN 'chat' THEN 'Chat'
-    ELSE NEW.appointment_type
+    ELSE v_appointment_type_raw
   END;
 
   -- Formata data/hora
@@ -44,7 +48,7 @@ BEGIN
     jsonb_build_object(
       'appointment_id', NEW.id,
       'client_name', v_client_name,
-      'appointment_type', NEW.appointment_type,
+      'appointment_type', v_appointment_type_raw,
       'start_at', NEW.start_at,
       'link', '/profissional/sessoes/' || NEW.id
     )
@@ -60,7 +64,7 @@ BEGIN
       v_start_formatted),
     jsonb_build_object(
       'appointment_id', NEW.id,
-      'appointment_type', NEW.appointment_type,
+      'appointment_type', v_appointment_type_raw,
       'start_at', NEW.start_at,
       'link', '/sessoes/' || NEW.id
     )

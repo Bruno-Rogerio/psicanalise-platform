@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" diff 50f4071..920098e -- \"src/app/\\(cliente\\)/sessoes/[id]/page.tsx\")",
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" diff 50f4071 920098e)",
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" log --oneline HEAD~10..HEAD)",
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" show fa81ebc --stat)",
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" diff HEAD~1 HEAD -- src/app/\\\\\\(cliente\\\\\\)/sessoes/[id]/page.tsx)",
+      "Bash(git -C \"C:\\\\Users\\\\raiza\\\\OneDrive\\\\Área de Trabalho\\\\psicanalise-platform\" log --all --oneline --grep=\"login\")",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: implementar sistema de notificações em tempo real\n\n- Criar tabela notifications com RLS e Supabase Realtime\n- Adicionar tipos TypeScript para notificações\n- Criar serviço de notificações \\(CRUD + Realtime subscriptions\\)\n- Implementar NotificationContext para estado global\n- Criar hook useNotifications\n- Criar componentes: NotificationBell, NotificationDropdown, NotificationItem\n- Integrar notificações nos layouts cliente e profissional\n- Adicionar triggers SQL para: agendamentos, cancelamentos, reagendamentos, PIX validado\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(find:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
