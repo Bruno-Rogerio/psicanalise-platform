@@ -1,15 +1,15 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import { useState } from "react";
 
 export default function CadastroPage() {
   const router = useRouter();
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{
@@ -18,71 +18,42 @@ export default function CadastroPage() {
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect para dashboard do cliente (não profissional!)
-  const redirectTo = useMemo(() => {
-    if (typeof window === "undefined") return undefined;
-    return `${window.location.origin}/auth/callback?next=/dashboard`;
-  }, []);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: { nome },
-        },
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, senha, phone }),
       });
 
-      if (error) {
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
         setLoading(false);
-
-        // Mensagens de erro mais amigáveis
-        if (error.message.includes("already registered")) {
-          setMsg({
-            type: "error",
-            text: "Este email já está cadastrado. Tente fazer login.",
-          });
-        } else if (error.message.includes("password")) {
-          setMsg({
-            type: "error",
-            text: "A senha deve ter pelo menos 6 caracteres.",
-          });
-        } else {
-          setMsg({
-            type: "error",
-            text: "Não foi possível criar sua conta. Verifique os dados e tente novamente.",
-          });
-        }
+        setMsg({
+          type: "error",
+          text:
+            data?.error ||
+            "NÃ£o foi possÃ­vel criar sua conta. Verifique os dados e tente novamente.",
+        });
         return;
-      }
-
-      // Cria profile se tiver sessão imediatamente
-      if (data.user) {
-        await supabase.from("profiles").upsert(
-          {
-            id: data.user.id,
-            nome,
-            role: "cliente",
-          },
-          { onConflict: "id" },
-        );
       }
 
       setLoading(false);
       setMsg({
         type: "success",
-        text: "Conta criada com sucesso! Verifique seu email para confirmar o cadastro.",
+        text: data?.emailSent
+          ? "Conta criada com sucesso! Verifique seu email para confirmar o cadastro."
+          : "Conta criada! NÃ£o conseguimos enviar o email agora. Tente reenviar a verificaÃ§Ã£o.",
       });
 
       // Aguarda um pouco antes de redirecionar
       setTimeout(() => {
-        router.push("/login");
+        router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
       }, 2000);
     } catch (err) {
       setLoading(false);
@@ -98,7 +69,7 @@ export default function CadastroPage() {
           Criar sua conta
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Um primeiro passo simples. A psicanálise acontece no seu tempo.
+          Um primeiro passo simples. A psicanÃ¡lise acontece no seu tempo.
         </p>
       </div>
 
@@ -113,7 +84,7 @@ export default function CadastroPage() {
             className="mt-2 w-full rounded-xl border border-warm-300/60 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition-all duration-300 placeholder:text-warm-400 focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Como você gostaria de ser chamado(a)?"
+            placeholder="Como vocÃª gostaria de ser chamado(a)?"
             required
             autoComplete="name"
           />
@@ -135,6 +106,21 @@ export default function CadastroPage() {
           />
         </div>
 
+        {/* Telefone (opcional) */}
+        <div>
+          <label className="block text-sm font-medium text-warm-900">
+            Telefone (opcional)
+          </label>
+          <input
+            className="mt-2 w-full rounded-xl border border-warm-300/60 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition-all duration-300 placeholder:text-warm-400 focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(11) 99999-9999"
+            autoComplete="tel"
+          />
+        </div>
+
         {/* Senha */}
         <div>
           <label className="block text-sm font-medium text-warm-900">
@@ -146,7 +132,7 @@ export default function CadastroPage() {
               type={showPassword ? "text" : "password"}
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="MÃ­nimo 6 caracteres"
               required
               minLength={6}
               autoComplete="new-password"
@@ -205,7 +191,7 @@ export default function CadastroPage() {
 
         {/* Link para login */}
         <p className="pt-2 text-center text-sm text-muted">
-          Já tem conta?{" "}
+          JÃ¡ tem conta?{" "}
           <Link
             href="/login"
             className="font-medium text-sage-600 transition-colors duration-300 hover:text-sage-700"
@@ -316,3 +302,4 @@ function LoadingSpinner() {
     </svg>
   );
 }
+

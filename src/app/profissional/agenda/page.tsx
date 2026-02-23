@@ -4,6 +4,19 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
 import { CalendarMonth } from "@/components/shared/agenda/CalendarMonth";
+import {
+  getBlocks,
+  getBookedAppointments,
+  getRules,
+  getSettings,
+  generateSlotsForDayWithStatus,
+  type Appointment as BookedAppointment,
+  type AppointmentType,
+  type AvailabilityBlock,
+  type AvailabilityRule,
+  type ProfessionalSettings,
+  type SlotWithStatus,
+} from "@/services/agenda";
 
 type AppointmentStatus =
   | "scheduled"
@@ -27,6 +40,14 @@ export default function ProfissionalAgendaPage() {
   const [month, setMonth] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [busy, setBusy] = useState<string | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<ProfessionalSettings | null>(null);
+  const [rules, setRules] = useState<AvailabilityRule[]>([]);
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [booked, setBooked] = useState<BookedAppointment[]>([]);
+  const [slotType, setSlotType] = useState<AppointmentType>("video");
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [toggleBusy, setToggleBusy] = useState<string | null>(null);
 
   // Load appointments
   useEffect(() => {
@@ -35,6 +56,7 @@ export default function ProfissionalAgendaPage() {
         setLoading(true);
         const { data: auth } = await supabase.auth.getUser();
         if (!auth.user?.id) return;
+        setProfessionalId(auth.user.id);
 
         const { data, error } = await supabase
           .from("appointments")
@@ -64,6 +86,47 @@ export default function ProfissionalAgendaPage() {
       }
     })();
   }, []);
+
+  // Load settings and rules
+  useEffect(() => {
+    if (!professionalId) return;
+
+    (async () => {
+      try {
+        const [s, r] = await Promise.all([
+          getSettings(professionalId),
+          getRules(professionalId),
+        ]);
+        setSettings(s);
+        setRules(r);
+      } catch {
+        // silent
+      }
+    })();
+  }, [professionalId]);
+
+  // Load blocks and booked slots for selected day
+  useEffect(() => {
+    if (!professionalId || !selectedDay) return;
+
+    (async () => {
+      setSlotsLoading(true);
+      try {
+        const from = startOfDay(selectedDay);
+        const to = endOfDay(selectedDay);
+
+        const [b, a] = await Promise.all([
+          getBlocks(professionalId, from.toISOString(), to.toISOString()),
+          getBookedAppointments(professionalId, from.toISOString(), to.toISOString()),
+        ]);
+
+        setBlocks(b);
+        setBooked(a);
+      } finally {
+        setSlotsLoading(false);
+      }
+    })();
+  }, [professionalId, selectedDay]);
 
   // Group sessions by day
   const sessionsByDay = useMemo(() => {
@@ -105,6 +168,18 @@ export default function ProfissionalAgendaPage() {
     return { scheduled, completed, cancelled, total: selectedSessions.length };
   }, [selectedSessions]);
 
+  const daySlots = useMemo(() => {
+    if (!settings || !selectedDay) return [];
+    return generateSlotsForDayWithStatus({
+      day: selectedDay,
+      type: slotType,
+      rules,
+      settings,
+      blocks,
+      booked,
+    });
+  }, [settings, selectedDay, slotType, rules, blocks, booked]);
+
   // Update status
   async function updateStatus(id: string, status: AppointmentStatus) {
     try {
@@ -123,6 +198,62 @@ export default function ProfissionalAgendaPage() {
       alert(e?.message ?? "Erro ao atualizar.");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function toggleSlot(slot: SlotWithStatus) {
+    if (!professionalId) return;
+    if (slot.status === "booked" || slot.status === "past") return;
+
+    const key = slot.start.toISOString();
+    const startISO = slot.start.toISOString();
+    const endISO = slot.end.toISOString();
+
+    try {
+      setToggleBusy(key);
+
+      if (slot.status === "blocked") {
+        const existing = blocks.find(
+          (b) => b.start_at === startISO && b.end_at === endISO,
+        );
+
+        const { error } = existing
+          ? await supabase
+              .from("availability_blocks")
+              .delete()
+              .eq("id", existing.id)
+          : await supabase
+              .from("availability_blocks")
+              .delete()
+              .eq("profissional_id", professionalId)
+              .eq("start_at", startISO)
+              .eq("end_at", endISO);
+
+        if (error) throw error;
+
+        setBlocks((prev) =>
+          prev.filter(
+            (b) => !(b.start_at === startISO && b.end_at === endISO),
+          ),
+        );
+      } else {
+        const { data, error } = await supabase
+          .from("availability_blocks")
+          .insert({
+            profissional_id: professionalId,
+            start_at: startISO,
+            end_at: endISO,
+          })
+          .select("id,profissional_id,start_at,end_at")
+          .single();
+
+        if (error) throw error;
+        if (data) setBlocks((prev) => [...prev, data as AvailabilityBlock]);
+      }
+    } catch (e: any) {
+      alert(e?.message ?? "Erro ao atualizar disponibilidade.");
+    } finally {
+      setToggleBusy(null);
     }
   }
 
@@ -236,6 +367,61 @@ export default function ProfissionalAgendaPage() {
                   />
                 ))
               )}
+            </div>
+          </div>
+
+          {/* Daily Availability */}
+          <div className="mt-4 rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-warm-900">
+                  Disponibilidade do dia
+                </p>
+                <p className="text-xs text-warm-500">
+                  Clique no horÃ¡rio para bloquear ou liberar
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-warm-200 bg-warm-50 p-1">
+                <button
+                  onClick={() => setSlotType("video")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    slotType === "video"
+                      ? "bg-rose-100 text-rose-700"
+                      : "text-warm-600 hover:text-warm-900"
+                  }`}
+                >
+                  VÃ­deo
+                </button>
+                <button
+                  onClick={() => setSlotType("chat")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    slotType === "chat"
+                      ? "bg-indigo-100 text-indigo-700"
+                      : "text-warm-600 hover:text-warm-900"
+                  }`}
+                >
+                  Chat
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              {slotsLoading ? (
+                <SlotsSkeleton />
+              ) : (
+                <SlotsStatusGrid
+                  slots={daySlots}
+                  onToggle={toggleSlot}
+                  busyKey={toggleBusy}
+                />
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3 text-xs text-warm-600">
+              <LegendDot color="bg-sage-500" label="DisponÃ­vel" />
+              <LegendDot color="bg-warm-400" label="IndisponÃ­vel" />
+              <LegendDot color="bg-amber-500" label="Agendado" />
+              <LegendDot color="bg-warm-200" label="Passado" />
             </div>
           </div>
 
@@ -422,6 +608,170 @@ function SessionsSkeleton() {
       ))}
     </div>
   );
+}
+
+function SlotsStatusGrid({
+  slots,
+  onToggle,
+  busyKey,
+}: {
+  slots: SlotWithStatus[];
+  onToggle: (slot: SlotWithStatus) => void;
+  busyKey: string | null;
+}) {
+  const grouped = useMemo(() => {
+    const morning: SlotWithStatus[] = [];
+    const afternoon: SlotWithStatus[] = [];
+    const evening: SlotWithStatus[] = [];
+
+    for (const slot of slots) {
+      const hour = slot.start.getHours();
+      if (hour < 12) {
+        morning.push(slot);
+      } else if (hour < 18) {
+        afternoon.push(slot);
+      } else {
+        evening.push(slot);
+      }
+    }
+
+    return { morning, afternoon, evening };
+  }, [slots]);
+
+  if (!slots.length) {
+    return (
+      <div className="rounded-xl border border-warm-200 bg-warm-50 p-6 text-center text-sm text-warm-600">
+        Sem horÃ¡rios para este dia
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {grouped.morning.length > 0 && (
+        <SlotStatusGroup
+          title="ManhÃ£"
+          slots={grouped.morning}
+          onToggle={onToggle}
+          busyKey={busyKey}
+        />
+      )}
+      {grouped.afternoon.length > 0 && (
+        <SlotStatusGroup
+          title="Tarde"
+          slots={grouped.afternoon}
+          onToggle={onToggle}
+          busyKey={busyKey}
+        />
+      )}
+      {grouped.evening.length > 0 && (
+        <SlotStatusGroup
+          title="Noite"
+          slots={grouped.evening}
+          onToggle={onToggle}
+          busyKey={busyKey}
+        />
+      )}
+    </div>
+  );
+}
+
+function SlotStatusGroup({
+  title,
+  slots,
+  onToggle,
+  busyKey,
+}: {
+  title: string;
+  slots: SlotWithStatus[];
+  onToggle: (slot: SlotWithStatus) => void;
+  busyKey: string | null;
+}) {
+  const statusStyles: Record<string, string> = {
+    available:
+      "border-sage-300 bg-white text-warm-800 hover:border-sage-400 hover:bg-sage-50",
+    blocked: "border-warm-300 bg-warm-100 text-warm-600 line-through",
+    booked: "border-amber-200 bg-amber-50 text-amber-700 cursor-not-allowed",
+    past: "border-warm-200 bg-warm-100 text-warm-400 cursor-not-allowed",
+  };
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-warm-600">
+          {title}
+        </span>
+        <span className="rounded-full bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-600">
+          {slots.length}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+        {slots.map((slot) => {
+          const key = slot.start.toISOString();
+          const isDisabled =
+            slot.status === "booked" ||
+            slot.status === "past" ||
+            busyKey === key;
+
+          return (
+            <button
+              key={key}
+              onClick={() => !isDisabled && onToggle(slot)}
+              disabled={isDisabled}
+              className={`rounded-xl border-2 px-3 py-2 text-sm font-bold transition-all duration-200 ${
+                statusStyles[slot.status]
+              } ${isDisabled ? "opacity-70" : ""}`}
+              title={
+                slot.status === "blocked"
+                  ? "Clique para liberar"
+                  : slot.status === "available"
+                    ? "Clique para bloquear"
+                    : undefined
+              }
+            >
+              {fmtTime(slot.start)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function SlotsSkeleton() {
+  return (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="h-10 animate-pulse rounded-xl bg-warm-200" />
+      ))}
+    </div>
+  );
+}
+
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 // Icons

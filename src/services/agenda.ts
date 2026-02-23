@@ -58,6 +58,12 @@ export type Slot = {
   appointment_type: AppointmentType;
 };
 
+export type SlotStatus = "available" | "blocked" | "booked" | "past";
+
+export type SlotWithStatus = Slot & {
+  status: SlotStatus;
+};
+
 export async function getProfessional(): Promise<Professional> {
   const { data, error } = await supabase
     .from("profiles")
@@ -256,6 +262,90 @@ export function generateSlotsForDay(params: {
   // remove duplicados quando existir regra repetida
   const unique = new Map<string, Slot>();
   for (const s of slots) unique.set(s.start.toISOString(), s);
+  return Array.from(unique.values()).sort(
+    (a, b) => a.start.getTime() - b.start.getTime(),
+  );
+}
+
+export function generateSlotsForDayWithStatus(params: {
+  day: Date;
+  type: AppointmentType;
+  rules: AvailabilityRule[];
+  settings: ProfessionalSettings;
+  blocks: AvailabilityBlock[];
+  booked: Appointment[];
+}): SlotWithStatus[] {
+  const { day, type, rules, settings, blocks, booked } = params;
+
+  const weekday = day.getDay(); // 0-6
+  const durationMin =
+    type === "video"
+      ? settings.session_duration_video_min
+      : settings.session_duration_chat_min;
+
+  const dayRules = rules.filter(
+    (r) => r.weekday === weekday && r.appointment_type === type && r.is_active,
+  );
+
+  if (!dayRules.length) return [];
+
+  const dayStart = startOfDay(day);
+  const dayEnd = endOfDay(day);
+
+  const blockRanges = blocks
+    .map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }))
+    .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
+
+  const bookedRanges = booked
+    .map((a) => ({ start: new Date(a.start_at), end: new Date(a.end_at) }))
+    .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
+
+  const slots: SlotWithStatus[] = [];
+
+  for (const r of dayRules) {
+    const { h: sh, m: sm } = parseTimeToHM(r.start_time);
+    const { h: eh, m: em } = parseTimeToHM(r.end_time);
+
+    const windowStart = new Date(day);
+    windowStart.setHours(sh, sm, 0, 0);
+
+    const windowEnd = new Date(day);
+    windowEnd.setHours(eh, em, 0, 0);
+
+    const stepMin = 10;
+
+    for (
+      let cursor = new Date(windowStart);
+      cursor < windowEnd;
+      cursor = new Date(cursor.getTime() + stepMin * 60000)
+    ) {
+      const slotStart = cursor;
+      const slotEnd = new Date(slotStart.getTime() + durationMin * 60000);
+
+      if (slotEnd > windowEnd) continue;
+
+      const isBooked = bookedRanges.some((b) =>
+        overlaps(slotStart, slotEnd, b.start, b.end),
+      );
+
+      const isPast = slotStart.getTime() < Date.now();
+
+      const isBlocked = blockRanges.some((b) =>
+        overlaps(slotStart, slotEnd, b.start, b.end),
+      );
+
+      let status: SlotStatus = "available";
+      if (isBooked) status = "booked";
+      else if (isPast) status = "past";
+      else if (isBlocked) status = "blocked";
+
+      slots.push({ start: slotStart, end: slotEnd, appointment_type: type, status });
+    }
+  }
+
+  const unique = new Map<string, SlotWithStatus>();
+  for (const s of slots) unique.set(s.start.toISOString(), s);
+
   return Array.from(unique.values()).sort(
     (a, b) => a.start.getTime() - b.start.getTime(),
   );

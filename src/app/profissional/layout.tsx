@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -12,13 +12,14 @@ const navItems = [
   { label: "Dashboard", href: "/profissional", icon: DashboardIcon },
   { label: "Agenda", href: "/profissional/agenda", icon: CalendarIcon },
   { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
-  { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
+  { label: "Usuarios", href: "/profissional/usuarios", icon: UsersIcon },
+  { label: "SessÃµes", href: "/profissional/sessoes", icon: VideoIcon },
   { label: "Financeiro", href: "/profissional/financeiro", icon: WalletIcon },
   { label: "Produtos", href: "/profissional/produtos", icon: PackageIcon },
   { label: "Blog", href: "/profissional/blog", icon: BlogIcon },
   { label: "Validar PIX", href: "/profissional/pagamentos-pix", icon: PixIcon },
   {
-    label: "Configurações",
+    label: "ConfiguraÃ§Ãµes",
     href: "/profissional/configuracoes",
     icon: SettingsIcon,
   },
@@ -64,7 +65,7 @@ export function PendingPixAlert() {
             {count > 1 ? "s" : ""}
           </p>
           <p className="mt-1 text-sm text-amber-700">
-            Clique para validar e liberar créditos dos clientes
+            Clique para validar e liberar crÃ©ditos dos clientes
           </p>
         </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-sm font-bold text-white">
@@ -133,7 +134,7 @@ export default function ProfissionalLayout({
           <Link href="/profissional" className="group flex items-center gap-3">
             <Image
               src="/logo.png"
-              alt="Raiza Convento Psicanálise"
+              alt="Raiza Convento PsicanÃ¡lise"
               width={180}
               height={54}
               priority
@@ -291,8 +292,8 @@ export default function ProfissionalLayout({
         {/* Footer */}
         <footer className="border-t border-warm-200/60 bg-white/60 px-4 py-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-2 text-xs text-warm-500 sm:flex-row">
-            <p>Sigilo e ética profissional em todas as sessões</p>
-            <p>© {new Date().getFullYear()} • Raiza Convento - Psicanalista</p>
+            <p>Sigilo e Ã©tica profissional em todas as sessÃµes</p>
+            <p>Â© {new Date().getFullYear()} â€¢ Raiza Convento - Psicanalista</p>
           </div>
         </footer>
       </div>

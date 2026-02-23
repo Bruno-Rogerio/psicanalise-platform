@@ -36,11 +36,23 @@ function LoginForm() {
       // Busca role no profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role,status,email_verified_at,deleted_at")
         .eq("id", data.user.id)
         .single();
 
       setLoading(false);
+
+      if (profile?.status === "blocked" || profile?.deleted_at) {
+        await supabase.auth.signOut();
+        setErro("Sua conta estÃ¡ bloqueada. Entre em contato para mais informaÃ§Ãµes.");
+        return;
+      }
+
+      if (!profile?.email_verified_at || profile?.status === "pending_email") {
+        await supabase.auth.signOut();
+        router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
 
       // Redireciona baseado no role ou para URL salva
       if (

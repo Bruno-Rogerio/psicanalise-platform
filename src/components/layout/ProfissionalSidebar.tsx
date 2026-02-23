@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,10 +8,11 @@ import { supabase } from "@/lib/supabase-browser";
 const navItems = [
   { label: "Agenda", href: "/profissional/agenda", icon: CalendarIcon },
   { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
-  { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
+  { label: "Usuarios", href: "/profissional/usuarios", icon: UsersIcon },
+  { label: "SessÃµes", href: "/profissional/sessoes", icon: VideoIcon },
   { label: "Financeiro", href: "/profissional/financeiro", icon: CurrencyIcon },
   {
-    label: "Configurações",
+    label: "ConfiguraÃ§Ãµes",
     href: "/profissional/configuracoes",
     icon: SettingsIcon,
   },
@@ -49,7 +50,7 @@ export function ProfissionalSidebar() {
             className="group flex items-center gap-3"
           >
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-400/30 to-sage-500/30 text-lg font-semibold text-sage-700 transition-transform duration-300 group-hover:scale-105">
-              Ψ
+              Î¨
             </span>
             {!collapsed && (
               <div className="min-w-0">
@@ -57,7 +58,7 @@ export function ProfissionalSidebar() {
                   Painel Profissional
                 </p>
                 <p className="truncate text-xs text-muted">
-                  Área administrativa
+                  Ãrea administrativa
                 </p>
               </div>
             )}
@@ -128,7 +129,7 @@ export function ProfissionalSidebar() {
         </Link>
 
         {!collapsed && (
-          <p className="mt-4 text-xs text-muted">Sigilo e ética profissional</p>
+          <p className="mt-4 text-xs text-muted">Sigilo e Ã©tica profissional</p>
         )}
       </div>
     </aside>

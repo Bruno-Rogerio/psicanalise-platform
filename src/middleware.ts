@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Rotas públicas (não precisam de autenticação)
+// Rotas pÃºblicas (nÃ£o precisam de autenticaÃ§Ã£o)
 const PUBLIC_PATHS = [
   "/",
   "/login",
@@ -10,20 +10,23 @@ const PUBLIC_PATHS = [
   "/recuperar",
   "/resetar-senha",
   "/auth/callback",
+  "/verificar-email",
+  "/acesso-negado",
   "/politica-de-privacidade",
   "/termos-de-uso",
   "/blog",
   "/api/payments/create-order/webhook",
 ];
 
-// Rotas que começam com esses prefixos são sempre públicas
+// Rotas que comeÃ§am com esses prefixos sÃ£o sempre pÃºblicas
 const PUBLIC_PREFIXES = [
   "/_next",
+  "/api/auth",
   "/api/public",
   "/favicon",
   "/robots",
   "/sitemap",
-  "/sessoes", // ⚠️ TEMPORÁRIO
+  "/sessoes", // âš ï¸ TEMPORÃRIO
   "/api/payments/create-order/webhook",
 ];
 
@@ -36,7 +39,7 @@ function isPublicPath(pathname: string): boolean {
     if (pathname.startsWith(prefix)) return true;
   }
 
-  // Arquivos estáticos
+  // Arquivos estÃ¡ticos
   if (pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|css|js|woff|woff2)$/)) {
     return true;
   }
@@ -47,7 +50,7 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // Rotas públicas passam direto
+  // Rotas pÃºblicas passam direto
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
@@ -92,13 +95,13 @@ export async function middleware(req: NextRequest) {
     },
   );
 
-  // Verifica se usuário está autenticado
+  // Verifica se usuÃ¡rio estÃ¡ autenticado
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
-  // Se não está logado, redireciona para login
+  // Se nÃ£o estÃ¡ logado, redireciona para login
   if (userError || !user) {
     const loginUrl = new URL("/login", req.url);
     // Salva a URL original para redirecionar depois do login
@@ -106,33 +109,53 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Proteção de rotas por role
-  if (pathname.startsWith("/profissional") || pathname.startsWith("/admin")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+  // Carrega profile uma vez (role, status, etc.)
+  const { data: baseProfile } = await supabase
+    .from("profiles")
+    .select("role,status,email_verified_at,deleted_at")
+    .eq("id", user.id)
+    .single();
 
-    // Se não é profissional, redireciona para dashboard do cliente
+  // Bloqueado ou deletado
+  if (baseProfile?.status === "blocked" || baseProfile?.deleted_at) {
+    return NextResponse.redirect(new URL("/acesso-negado", req.url));
+  }
+
+  // Precisa verificar email
+  const needsEmailVerification =
+    !baseProfile?.email_verified_at || baseProfile?.status === "pending_email";
+
+  const isVerificationPath =
+    pathname.startsWith("/verificar-email") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/logout");
+
+  if (needsEmailVerification && !isVerificationPath) {
+    const url = new URL("/verificar-email", req.url);
+    const email = user.email || "";
+    if (email) url.searchParams.set("email", email);
+    return NextResponse.redirect(url);
+  }
+
+  // ProteÃ§Ã£o de rotas por role
+  if (pathname.startsWith("/profissional") || pathname.startsWith("/admin")) {
+    const profile = baseProfile;
+
+    // Se nÃ£o Ã© profissional, redireciona para dashboard do cliente
     if (profile?.role !== "profissional") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
-  // Se é profissional tentando acessar área de cliente, redireciona
+  // Se Ã© profissional tentando acessar Ã¡rea de cliente, redireciona
   if (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/minhas-sessoes") ||
     pathname.startsWith("/agendar")
   ) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const profile = baseProfile;
 
-    // Se é profissional, redireciona para área do profissional
+    // Se Ã© profissional, redireciona para Ã¡rea do profissional
     if (profile?.role === "profissional") {
       return NextResponse.redirect(new URL("/profissional/agenda", req.url));
     }
@@ -153,3 +176,4 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
+
