@@ -5,6 +5,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 async function requireProfessional() {
   const cookieStore = await cookies();
 
@@ -59,13 +62,31 @@ async function requireProfessional() {
   return { user };
 }
 
+function resolveUserId(
+  request: NextRequest,
+  params?: { id?: string },
+): string {
+  if (params?.id) return params.id;
+  try {
+    const parts = new URL(request.url).pathname.split("/").filter(Boolean);
+    return parts[parts.length - 1] || "";
+  } catch {
+    return "";
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params?: { id?: string } },
 ) {
   try {
     const auth = await requireProfessional();
     if (auth.error) return auth.error;
+
+    const targetId = resolveUserId(request, params);
+    if (!UUID_RE.test(targetId)) {
+      return NextResponse.json({ error: "ID invalido" }, { status: 400 });
+    }
 
     const body = await request.json().catch(() => ({}));
 
@@ -100,7 +121,7 @@ export async function PATCH(
       updates.email = email;
 
       const { error: emailErr } = await supabaseAdmin.auth.admin.updateUserById(
-        params.id,
+        targetId,
         { email },
       );
 
@@ -116,7 +137,7 @@ export async function PATCH(
     const { error } = await supabaseAdmin
       .from("profiles")
       .update(updates)
-      .eq("id", params.id);
+      .eq("id", targetId);
 
     if (error) {
       console.error("[admin-users] update failed", error);
@@ -134,19 +155,24 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
+  request: NextRequest,
+  { params }: { params?: { id?: string } },
 ) {
   try {
     const auth = await requireProfessional();
     if (auth.error) return auth.error;
+
+    const targetId = resolveUserId(request, params);
+    if (!UUID_RE.test(targetId)) {
+      return NextResponse.json({ error: "ID invalido" }, { status: 400 });
+    }
 
     const now = new Date().toISOString();
 
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({ deleted_at: now, status: "blocked" })
-      .eq("id", params.id);
+      .eq("id", targetId);
 
     if (error) {
       console.error("[admin-users] delete failed", error);
