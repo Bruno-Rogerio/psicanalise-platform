@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default function VerificarEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
