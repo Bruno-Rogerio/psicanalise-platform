@@ -1,4 +1,4 @@
-// src/app/profissional/sessoes/[id]/page.tsx
+﻿// src/app/profissional/sessoes/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";

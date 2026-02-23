@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
@@ -378,7 +378,7 @@ export default function ProfissionalAgendaPage() {
                   Disponibilidade do dia
                 </p>
                 <p className="text-xs text-warm-500">
-                  Clique no horÃ¡rio para bloquear ou liberar
+                  Clique no horário para bloquear ou liberar
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-warm-200 bg-warm-50 p-1">
@@ -390,7 +390,7 @@ export default function ProfissionalAgendaPage() {
                       : "text-warm-600 hover:text-warm-900"
                   }`}
                 >
-                  VÃ­deo
+                  Vídeo
                 </button>
                 <button
                   onClick={() => setSlotType("chat")}
@@ -418,8 +418,8 @@ export default function ProfissionalAgendaPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3 text-xs text-warm-600">
-              <LegendDot color="bg-sage-500" label="DisponÃ­vel" />
-              <LegendDot color="bg-warm-400" label="IndisponÃ­vel" />
+              <LegendDot color="bg-sage-500" label="Disponível" />
+              <LegendDot color="bg-warm-400" label="Indisponível" />
               <LegendDot color="bg-amber-500" label="Agendado" />
               <LegendDot color="bg-warm-200" label="Passado" />
             </div>
@@ -561,7 +561,7 @@ function SessionCard({
                 disabled={busy}
                 className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-200 disabled:opacity-50"
               >
-                ✕ Cancelar
+                ✖ Cancelar
               </button>
             </>
           )}
@@ -641,7 +641,7 @@ function SlotsStatusGrid({
   if (!slots.length) {
     return (
       <div className="rounded-xl border border-warm-200 bg-warm-50 p-6 text-center text-sm text-warm-600">
-        Sem horÃ¡rios para este dia
+        Sem horários para este dia
       </div>
     );
   }
@@ -650,7 +650,7 @@ function SlotsStatusGrid({
     <div className="space-y-4">
       {grouped.morning.length > 0 && (
         <SlotStatusGroup
-          title="ManhÃ£"
+          title="Manhã"
           slots={grouped.morning}
           onToggle={onToggle}
           busyKey={busyKey}
@@ -852,3 +852,4 @@ function ChatIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+

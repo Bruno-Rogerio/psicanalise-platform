@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
@@ -488,3 +488,4 @@ function InfoIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+

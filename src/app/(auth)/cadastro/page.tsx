@@ -38,7 +38,7 @@ export default function CadastroPage() {
           type: "error",
           text:
             data?.error ||
-            "NÃ£o foi possÃ­vel criar sua conta. Verifique os dados e tente novamente.",
+            "Não foi possível criar sua conta. Verifique os dados e tente novamente.",
         });
         return;
       }
@@ -48,7 +48,7 @@ export default function CadastroPage() {
         type: "success",
         text: data?.emailSent
           ? "Conta criada com sucesso! Verifique seu email para confirmar o cadastro."
-          : "Conta criada! NÃ£o conseguimos enviar o email agora. Tente reenviar a verificaÃ§Ã£o.",
+          : "Conta criada! Não conseguimos enviar o email agora. Tente reenviar a verificação.",
       });
 
       // Aguarda um pouco antes de redirecionar
@@ -69,7 +69,7 @@ export default function CadastroPage() {
           Criar sua conta
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Um primeiro passo simples. A psicanÃ¡lise acontece no seu tempo.
+          Um primeiro passo simples. A psicanálise acontece no seu tempo.
         </p>
       </div>
 
@@ -84,7 +84,7 @@ export default function CadastroPage() {
             className="mt-2 w-full rounded-xl border border-warm-300/60 bg-white px-4 py-3 text-sm text-warm-900 outline-none transition-all duration-300 placeholder:text-warm-400 focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Como vocÃª gostaria de ser chamado(a)?"
+            placeholder="Como você gostaria de ser chamado(a)?"
             required
             autoComplete="name"
           />
@@ -132,7 +132,7 @@ export default function CadastroPage() {
               type={showPassword ? "text" : "password"}
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              placeholder="MÃ­nimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               required
               minLength={6}
               autoComplete="new-password"
@@ -191,7 +191,7 @@ export default function CadastroPage() {
 
         {/* Link para login */}
         <p className="pt-2 text-center text-sm text-muted">
-          JÃ¡ tem conta?{" "}
+          Já tem conta?{" "}
           <Link
             href="/login"
             className="font-medium text-sage-600 transition-colors duration-300 hover:text-sage-700"
@@ -302,4 +302,5 @@ function LoadingSpinner() {
     </svg>
   );
 }
+
 

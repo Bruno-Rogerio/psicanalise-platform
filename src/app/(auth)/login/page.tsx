@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -44,7 +44,7 @@ function LoginForm() {
 
       if (profile?.status === "blocked" || profile?.deleted_at) {
         await supabase.auth.signOut();
-        setErro("Sua conta estÃ¡ bloqueada. Entre em contato para mais informaÃ§Ãµes.");
+        setErro("Sua conta está bloqueada. Entre em contato para mais informações.");
         return;
       }
 
@@ -282,3 +282,4 @@ function LoadingSpinner() {
     </svg>
   );
 }
+

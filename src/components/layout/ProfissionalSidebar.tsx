@@ -9,10 +9,10 @@ const navItems = [
   { label: "Agenda", href: "/profissional/agenda", icon: CalendarIcon },
   { label: "Pacientes", href: "/profissional/pacientes", icon: UsersIcon },
   { label: "Usuarios", href: "/profissional/usuarios", icon: UsersIcon },
-  { label: "SessÃµes", href: "/profissional/sessoes", icon: VideoIcon },
+  { label: "Sessões", href: "/profissional/sessoes", icon: VideoIcon },
   { label: "Financeiro", href: "/profissional/financeiro", icon: CurrencyIcon },
   {
-    label: "ConfiguraÃ§Ãµes",
+    label: "Configurações",
     href: "/profissional/configuracoes",
     icon: SettingsIcon,
   },
@@ -50,7 +50,7 @@ export function ProfissionalSidebar() {
             className="group flex items-center gap-3"
           >
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-400/30 to-sage-500/30 text-lg font-semibold text-sage-700 transition-transform duration-300 group-hover:scale-105">
-              Î¨
+              Ψ
             </span>
             {!collapsed && (
               <div className="min-w-0">
@@ -58,7 +58,7 @@ export function ProfissionalSidebar() {
                   Painel Profissional
                 </p>
                 <p className="truncate text-xs text-muted">
-                  Ãrea administrativa
+                  Área administrativa
                 </p>
               </div>
             )}
@@ -129,7 +129,7 @@ export function ProfissionalSidebar() {
         </Link>
 
         {!collapsed && (
-          <p className="mt-4 text-xs text-muted">Sigilo e Ã©tica profissional</p>
+          <p className="mt-4 text-xs text-muted">Sigilo e ética profissional</p>
         )}
       </div>
     </aside>
@@ -286,3 +286,4 @@ function ChevronRightIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+

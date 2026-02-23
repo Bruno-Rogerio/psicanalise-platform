@@ -1,4 +1,4 @@
-export default function TermosDeUsoPage() {
+﻿export default function TermosDeUsoPage() {
   return (
     <main className="bg-warm-100 py-16">
       <div className="mx-auto max-w-3xl px-5 sm:px-6">
@@ -62,3 +62,4 @@ export default function TermosDeUsoPage() {
     </main>
   );
 }
+

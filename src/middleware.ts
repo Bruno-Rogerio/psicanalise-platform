@@ -2,7 +2,7 @@
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Rotas pÃºblicas (nÃ£o precisam de autenticaÃ§Ã£o)
+// Rotas públicas (não precisam de autenticação)
 const PUBLIC_PATHS = [
   "/",
   "/login",
@@ -18,7 +18,7 @@ const PUBLIC_PATHS = [
   "/api/payments/create-order/webhook",
 ];
 
-// Rotas que comeÃ§am com esses prefixos sÃ£o sempre pÃºblicas
+// Rotas que começam com esses prefixos são sempre públicas
 const PUBLIC_PREFIXES = [
   "/_next",
   "/api/auth",
@@ -26,7 +26,7 @@ const PUBLIC_PREFIXES = [
   "/favicon",
   "/robots",
   "/sitemap",
-  "/sessoes", // âš ï¸ TEMPORÃRIO
+  "/sessoes", // ⚠️ TEMPORÁRIO
   "/api/payments/create-order/webhook",
 ];
 
@@ -39,7 +39,7 @@ function isPublicPath(pathname: string): boolean {
     if (pathname.startsWith(prefix)) return true;
   }
 
-  // Arquivos estÃ¡ticos
+  // Arquivos estáticos
   if (pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|css|js|woff|woff2)$/)) {
     return true;
   }
@@ -50,7 +50,7 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // Rotas pÃºblicas passam direto
+  // Rotas públicas passam direto
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
@@ -95,13 +95,13 @@ export async function middleware(req: NextRequest) {
     },
   );
 
-  // Verifica se usuÃ¡rio estÃ¡ autenticado
+  // Verifica se usuário está autenticado
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
-  // Se nÃ£o estÃ¡ logado, redireciona para login
+  // Se não está logado, redireciona para login
   if (userError || !user) {
     const loginUrl = new URL("/login", req.url);
     // Salva a URL original para redirecionar depois do login
@@ -137,17 +137,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ProteÃ§Ã£o de rotas por role
+  // Proteção de rotas por role
   if (pathname.startsWith("/profissional") || pathname.startsWith("/admin")) {
     const profile = baseProfile;
 
-    // Se nÃ£o Ã© profissional, redireciona para dashboard do cliente
+    // Se não é profissional, redireciona para dashboard do cliente
     if (profile?.role !== "profissional") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
-  // Se Ã© profissional tentando acessar Ã¡rea de cliente, redireciona
+  // Se é profissional tentando acessar área de cliente, redireciona
   if (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/minhas-sessoes") ||
@@ -155,7 +155,7 @@ export async function middleware(req: NextRequest) {
   ) {
     const profile = baseProfile;
 
-    // Se Ã© profissional, redireciona para Ã¡rea do profissional
+    // Se é profissional, redireciona para área do profissional
     if (profile?.role === "profissional") {
       return NextResponse.redirect(new URL("/profissional/agenda", req.url));
     }
@@ -176,4 +176,5 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
+
 
