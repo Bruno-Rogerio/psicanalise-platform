@@ -47,7 +47,10 @@ export default function ProfissionalAgendaPage() {
   const [booked, setBooked] = useState<BookedAppointment[]>([]);
   const [slotType, setSlotType] = useState<AppointmentType>("video");
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [toggleBusy, setToggleBusy] = useState<string | null>(null);
+  const [selectedSlots, setSelectedSlots] = useState<
+    Record<string, SlotWithStatus>
+  >({});
+  const [bulkBusy, setBulkBusy] = useState<"block" | "unblock" | null>(null);
 
   // Load appointments
   useEffect(() => {
@@ -180,6 +183,28 @@ export default function ProfissionalAgendaPage() {
     });
   }, [settings, selectedDay, slotType, rules, blocks, booked]);
 
+  useEffect(() => {
+    setSelectedSlots({});
+  }, [selectedDay, slotType]);
+
+  useEffect(() => {
+    setSelectedSlots((prev) => {
+      const next: Record<string, SlotWithStatus> = {};
+      const slotByKey = new Map(
+        daySlots.map((slot) => [slotKey(slot), slot]),
+      );
+
+      for (const key of Object.keys(prev)) {
+        const slot = slotByKey.get(key);
+        if (!slot) continue;
+        if (slot.status === "booked" || slot.status === "past") continue;
+        next[key] = slot;
+      }
+
+      return next;
+    });
+  }, [daySlots]);
+
   // Update status
   async function updateStatus(id: string, status: AppointmentStatus) {
     try {
@@ -201,59 +226,88 @@ export default function ProfissionalAgendaPage() {
     }
   }
 
-  async function toggleSlot(slot: SlotWithStatus) {
+  function toggleSelection(slot: SlotWithStatus) {
     if (!professionalId) return;
     if (slot.status === "booked" || slot.status === "past") return;
 
-    const key = slot.start.toISOString();
-    const startISO = slot.start.toISOString();
-    const endISO = slot.end.toISOString();
+    const key = slotKey(slot);
+    setSelectedSlots((prev) => {
+      if (prev[key]) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: slot };
+    });
+  }
+
+  async function blockSelected() {
+    if (!professionalId) return;
+
+    const toBlock = Object.values(selectedSlots).filter(
+      (slot) => slot.status === "available",
+    );
+    if (!toBlock.length) return;
 
     try {
-      setToggleBusy(key);
+      setBulkBusy("block");
+      const payload = toBlock.map((slot) => ({
+        profissional_id: professionalId,
+        start_at: slot.start.toISOString(),
+        end_at: slot.end.toISOString(),
+      }));
 
-      if (slot.status === "blocked") {
-        const existing = blocks.find(
-          (b) => b.start_at === startISO && b.end_at === endISO,
-        );
+      const { data, error } = await supabase
+        .from("availability_blocks")
+        .insert(payload)
+        .select("id,profissional_id,start_at,end_at");
 
-        const { error } = existing
-          ? await supabase
-              .from("availability_blocks")
-              .delete()
-              .eq("id", existing.id)
-          : await supabase
-              .from("availability_blocks")
-              .delete()
-              .eq("profissional_id", professionalId)
-              .eq("start_at", startISO)
-              .eq("end_at", endISO);
-
-        if (error) throw error;
-
-        setBlocks((prev) =>
-          prev.filter(
-            (b) => !(b.start_at === startISO && b.end_at === endISO),
-          ),
-        );
-      } else {
-        const { data, error } = await supabase
-          .from("availability_blocks")
-          .insert({
-            profissional_id: professionalId,
-            start_at: startISO,
-            end_at: endISO,
-          })
-          .select("id,profissional_id,start_at,end_at")
-          .single();
-
-        if (error) throw error;
-        if (data) setBlocks((prev) => [...prev, data as AvailabilityBlock]);
+      if (error) throw error;
+      if (data?.length) {
+        setBlocks((prev) => [...prev, ...(data as AvailabilityBlock[])]);
       }
+      setSelectedSlots({});
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao atualizar disponibilidade.");
+      alert(e?.message ?? "Erro ao bloquear horários.");
     } finally {
-      setToggleBusy(null);
+      setBulkBusy(null);
+    }
+  }
+
+  async function unblockSelected() {
+    if (!professionalId) return;
+
+    const selectedBlocked = Object.values(selectedSlots).filter(
+      (slot) => slot.status === "blocked",
+    );
+    if (!selectedBlocked.length) return;
+
+    const blockKeyToId = new Map(
+      blocks.map((b) => [blockKey(b), b.id]),
+    );
+    const idsToDelete = selectedBlocked
+      .map((slot) => blockKeyToId.get(slotKey(slot)))
+      .filter(Boolean) as string[];
+
+    if (!idsToDelete.length) {
+      setSelectedSlots({});
+      return;
+    }
+
+    try {
+      setBulkBusy("unblock");
+      const { error } = await supabase
+        .from("availability_blocks")
+        .delete()
+        .in("id", idsToDelete);
+
+      if (error) throw error;
+      setBlocks((prev) => prev.filter((b) => !idsToDelete.includes(b.id)));
+      setSelectedSlots({});
+    } catch (e: any) {
+      alert(e?.message ?? "Erro ao desbloquear horários.");
+    } finally {
+      setBulkBusy(null);
     }
   }
 
@@ -378,7 +432,7 @@ export default function ProfissionalAgendaPage() {
                   Disponibilidade do dia
                 </p>
                 <p className="text-xs text-warm-500">
-                  Clique no horário para bloquear ou liberar
+                  Selecione horários e use os botões para bloquear ou liberar
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-warm-200 bg-warm-50 p-1">
@@ -405,14 +459,54 @@ export default function ProfissionalAgendaPage() {
               </div>
             </div>
 
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-warm-600">
+              <span>
+                Selecionados:{" "}
+                <strong className="text-warm-900">
+                  {Object.keys(selectedSlots).length}
+                </strong>
+              </span>
+              <button
+                onClick={blockSelected}
+                disabled={
+                  bulkBusy !== null ||
+                  Object.values(selectedSlots).filter(
+                    (slot) => slot.status === "available",
+                  ).length === 0
+                }
+                className="rounded-lg border border-sage-300 bg-sage-50 px-3 py-1.5 font-semibold text-sage-700 transition-colors hover:bg-sage-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Bloquear
+              </button>
+              <button
+                onClick={unblockSelected}
+                disabled={
+                  bulkBusy !== null ||
+                  Object.values(selectedSlots).filter(
+                    (slot) => slot.status === "blocked",
+                  ).length === 0
+                }
+                className="rounded-lg border border-warm-300 bg-warm-50 px-3 py-1.5 font-semibold text-warm-700 transition-colors hover:bg-warm-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Desbloquear
+              </button>
+              <button
+                onClick={() => setSelectedSlots({})}
+                disabled={bulkBusy !== null || !Object.keys(selectedSlots).length}
+                className="rounded-lg border border-warm-200 bg-white px-3 py-1.5 font-medium text-warm-500 transition-colors hover:bg-warm-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Limpar
+              </button>
+            </div>
+
             <div className="mt-4">
               {slotsLoading ? (
                 <SlotsSkeleton />
               ) : (
                 <SlotsStatusGrid
                   slots={daySlots}
-                  onToggle={toggleSlot}
-                  busyKey={toggleBusy}
+                  onSelect={toggleSelection}
+                  selectedKeys={new Set(Object.keys(selectedSlots))}
                 />
               )}
             </div>
@@ -612,12 +706,12 @@ function SessionsSkeleton() {
 
 function SlotsStatusGrid({
   slots,
-  onToggle,
-  busyKey,
+  onSelect,
+  selectedKeys,
 }: {
   slots: SlotWithStatus[];
-  onToggle: (slot: SlotWithStatus) => void;
-  busyKey: string | null;
+  onSelect: (slot: SlotWithStatus) => void;
+  selectedKeys: Set<string>;
 }) {
   const grouped = useMemo(() => {
     const morning: SlotWithStatus[] = [];
@@ -652,24 +746,24 @@ function SlotsStatusGrid({
         <SlotStatusGroup
           title="Manhã"
           slots={grouped.morning}
-          onToggle={onToggle}
-          busyKey={busyKey}
+          onSelect={onSelect}
+          selectedKeys={selectedKeys}
         />
       )}
       {grouped.afternoon.length > 0 && (
         <SlotStatusGroup
           title="Tarde"
           slots={grouped.afternoon}
-          onToggle={onToggle}
-          busyKey={busyKey}
+          onSelect={onSelect}
+          selectedKeys={selectedKeys}
         />
       )}
       {grouped.evening.length > 0 && (
         <SlotStatusGroup
           title="Noite"
           slots={grouped.evening}
-          onToggle={onToggle}
-          busyKey={busyKey}
+          onSelect={onSelect}
+          selectedKeys={selectedKeys}
         />
       )}
     </div>
@@ -679,13 +773,13 @@ function SlotsStatusGrid({
 function SlotStatusGroup({
   title,
   slots,
-  onToggle,
-  busyKey,
+  onSelect,
+  selectedKeys,
 }: {
   title: string;
   slots: SlotWithStatus[];
-  onToggle: (slot: SlotWithStatus) => void;
-  busyKey: string | null;
+  onSelect: (slot: SlotWithStatus) => void;
+  selectedKeys: Set<string>;
 }) {
   const statusStyles: Record<string, string> = {
     available:
@@ -708,20 +802,21 @@ function SlotStatusGroup({
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
         {slots.map((slot) => {
-          const key = slot.start.toISOString();
+          const key = slotKey(slot);
+          const isSelected = selectedKeys.has(key);
           const isDisabled =
-            slot.status === "booked" ||
-            slot.status === "past" ||
-            busyKey === key;
+            slot.status === "booked" || slot.status === "past";
 
           return (
             <button
               key={key}
-              onClick={() => !isDisabled && onToggle(slot)}
+              onClick={() => !isDisabled && onSelect(slot)}
               disabled={isDisabled}
               className={`rounded-xl border-2 px-3 py-2 text-sm font-bold transition-all duration-200 ${
                 statusStyles[slot.status]
-              } ${isDisabled ? "opacity-70" : ""}`}
+              } ${isSelected ? "ring-2 ring-sage-400" : ""} ${
+                isDisabled ? "opacity-70" : ""
+              }`}
               title={
                 slot.status === "blocked"
                   ? "Clique para liberar"
@@ -772,6 +867,16 @@ function endOfDay(d: Date) {
 
 function fmtTime(d: Date) {
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function slotKey(slot: { start: Date; end: Date }) {
+  return `${slot.start.toISOString()}|${slot.end.toISOString()}`;
+}
+
+function blockKey(block: AvailabilityBlock) {
+  const start = new Date(block.start_at);
+  const end = new Date(block.end_at);
+  return `${start.toISOString()}|${end.toISOString()}`;
 }
 
 // Icons

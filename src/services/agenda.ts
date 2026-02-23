@@ -209,9 +209,12 @@ export function generateSlotsForDay(params: {
   const dayStart = startOfDay(day);
   const dayEnd = endOfDay(day);
 
-  const blockRanges = blocks
-    .map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }))
-    .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
+  const blockKeys = new Set(
+    blocks
+      .map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }))
+      .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd))
+      .map((b) => `${b.start.toISOString()}|${b.end.toISOString()}`),
+  );
 
   const bookedRanges = booked
     .map((a) => ({ start: new Date(a.start_at), end: new Date(a.end_at) }))
@@ -242,8 +245,8 @@ export function generateSlotsForDay(params: {
 
       if (slotEnd > windowEnd) continue;
 
-      const isBlocked = blockRanges.some((b) =>
-        overlaps(slotStart, slotEnd, b.start, b.end),
+      const isBlocked = blockKeys.has(
+        `${slotStart.toISOString()}|${slotEnd.toISOString()}`,
       );
       if (isBlocked) continue;
 
@@ -292,9 +295,12 @@ export function generateSlotsForDayWithStatus(params: {
   const dayStart = startOfDay(day);
   const dayEnd = endOfDay(day);
 
-  const blockRanges = blocks
-    .map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }))
-    .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
+  const blockKeys = new Set(
+    blocks
+      .map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }))
+      .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd))
+      .map((b) => `${b.start.toISOString()}|${b.end.toISOString()}`),
+  );
 
   const bookedRanges = booked
     .map((a) => ({ start: new Date(a.start_at), end: new Date(a.end_at) }))
@@ -330,8 +336,8 @@ export function generateSlotsForDayWithStatus(params: {
 
       const isPast = slotStart.getTime() < Date.now();
 
-      const isBlocked = blockRanges.some((b) =>
-        overlaps(slotStart, slotEnd, b.start, b.end),
+      const isBlocked = blockKeys.has(
+        `${slotStart.toISOString()}|${slotEnd.toISOString()}`,
       );
 
       let status: SlotStatus = "available";
