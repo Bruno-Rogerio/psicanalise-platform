@@ -15,6 +15,7 @@ import {
   getProducts,
   getCreditsBalance,
   generateSlotsForDay,
+  MIN_SCHEDULE_LEAD_HOURS,
   type AppointmentType,
   type Slot,
   type ProfessionalSettings,
@@ -198,6 +199,16 @@ export default function AgendaPage() {
     if (!professionalId || !pickedSlot) return;
 
     try {
+      const minStartMs =
+        Date.now() + MIN_SCHEDULE_LEAD_HOURS * 60 * 60 * 1000;
+      if (pickedSlot.start.getTime() < minStartMs) {
+        alert(
+          `Agendamentos precisam de no mínimo ${MIN_SCHEDULE_LEAD_HOURS} horas de antecedência.`,
+        );
+        setPickedSlot(null);
+        return;
+      }
+
       setConfirming(true);
 
       const { data: auth } = await supabase.auth.getUser();
@@ -415,6 +426,9 @@ export default function AgendaPage() {
                         {selectedDay
                           ? fmtDayTitle(selectedDay)
                           : "Selecione um dia"}
+                      </p>
+                      <p className="text-xs text-warm-400">
+                        Agendamentos com no mínimo {MIN_SCHEDULE_LEAD_HOURS}h de antecedência.
                       </p>
                     </div>
                     {daySlots.length > 0 && (

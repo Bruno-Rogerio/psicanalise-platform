@@ -64,6 +64,8 @@ export type SlotWithStatus = Slot & {
   status: SlotStatus;
 };
 
+export const MIN_SCHEDULE_LEAD_HOURS = 4;
+
 export async function getProfessional(): Promise<Professional> {
   const { data, error } = await supabase
     .from("profiles")
@@ -221,6 +223,8 @@ export function generateSlotsForDay(params: {
     .filter((b) => overlaps(b.start, b.end, dayStart, dayEnd));
 
   const slots: Slot[] = [];
+  const minStartMs =
+    Date.now() + MIN_SCHEDULE_LEAD_HOURS * 60 * 60 * 1000;
 
   for (const r of dayRules) {
     const { h: sh, m: sm } = parseTimeToHM(r.start_time);
@@ -255,8 +259,8 @@ export function generateSlotsForDay(params: {
       );
       if (isBooked) continue;
 
-      // não permitir slots no passado
-      if (slotStart.getTime() < Date.now()) continue;
+      // não permitir slots com menos de 4h de antecedência
+      if (slotStart.getTime() < minStartMs) continue;
 
       slots.push({ start: slotStart, end: slotEnd, appointment_type: type });
     }
