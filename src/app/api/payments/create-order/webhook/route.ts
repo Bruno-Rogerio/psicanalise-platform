@@ -61,6 +61,10 @@ export async function POST(request: Request) {
         await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
         break;
 
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -112,6 +116,24 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   if (creditsError) throw creditsError;
 
   console.log(`✅ Payment processed successfully for order ${orderId}`);
+}
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  if (!session.payment_link) return; // Ignora sessions que não vieram de payment link
+  if (session.payment_status !== "paid") return;
+
+  const { error } = await supabase
+    .from("payment_links")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      stripe_checkout_session_id: session.id,
+    })
+    .eq("stripe_payment_link_id", session.payment_link);
+
+  if (error) throw error;
+
+  console.log(`✅ Payment link pago: ${session.payment_link}`);
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
