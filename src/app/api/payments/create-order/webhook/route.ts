@@ -134,16 +134,20 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   console.log(`🔵 Checkout session completed, payment_link ID: ${paymentLinkId}`);
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("payment_links")
     .update({
       status: "paid",
       paid_at: new Date().toISOString(),
       stripe_checkout_session_id: session.id,
     })
-    .eq("stripe_payment_link_id", paymentLinkId);
+    .eq("stripe_payment_link_id", paymentLinkId)
+    .select();
 
-  if (error) throw error;
+  if (error) throw new Error(`Supabase update error: ${JSON.stringify(error)}`);
+  if (!updated || updated.length === 0) {
+    throw new Error(`UPDATE 0 rows — stripe_payment_link_id não encontrado: ${paymentLinkId}`);
+  }
 
   console.log(`✅ Payment link marcado como pago: ${paymentLinkId}`);
 }
