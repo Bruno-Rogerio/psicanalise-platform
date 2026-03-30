@@ -126,6 +126,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   if (!session.payment_link) return; // Ignora sessions que não vieram de payment link
   if (session.payment_status !== "paid") return;
 
+  // payment_link pode ser string (ID) ou objeto expandido — extrai sempre o ID
+  const paymentLinkId =
+    typeof session.payment_link === "string"
+      ? session.payment_link
+      : (session.payment_link as Stripe.PaymentLink).id;
+
+  console.log(`🔵 Checkout session completed, payment_link ID: ${paymentLinkId}`);
+
   const { error } = await supabase
     .from("payment_links")
     .update({
@@ -133,11 +141,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       paid_at: new Date().toISOString(),
       stripe_checkout_session_id: session.id,
     })
-    .eq("stripe_payment_link_id", session.payment_link);
+    .eq("stripe_payment_link_id", paymentLinkId);
 
   if (error) throw error;
 
-  console.log(`✅ Payment link pago: ${session.payment_link}`);
+  console.log(`✅ Payment link marcado como pago: ${paymentLinkId}`);
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
