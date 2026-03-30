@@ -26,6 +26,12 @@ CREATE POLICY "profissional_select_own_payment_links"
 -- Profissional cria via service role (API route)
 -- Sem policy de INSERT para usuário direto — apenas service role escreve
 
+-- Webhook (service role) pode atualizar status
+CREATE POLICY "webhook_update_payment_links"
+  ON payment_links FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
 -- Index
 CREATE INDEX idx_payment_links_profissional_id ON payment_links(profissional_id);
 CREATE INDEX idx_payment_links_stripe_payment_link_id ON payment_links(stripe_payment_link_id);
