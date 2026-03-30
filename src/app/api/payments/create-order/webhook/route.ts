@@ -82,7 +82,11 @@ export async function POST(request: Request) {
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   const orderId = paymentIntent.metadata?.order_id;
-  if (!orderId) throw new Error("No order_id in payment intent metadata");
+  // Payment links não têm order_id — ignorar silenciosamente
+  if (!orderId) {
+    console.log("ℹ️ payment_intent sem order_id (provavelmente payment link), ignorando");
+    return;
+  }
 
   // Idempotência (se já pagou, não repete)
   const { data: existingOrder, error: readErr } = await supabase
