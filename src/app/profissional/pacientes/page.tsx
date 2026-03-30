@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase-browser";
 type Patient = {
   id: string;
   nome: string;
+  tier: "standard" | "popular";
 };
 
 type Appointment = {
@@ -40,6 +41,11 @@ export default function PacientesPage() {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [detailLoading, setDetailLoading] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [updatingTier, setUpdatingTier] = useState(false);
+  const [profissionalId, setProfissionalId] = useState<string | null>(null);
 
   // Load patients
   useEffect(() => {
@@ -48,6 +54,7 @@ export default function PacientesPage() {
         setLoading(true);
         const { data: auth } = await supabase.auth.getUser();
         if (!auth.user?.id) return;
+        setProfissionalId(auth.user.id);
 
         const { data, error } = await supabase
           .from("appointments")
@@ -80,11 +87,21 @@ export default function PacientesPage() {
         setAppointments(appts);
 
         // Unique patients
+        const patientIds = [...new Set(raw.map((a: any) => a.user_id).filter(Boolean))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, tier")
+          .in("id", patientIds);
+        const tierMap: Record<string, "standard" | "popular"> = {};
+        for (const p of (profilesData ?? [])) {
+          tierMap[p.id] = p.tier ?? "standard";
+        }
+
         const map = new Map<string, Patient>();
         for (const a of raw) {
           const p = Array.isArray(a.patient) ? a.patient[0] : a.patient;
           if (p?.id && !map.has(p.id)) {
-            map.set(p.id, { id: p.id, nome: p.nome ?? "Paciente" });
+            map.set(p.id, { id: p.id, nome: p.nome ?? "Paciente", tier: tierMap[p.id] ?? "standard" });
           }
         }
         const uniquePatients = Array.from(map.values()).sort((a, b) =>
@@ -100,6 +117,51 @@ export default function PacientesPage() {
       }
     })();
   }, []);
+
+  async function generatePromoCode() {
+    if (!profissionalId) return;
+    setGeneratingCode(true);
+    try {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const random = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      const code = `POP-${random}`;
+
+      const { error } = await supabase
+        .from("promo_codes")
+        .insert({ code, profissional_id: profissionalId });
+
+      if (error) throw error;
+      setGeneratedCode(code);
+      setCodeCopied(false);
+    } catch (err: any) {
+      alert(err.message || "Erro ao gerar código");
+    } finally {
+      setGeneratingCode(false);
+    }
+  }
+
+  async function togglePatientTier(patient: Patient) {
+    const newTier = patient.tier === "popular" ? "standard" : "popular";
+    if (!confirm(`Alterar ${patient.nome} para plano ${newTier === "popular" ? "Popular" : "Padrão"}?`)) return;
+
+    setUpdatingTier(true);
+    try {
+      const res = await fetch("/api/profissional/update-patient-tier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patientId: patient.id, tier: newTier }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+
+      setPatients((prev) =>
+        prev.map((p) => (p.id === patient.id ? { ...p, tier: newTier } : p)),
+      );
+    } catch (err: any) {
+      alert(err.message || "Erro ao atualizar plano");
+    } finally {
+      setUpdatingTier(false);
+    }
+  }
 
   // Load notes when patient changes
   useEffect(() => {
@@ -184,6 +246,34 @@ export default function PacientesPage() {
             </p>
           </div>
         </div>
+
+        {/* Gerador de código popular */}
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={generatePromoCode}
+            disabled={generatingCode}
+            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 disabled:opacity-60"
+          >
+            {generatingCode ? "Gerando..." : "Gerar código popular"}
+          </button>
+          {generatedCode && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2">
+              <span className="font-mono text-sm font-bold tracking-widest text-amber-800">
+                {generatedCode}
+              </span>
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(generatedCode);
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+              >
+                {codeCopied ? "Copiado!" : "Copiar"}
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Grid */}
@@ -243,7 +333,14 @@ export default function PacientesPage() {
                         {patient.nome.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold">{patient.nome}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate font-semibold">{patient.nome}</p>
+                          {patient.tier === "popular" && (
+                            <span className="shrink-0 rounded-full bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                              POP
+                            </span>
+                          )}
+                        </div>
                         <p
                           className={`text-xs ${isActive ? "text-white/70" : "text-warm-500"}`}
                         >
@@ -283,8 +380,22 @@ export default function PacientesPage() {
                       <p className="text-lg font-bold text-warm-900">
                         {selectedPatient.nome}
                       </p>
+                      <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        selectedPatient.tier === "popular"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-warm-100 text-warm-600"
+                      }`}>
+                        {selectedPatient.tier === "popular" ? "Plano Popular" : "Plano Padrão"}
+                      </span>
                     </div>
                   </div>
+                  <button
+                    onClick={() => togglePatientTier(selectedPatient)}
+                    disabled={updatingTier}
+                    className="rounded-xl border border-warm-200 bg-warm-50 px-3 py-1.5 text-xs font-medium text-warm-700 transition-colors hover:bg-warm-100 disabled:opacity-60"
+                  >
+                    {updatingTier ? "Alterando..." : selectedPatient.tier === "popular" ? "Mover para Padrão" : "Mover para Popular"}
+                  </button>
                 </div>
 
                 {/* Stats */}

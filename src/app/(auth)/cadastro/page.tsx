@@ -11,6 +11,7 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [senha, setSenha] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{
     type: "success" | "error";
@@ -27,7 +28,7 @@ export default function CadastroPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, senha, phone }),
+        body: JSON.stringify({ nome, email, senha, phone, promoCode: promoCode || undefined }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -118,6 +119,21 @@ export default function CadastroPage() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(11) 99999-9999"
             autoComplete="tel"
+          />
+        </div>
+
+        {/* Código promocional (opcional) */}
+        <div>
+          <label className="block text-sm font-medium text-warm-900">
+            Código promocional{" "}
+            <span className="font-normal text-warm-400">(opcional)</span>
+          </label>
+          <input
+            className="mt-2 w-full rounded-xl border border-warm-300/60 bg-white px-4 py-3 text-sm uppercase tracking-widest text-warm-900 outline-none transition-all duration-300 placeholder:text-warm-400 placeholder:normal-case placeholder:tracking-normal focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            placeholder="Se você recebeu um código"
+            autoComplete="off"
           />
         </div>
 

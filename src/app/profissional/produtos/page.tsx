@@ -29,6 +29,7 @@ export default function ProdutosPage() {
     appointmentType: "video" as AppointmentType,
     sessionsCount: 1,
     priceReais: "0",
+    tier: "standard" as "standard" | "popular",
   });
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function ProdutosPage() {
       appointmentType: "video",
       sessionsCount: 1,
       priceReais: "0",
+      tier: "standard",
     });
     setShowModal(true);
   }
@@ -72,6 +74,7 @@ export default function ProdutosPage() {
       appointmentType: product.appointment_type,
       sessionsCount: product.sessions_count,
       priceReais: (product.price_cents / 100).toFixed(2),
+      tier: product.tier ?? "standard",
     });
     setShowModal(true);
   }
@@ -93,6 +96,7 @@ export default function ProdutosPage() {
           description: formData.description || undefined,
           sessionsCount: formData.sessionsCount,
           priceCents,
+          tier: formData.tier,
         });
       } else {
         // Create
@@ -102,6 +106,7 @@ export default function ProdutosPage() {
           appointmentType: formData.appointmentType,
           sessionsCount: formData.sessionsCount,
           priceCents,
+          tier: formData.tier,
         });
       }
 
@@ -300,6 +305,15 @@ function ProductCard({
         product.is_active ? "border-warm-200" : "border-warm-200 opacity-60"
       }`}
     >
+      {/* Tier badge */}
+      {product.tier === "popular" && (
+        <div className="absolute left-3 top-3">
+          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+            Popular
+          </span>
+        </div>
+      )}
+
       {/* Status badge */}
       <div className="absolute right-3 top-3">
         <span
@@ -492,6 +506,39 @@ function ProductModal({
               rows={3}
               className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
             />
+          </div>
+
+          {/* Tier */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-warm-700">
+              Público-alvo
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onChange({ ...formData, tier: "standard" })}
+                className={`rounded-xl border-2 p-3 text-left transition-all ${
+                  formData.tier === "standard"
+                    ? "border-sage-400 bg-sage-50"
+                    : "border-warm-200 bg-white hover:bg-warm-50"
+                }`}
+              >
+                <p className="text-sm font-semibold text-warm-900">Padrão</p>
+                <p className="mt-0.5 text-xs text-warm-500">Todos os pacientes</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ ...formData, tier: "popular" })}
+                className={`rounded-xl border-2 p-3 text-left transition-all ${
+                  formData.tier === "popular"
+                    ? "border-amber-400 bg-amber-50"
+                    : "border-warm-200 bg-white hover:bg-warm-50"
+                }`}
+              >
+                <p className="text-sm font-semibold text-warm-900">Popular</p>
+                <p className="mt-0.5 text-xs text-warm-500">Apenas com código promo</p>
+              </button>
+            </div>
           </div>
 
           {/* Sessions Count + Price */}

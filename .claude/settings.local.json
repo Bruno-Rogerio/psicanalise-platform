@@ -13,7 +13,12 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: implementar sistema de notificações em tempo real\n\n- Criar tabela notifications com RLS e Supabase Realtime\n- Adicionar tipos TypeScript para notificações\n- Criar serviço de notificações \\(CRUD + Realtime subscriptions\\)\n- Implementar NotificationContext para estado global\n- Criar hook useNotifications\n- Criar componentes: NotificationBell, NotificationDropdown, NotificationItem\n- Integrar notificações nos layouts cliente e profissional\n- Adicionar triggers SQL para: agendamentos, cancelamentos, reagendamentos, PIX validado\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push)",
       "Bash(find:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(cat ./supabase/migrations/001_*.sql 2>/dev/null | head -200)",
+      "Bash(cat ./src/app/\\\\\\(cliente\\\\\\)/agenda/page.tsx | head -250)",
+      "Bash(cat ./supabase/migrations/*.sql | grep -A 30 \"CREATE TABLE.*appointment\\\\|CREATE TABLE.*availab\")",
+      "Bash(find ./src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) | xargs grep -l \"slot\\\\|schedule\\\\|interval\\\\|disponib\\\\|horario\\\\|availability\\\\|appointment\" | sort | uniq)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

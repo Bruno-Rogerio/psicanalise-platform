@@ -14,6 +14,8 @@ export type CreditStatus = "active" | "consumed" | "refunded";
 
 export type AppointmentType = "video" | "chat";
 
+export type ProductTier = "standard" | "popular";
+
 export interface Product {
   id: string;
   profissional_id: string;
@@ -23,6 +25,7 @@ export interface Product {
   sessions_count: number;
   price_cents: number;
   is_active: boolean;
+  tier: ProductTier;
   created_at: string;
 }
 

@@ -1,6 +1,6 @@
 // src/services/products.ts
 import { supabase } from "@/lib/supabase-browser";
-import type { Product, AppointmentType } from "@/types/payment";
+import type { Product, AppointmentType, ProductTier } from "@/types/payment";
 
 export interface CreateProductParams {
   title: string;
@@ -8,6 +8,7 @@ export interface CreateProductParams {
   appointmentType: AppointmentType;
   sessionsCount: number;
   priceCents: number;
+  tier?: ProductTier;
 }
 
 export interface UpdateProductParams {
@@ -17,6 +18,7 @@ export interface UpdateProductParams {
   sessionsCount?: number;
   priceCents?: number;
   isActive?: boolean;
+  tier?: ProductTier;
 }
 
 /**
@@ -43,11 +45,12 @@ export async function listProducts(
 }
 
 /**
- * Lista produtos ativos de um profissional (para clientes)
+ * Lista produtos ativos de um profissional (para clientes), filtrados por tier
  */
 export async function listActiveProducts(
   professionalId: string,
   appointmentType: AppointmentType,
+  tier: ProductTier = "standard",
 ): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
@@ -55,6 +58,7 @@ export async function listActiveProducts(
     .eq("profissional_id", professionalId)
     .eq("appointment_type", appointmentType)
     .eq("is_active", true)
+    .eq("tier", tier)
     .order("sessions_count", { ascending: true });
 
   if (error) throw error;
@@ -78,6 +82,7 @@ export async function createProduct(
       sessions_count: params.sessionsCount,
       price_cents: params.priceCents,
       is_active: true,
+      tier: params.tier ?? "standard",
     })
     .select()
     .single();
@@ -101,6 +106,7 @@ export async function updateProduct(
     updates.sessions_count = params.sessionsCount;
   if (params.priceCents !== undefined) updates.price_cents = params.priceCents;
   if (params.isActive !== undefined) updates.is_active = params.isActive;
+  if (params.tier !== undefined) updates.tier = params.tier;
 
   const { data, error } = await supabase
     .from("products")

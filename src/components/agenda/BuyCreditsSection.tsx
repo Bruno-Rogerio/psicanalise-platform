@@ -4,7 +4,8 @@
 import { useState, useEffect } from "react";
 import { listActiveProducts } from "@/services/products";
 import { getCreditsBalance } from "@/services/payments";
-import type { Product, AppointmentType } from "@/types/payment";
+import type { Product, AppointmentType, ProductTier } from "@/types/payment";
+import { supabase } from "@/lib/supabase-browser";
 import { formatCents } from "@/services/products";
 import { StripeCheckoutModal } from "@/components/payments/StripeCheckoutModal";
 import { PixCheckoutModal } from "@/components/payments/PixCheckoutModal";
@@ -25,6 +26,7 @@ export function BuyCreditsSection({
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [credits, setCredits] = useState(0);
+  const [userTier, setUserTier] = useState<ProductTier>("standard");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
@@ -36,8 +38,20 @@ export function BuyCreditsSection({
   async function loadData() {
     try {
       setLoading(true);
+      const { data: auth } = await supabase.auth.getUser();
+      const tier: ProductTier = auth.user
+        ? await supabase
+            .from("profiles")
+            .select("tier")
+            .eq("id", auth.user.id)
+            .single()
+            .then(({ data }) => (data?.tier as ProductTier) ?? "standard")
+        : "standard";
+
+      setUserTier(tier);
+
       const [prods, balance] = await Promise.all([
-        listActiveProducts(professionalId, appointmentType),
+        listActiveProducts(professionalId, appointmentType, tier),
         getCreditsBalance(professionalId, appointmentType),
       ]);
       setProducts(prods);

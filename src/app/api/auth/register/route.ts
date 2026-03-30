@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     const email = String(body.email ?? "").trim().toLowerCase();
     const senha = String(body.senha ?? "").trim();
     const phone = String(body.phone ?? "").trim();
+    const promoCode = String(body.promoCode ?? "").trim().toUpperCase();
 
     if (!nome || nome.length < 2) {
       return NextResponse.json(
@@ -61,6 +62,24 @@ export async function POST(request: NextRequest) {
         { error: "Email nao parece valido (sem MX)" },
         { status: 400 },
       );
+    }
+
+    // Valida código promocional (se fornecido)
+    let promoCodeData: { id: string; profissional_id: string } | null = null;
+    if (promoCode) {
+      const { data: codeRow } = await supabaseAdmin
+        .from("promo_codes")
+        .select("id, profissional_id, used_by")
+        .eq("code", promoCode)
+        .maybeSingle();
+
+      if (!codeRow) {
+        return NextResponse.json({ error: "Código promocional inválido" }, { status: 400 });
+      }
+      if (codeRow.used_by) {
+        return NextResponse.json({ error: "Código promocional já utilizado" }, { status: 400 });
+      }
+      promoCodeData = codeRow;
     }
 
     const { data: created, error: createError } =
@@ -97,9 +116,18 @@ export async function POST(request: NextRequest) {
         status: "pending_email",
         email_verified_at: null,
         deleted_at: null,
+        tier: promoCodeData ? "popular" : "standard",
       },
       { onConflict: "id" },
     );
+
+    // Marca o código como usado
+    if (promoCodeData) {
+      await supabaseAdmin
+        .from("promo_codes")
+        .update({ used_by: user.id, used_at: new Date().toISOString() })
+        .eq("id", promoCodeData.id);
+    }
 
     // Create verification token
     const rawToken = randomBytes(32).toString("hex");
