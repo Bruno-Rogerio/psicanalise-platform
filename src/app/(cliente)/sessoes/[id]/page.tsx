@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
@@ -72,6 +73,7 @@ function isNowWithinSessionWithMargin(
 }
 
 export default function SessaoDetailPage() {
+  const { toast } = useToast();
   const params = useParams();
   const sessionId = params?.id as string;
 
@@ -274,12 +276,12 @@ export default function SessaoDetailPage() {
       setAutoState("saved");
       setAutoError(null);
 
-      if (showToast) alert("Prontuário salvo com sucesso!");
+      if (showToast) toast("Prontuário salvo com sucesso!", "success");
     } catch (e: any) {
       console.error(e);
       setAutoState("error");
       setAutoError(e?.message ?? "Erro ao salvar.");
-      if (showToast) alert(e?.message ?? "Erro ao salvar prontuário.");
+      if (showToast) toast(e?.message ?? "Erro ao salvar prontuário.", "error");
     }
   }
 
@@ -356,7 +358,7 @@ export default function SessaoDetailPage() {
 
       setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao enviar mensagem.");
+      toast(e?.message ?? "Erro ao enviar mensagem.", "error");
     } finally {
       setChatBusy(false);
     }
@@ -383,7 +385,7 @@ export default function SessaoDetailPage() {
       url.searchParams.set("t", json.token);
       setDailyUrl(url.toString());
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao entrar na sessão.");
+      toast(e?.message ?? "Erro ao entrar na sessão.", "error");
     } finally {
       setJoinBusy(false);
     }
@@ -403,9 +405,9 @@ export default function SessaoDetailPage() {
       if (error) throw error;
 
       setRoom((prev) => (prev ? { ...prev, status: "completed" } : null));
-      alert("Sessão marcada como realizada!");
+      toast("Sessão marcada como realizada!", "success");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao atualizar status.");
+      toast(e?.message ?? "Erro ao atualizar status.", "error");
     } finally {
       setStatusBusy(false);
     }

@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useToast } from "@/contexts/ToastContext";
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase-browser';
 import { listAuthorPosts, deletePost, publishPost, archivePost } from '@/services/blog';
 import type { BlogPost, PostStatus } from '@/types/blog';
 
 export default function BlogAdminPage() {
+  const { toast } = useToast();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<PostStatus | 'all'>('all');
@@ -35,7 +37,7 @@ export default function BlogAdminPage() {
       await loadPosts();
     } catch (error) {
       console.error('Erro ao publicar:', error);
-      alert('Erro ao publicar o post');
+      toast('Erro ao publicar o post', 'error');
     }
   }
 
@@ -45,7 +47,7 @@ export default function BlogAdminPage() {
       await loadPosts();
     } catch (error) {
       console.error('Erro ao arquivar:', error);
-      alert('Erro ao arquivar o post');
+      toast('Erro ao arquivar o post', 'error');
     }
   }
 
@@ -57,7 +59,7 @@ export default function BlogAdminPage() {
       await loadPosts();
     } catch (error) {
       console.error('Erro ao excluir:', error);
-      alert('Erro ao excluir o post');
+      toast('Erro ao excluir o post', 'error');
     }
   }
 

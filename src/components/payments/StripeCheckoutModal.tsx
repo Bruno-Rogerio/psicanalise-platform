@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { useToast } from "@/contexts/ToastContext";
 import {
   Elements,
   PaymentElement,
@@ -30,6 +31,7 @@ export function StripeCheckoutModal({
   product,
   onSuccess,
 }: StripeCheckoutModalProps) {
+  const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +52,7 @@ export function StripeCheckoutModal({
         setOrderId(response.order.id);
       } catch (error: any) {
         console.error("Error creating order:", error);
-        alert(error.message || "Erro ao iniciar pagamento");
+        toast(error.message || "Erro ao iniciar pagamento", "error");
         onClose();
       } finally {
         setLoading(false);

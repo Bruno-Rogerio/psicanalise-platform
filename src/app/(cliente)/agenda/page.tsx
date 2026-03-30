@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-browser";
 import { CalendarMonth } from "@/components/shared/agenda/CalendarMonth";
@@ -26,6 +27,7 @@ import {
 } from "@/services/agenda";
 
 export default function AgendaPage() {
+  const { toast } = useToast();
   const router = useRouter();
 
   // State
@@ -202,9 +204,7 @@ export default function AgendaPage() {
       const minStartMs =
         Date.now() + MIN_SCHEDULE_LEAD_HOURS * 60 * 60 * 1000;
       if (pickedSlot.start.getTime() < minStartMs) {
-        alert(
-          `Agendamentos precisam de no mínimo ${MIN_SCHEDULE_LEAD_HOURS} horas de antecedência.`,
-        );
+        toast(`Agendamentos precisam de no mínimo ${MIN_SCHEDULE_LEAD_HOURS} horas de antecedência.`, "error");
         setPickedSlot(null);
         return;
       }
@@ -229,7 +229,7 @@ export default function AgendaPage() {
 
       // ✅ conflito de agenda (alguém pegou antes / overlap)
       if (msg.includes("SLOT_TAKEN")) {
-        alert("Esse horário acabou de ser reservado. Escolha outro.");
+        toast("Esse horário acabou de ser reservado. Escolha outro.", "error");
 
         await refreshBooked();
         setPickedSlot(null);
@@ -239,17 +239,17 @@ export default function AgendaPage() {
       }
 
       if (msg.includes("NO_CREDITS")) {
-        alert("Você não tem créditos disponíveis para agendar.");
+        toast("Você não tem créditos disponíveis para agendar.", "error");
         await loadCreditsBalance(pickedSlot.appointment_type);
         return;
       }
 
       if (msg.includes("NOT_AUTHENTICATED")) {
-        alert("Você precisa estar logado.");
+        toast("Você precisa estar logado.", "error");
         return;
       }
 
-      alert(e?.message ?? "Erro ao agendar.");
+      toast(e?.message ?? "Erro ao agendar.", "error");
     } finally {
       setConfirming(false);
     }

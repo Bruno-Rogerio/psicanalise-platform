@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
+import { useToast } from "@/contexts/ToastContext";
 import type { Product } from "@/types/payment";
 import { createOrder } from "@/services/payments";
 import { formatCents } from "@/services/products";
@@ -19,6 +20,7 @@ export function PixCheckoutModal({
   product,
   onSuccess,
 }: PixCheckoutModalProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<{
     reference: string;
@@ -71,7 +73,7 @@ export function PixCheckoutModal({
         });
       } catch (error: any) {
         console.error("Error creating PIX order:", error);
-        alert(error.message || "Erro ao gerar PIX");
+        toast(error.message || "Erro ao gerar PIX", "error");
         onClose();
       } finally {
         setLoading(false);
@@ -88,7 +90,7 @@ export function PixCheckoutModal({
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy:", error);
-      alert("Erro ao copiar código PIX");
+      toast("Erro ao copiar código PIX", "error");
     }
   }
 

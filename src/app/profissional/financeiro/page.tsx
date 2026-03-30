@@ -6,11 +6,12 @@ import { supabase } from "@/lib/supabase-browser";
 
 type Payment = {
   id: string;
-  amount: number;
+  amount: number; // in BRL (not cents)
   status: string;
   created_at: string;
   patient_name: string;
   appointment_type: string;
+  payment_method: string;
 };
 
 type Period = "week" | "month" | "year" | "all";
@@ -20,7 +21,6 @@ export default function FinanceiroPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [period, setPeriod] = useState<Period>("month");
 
-  // Load payments (mock data for now - would come from payments table)
   useEffect(() => {
     (async () => {
       try {
@@ -28,32 +28,33 @@ export default function FinanceiroPage() {
         const { data: auth } = await supabase.auth.getUser();
         if (!auth.user?.id) return;
 
-        // Get completed appointments as "payments"
         const { data, error } = await supabase
-          .from("appointments")
+          .from("orders")
           .select(
             `
             id,
-            appointment_type,
-            status,
-            start_at,
-            patient:profiles!appointments_user_id_fkey ( nome )
+            amount_cents,
+            payment_method,
+            created_at,
+            product:products!orders_product_id_fkey ( appointment_type ),
+            patient:profiles!orders_user_id_fkey ( nome )
           `,
           )
           .eq("profissional_id", auth.user.id)
-          .eq("status", "completed")
-          .order("start_at", { ascending: false });
+          .eq("status", "paid")
+          .order("created_at", { ascending: false });
 
         if (!error && data) {
-          const mockPayments: Payment[] = data.map((a: any) => ({
-            id: a.id,
-            amount: a.appointment_type === "video" ? 200 : 150, // Mock prices
+          const mapped: Payment[] = data.map((o: any) => ({
+            id: o.id,
+            amount: (o.amount_cents ?? 0) / 100,
             status: "paid",
-            created_at: a.start_at,
-            patient_name: a.patient?.[0]?.nome || "Paciente",
-            appointment_type: a.appointment_type,
+            created_at: o.created_at,
+            patient_name: o.patient?.nome || "Paciente",
+            appointment_type: o.product?.appointment_type || "video",
+            payment_method: o.payment_method || "card",
           }));
-          setPayments(mockPayments);
+          setPayments(mapped);
         }
       } finally {
         setLoading(false);
@@ -89,7 +90,6 @@ export default function FinanceiroPage() {
     const count = filteredPayments.length;
     const avg = count > 0 ? total / count : 0;
 
-    // By type
     const videoTotal = filteredPayments
       .filter((p) => p.appointment_type === "video")
       .reduce((sum, p) => sum + p.amount, 0);
@@ -149,7 +149,7 @@ export default function FinanceiroPage() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all sm:px-4 ${
                 period === p
                   ? "bg-[#4A7C59] text-white shadow"
                   : "text-warm-600 hover:text-warm-900"
@@ -168,20 +168,20 @@ export default function FinanceiroPage() {
       </header>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={<MoneyIcon className="h-6 w-6" />}
           iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
           label="Total Recebido"
           value={formatCurrency(stats.total)}
-          sublabel={`${stats.count} sessão(ões)`}
+          sublabel={`${stats.count} compra(s)`}
         />
         <StatCard
           icon={<TrendingIcon className="h-6 w-6" />}
           iconBg="bg-gradient-to-br from-amber-500 to-amber-600"
-          label="Média por Sessão"
+          label="Ticket Médio"
           value={formatCurrency(stats.avg)}
-          sublabel="valor médio"
+          sublabel="por compra"
         />
         <StatCard
           icon={<VideoIcon className="h-6 w-6" />}
@@ -203,7 +203,7 @@ export default function FinanceiroPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Chart */}
         <div className="lg:col-span-2">
-          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-warm-200 bg-white p-4 shadow-sm sm:p-5">
             <h2 className="font-bold text-warm-900">Evolução Mensal</h2>
             <p className="text-sm text-warm-500">Últimos 6 meses</p>
 
@@ -228,7 +228,6 @@ export default function FinanceiroPage() {
                 ))}
               </div>
 
-              {/* Y-axis labels */}
               <div className="mt-4 flex items-center justify-between border-t border-warm-200 pt-4 text-xs text-warm-500">
                 <span>R$ 0</span>
                 <span>{formatCurrency(maxChartValue / 2)}</span>
@@ -240,9 +239,9 @@ export default function FinanceiroPage() {
 
         {/* Recent Payments */}
         <div>
-          <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-warm-200 bg-white p-4 shadow-sm sm:p-5">
             <h2 className="font-bold text-warm-900">Últimos Recebimentos</h2>
-            <p className="text-sm text-warm-500">Sessões realizadas</p>
+            <p className="text-sm text-warm-500">Pacotes comprados</p>
 
             <div className="mt-4 space-y-3">
               {loading ? (
@@ -271,7 +270,7 @@ export default function FinanceiroPage() {
       </div>
 
       {/* Full List */}
-      <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-warm-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="font-bold text-warm-900">Histórico Completo</h2>
@@ -297,18 +296,18 @@ export default function FinanceiroPage() {
               Nenhum recebimento
             </p>
             <p className="mt-1 text-sm text-warm-500">
-              Os pagamentos de sessões realizadas aparecerão aqui.
+              Compras de pacotes de sessões aparecerão aqui.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[480px]">
               <thead>
                 <tr className="border-b border-warm-200 text-left text-xs font-semibold text-warm-500">
                   <th className="pb-3 pr-4">Data</th>
                   <th className="pb-3 pr-4">Paciente</th>
                   <th className="pb-3 pr-4">Tipo</th>
-                  <th className="pb-3 pr-4">Status</th>
+                  <th className="pb-3 pr-4">Pagamento</th>
                   <th className="pb-3 text-right">Valor</th>
                 </tr>
               </thead>
@@ -333,8 +332,10 @@ export default function FinanceiroPage() {
                         </span>
                       </td>
                       <td className="py-3 pr-4">
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                          Pago
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${payment.payment_method === "pix" ? "bg-emerald-100 text-emerald-700" : "bg-warm-100 text-warm-700"}`}
+                        >
+                          {payment.payment_method === "pix" ? "PIX" : "Cartão"}
                         </span>
                       </td>
                       <td className="py-3 text-right font-semibold text-emerald-600">
@@ -366,13 +367,13 @@ function StatCard({
   sublabel: string;
 }) {
   return (
-    <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-warm-200 bg-white p-4 shadow-sm sm:p-5">
       <div
-        className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} text-white shadow-md`}
+        className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${iconBg} text-white shadow-md`}
       >
         {icon}
       </div>
-      <p className="text-2xl font-bold text-warm-900">{value}</p>
+      <p className="text-xl font-bold text-warm-900 sm:text-2xl">{value}</p>
       <p className="text-sm font-medium text-warm-700">{label}</p>
       <p className="text-xs text-warm-500">{sublabel}</p>
     </div>

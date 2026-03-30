@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { supabase } from "@/lib/supabase-browser";
 import {
   listProducts,
@@ -15,6 +16,7 @@ import {
 import type { Product, AppointmentType } from "@/types/payment";
 
 export default function ProdutosPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function ProdutosPage() {
       setProducts(prods);
     } catch (error: any) {
       console.error("Erro ao carregar produtos:", error);
-      alert(error.message || "Erro ao carregar produtos");
+      toast(error.message || "Erro ao carregar produtos", "error");
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ export default function ProdutosPage() {
       loadProducts();
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
-      alert(error.message || "Erro ao salvar produto");
+      toast(error.message || "Erro ao salvar produto", "error");
     } finally {
       setModalBusy(false);
     }
@@ -128,7 +130,7 @@ export default function ProdutosPage() {
       loadProducts();
     } catch (error: any) {
       console.error("Erro ao deletar produto:", error);
-      alert(error.message || "Erro ao deletar produto");
+      toast(error.message || "Erro ao deletar produto", "error");
     }
   }
 
@@ -141,7 +143,7 @@ export default function ProdutosPage() {
       loadProducts();
     } catch (error: any) {
       console.error("Erro ao atualizar produto:", error);
-      alert(error.message || "Erro ao atualizar produto");
+      toast(error.message || "Erro ao atualizar produto", "error");
     }
   }
 

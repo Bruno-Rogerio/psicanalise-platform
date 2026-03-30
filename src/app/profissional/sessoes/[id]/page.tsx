@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
@@ -45,6 +46,7 @@ const fmtTime = (d: Date) =>
   });
 
 export default function SessaoDetailPage() {
+  const { toast } = useToast();
   const params = useParams();
   const sessionId = params?.id as string;
 
@@ -259,11 +261,11 @@ export default function SessaoDetailPage() {
       const { error } = await supabase.from("session_notes").upsert(payload);
 
       if (error) throw error;
-      alert("Prontuário salvo com sucesso!");
+      toast("Prontuário salvo com sucesso!", "success");
       setAutosaveStatus("saved");
       window.setTimeout(() => setAutosaveStatus("idle"), 1500);
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao salvar prontuário.");
+      toast(e?.message ?? "Erro ao salvar prontuário.", "error");
       setAutosaveStatus("error");
       window.setTimeout(() => setAutosaveStatus("idle"), 2500);
     } finally {
@@ -285,9 +287,9 @@ export default function SessaoDetailPage() {
       if (error) throw error;
 
       setRoom((prev) => (prev ? { ...prev, status: "completed" } : null));
-      alert("Sessão marcada como realizada!");
+      toast("Sessão marcada como realizada!", "success");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao atualizar status.");
+      toast(e?.message ?? "Erro ao atualizar status.", "error");
     } finally {
       setStatusBusy(false);
     }
@@ -323,7 +325,7 @@ export default function SessaoDetailPage() {
       // ✅ Scroll automático apenas quando VOCÊ envia
       setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao enviar mensagem.");
+      toast(e?.message ?? "Erro ao enviar mensagem.", "error");
     } finally {
       setChatBusy(false);
     }
@@ -350,7 +352,7 @@ export default function SessaoDetailPage() {
       url.searchParams.set("t", json.token);
       setDailyUrl(url.toString());
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao entrar na sessão.");
+      toast(e?.message ?? "Erro ao entrar na sessão.", "error");
     } finally {
       setJoinBusy(false);
     }

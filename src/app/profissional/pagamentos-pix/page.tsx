@@ -2,11 +2,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { supabase } from "@/lib/supabase-browser";
 import type { OrderWithItems } from "@/types/payment";
 import { formatCents } from "@/services/products";
 
 export default function PagamentosPixPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function PagamentosPixPage() {
       setOrders((data || []) as OrderWithItems[]);
     } catch (error: any) {
       console.error("Erro ao carregar pagamentos:", error);
-      alert(error.message || "Erro ao carregar pagamentos");
+      toast(error.message || "Erro ao carregar pagamentos", "error");
     } finally {
       setLoading(false);
     }
@@ -96,11 +98,11 @@ export default function PagamentosPixPage() {
 
       console.log("✅ Validation successful:", data);
 
-      alert("✅ Pagamento validado! Créditos liberados para o cliente.");
+      toast("Pagamento validado! Créditos liberados para o cliente.", "success");
       loadOrders(); // Recarrega lista
     } catch (error: any) {
       console.error("Erro ao validar pagamento:", error);
-      alert(error.message || "Erro ao validar pagamento");
+      toast(error.message || "Erro ao validar pagamento", "error");
     } finally {
       setValidating(null);
     }
@@ -118,11 +120,11 @@ export default function PagamentosPixPage() {
 
       if (error) throw error;
 
-      alert("Pagamento rejeitado.");
+      toast("Pagamento rejeitado.", "info");
       loadOrders();
     } catch (error: any) {
       console.error("Erro ao rejeitar pagamento:", error);
-      alert(error.message || "Erro ao rejeitar pagamento");
+      toast(error.message || "Erro ao rejeitar pagamento", "error");
     }
   }
 

@@ -84,6 +84,10 @@ const config: Config = {
         glow: "0 0 40px -10px rgba(212, 165, 165, 0.3)",
       },
 
+      fontFamily: {
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+
       transitionDuration: {
         400: "400ms",
       },

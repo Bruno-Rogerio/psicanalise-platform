@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import { supabase } from "@/lib/supabase-browser";
 
 type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -48,6 +49,7 @@ type BreakEditorState = {
 } | null;
 
 export default function ConfiguracoesPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("availability");
@@ -328,9 +330,9 @@ export default function ConfiguracoesPage() {
         if (error) throw error;
       }
 
-      alert("Disponibilidade salva ✓");
+      toast("Disponibilidade salva!", "success");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao salvar");
+      toast(e?.message ?? "Erro ao salvar", "error");
     } finally {
       setSaving(false);
     }
@@ -356,9 +358,9 @@ export default function ConfiguracoesPage() {
 
       if (error) throw error;
 
-      alert("Configurações salvas ✓");
+      toast("Configurações salvas!", "success");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao salvar");
+      toast(e?.message ?? "Erro ao salvar", "error");
     } finally {
       setSaving(false);
     }
@@ -381,9 +383,9 @@ export default function ConfiguracoesPage() {
 
       if (error) throw error;
 
-      alert("Perfil salvo ✓");
+      toast("Perfil salvo!", "success");
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao salvar");
+      toast(e?.message ?? "Erro ao salvar", "error");
     } finally {
       setSaving(false);
     }

@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
 
@@ -30,6 +31,7 @@ type SessionNotes = {
 };
 
 export default function PacientesPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -134,7 +136,7 @@ export default function PacientesPage() {
       setGeneratedCode(code);
       setCodeCopied(false);
     } catch (err: any) {
-      alert(err.message || "Erro ao gerar código");
+      toast(err.message || "Erro ao gerar código", "error");
     } finally {
       setGeneratingCode(false);
     }
@@ -157,7 +159,7 @@ export default function PacientesPage() {
         prev.map((p) => (p.id === patient.id ? { ...p, tier: newTier } : p)),
       );
     } catch (err: any) {
-      alert(err.message || "Erro ao atualizar plano");
+      toast(err.message || "Erro ao atualizar plano", "error");
     } finally {
       setUpdatingTier(false);
     }

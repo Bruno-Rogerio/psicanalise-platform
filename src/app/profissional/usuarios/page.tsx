@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/contexts/ToastContext";
 
 type UserRow = {
   id: string;
@@ -12,6 +13,7 @@ type UserRow = {
 };
 
 export default function UsuariosPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +90,7 @@ export default function UsuariosPage() {
 
       setEditing(null);
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao salvar");
+      toast(e?.message ?? "Erro ao salvar", "error");
     } finally {
       setBusyId(null);
     }
@@ -112,7 +114,7 @@ export default function UsuariosPage() {
         prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)),
       );
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao atualizar status");
+      toast(e?.message ?? "Erro ao atualizar status", "error");
     } finally {
       setBusyId(null);
     }
@@ -135,7 +137,7 @@ export default function UsuariosPage() {
 
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao excluir");
+      toast(e?.message ?? "Erro ao excluir", "error");
     } finally {
       setBusyId(null);
     }

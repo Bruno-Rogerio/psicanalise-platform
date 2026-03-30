@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useToast } from "@/contexts/ToastContext";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-browser";
 import { CalendarMonth } from "@/components/shared/agenda/CalendarMonth";
@@ -35,6 +36,7 @@ type Appointment = {
 };
 
 export default function ProfissionalAgendaPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [month, setMonth] = useState(() => new Date());
@@ -220,7 +222,7 @@ export default function ProfissionalAgendaPage() {
         prev.map((a) => (a.id === id ? { ...a, status } : a)),
       );
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao atualizar.");
+      toast(e?.message ?? "Erro ao atualizar.", "error");
     } finally {
       setBusy(null);
     }
@@ -268,7 +270,7 @@ export default function ProfissionalAgendaPage() {
       }
       setSelectedSlots({});
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao bloquear horários.");
+      toast(e?.message ?? "Erro ao bloquear horários.", "error");
     } finally {
       setBulkBusy(null);
     }
@@ -305,7 +307,7 @@ export default function ProfissionalAgendaPage() {
       setBlocks((prev) => prev.filter((b) => !idsToDelete.includes(b.id)));
       setSelectedSlots({});
     } catch (e: any) {
-      alert(e?.message ?? "Erro ao desbloquear horários.");
+      toast(e?.message ?? "Erro ao desbloquear horários.", "error");
     } finally {
       setBulkBusy(null);
     }

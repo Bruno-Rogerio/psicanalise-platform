@@ -30,19 +30,45 @@ export function PendingPixAlert() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    loadPendingCount();
-    const interval = setInterval(loadPendingCount, 30000);
-    return () => clearInterval(interval);
+    let userId: string | null = null;
+
+    async function init() {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) return;
+      userId = auth.user.id;
+
+      // Initial load
+      await fetchCount(userId);
+
+      // Realtime subscription
+      const channel = supabase
+        .channel("pix-pending-count")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `profissional_id=eq.${userId}`,
+          },
+          () => fetchCount(userId!),
+        )
+        .subscribe();
+
+      return () => supabase.removeChannel(channel);
+    }
+
+    const cleanupPromise = init();
+    return () => {
+      cleanupPromise.then((fn) => fn?.());
+    };
   }, []);
 
-  async function loadPendingCount() {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user?.id) return;
-
+  async function fetchCount(userId: string) {
     const { count } = await supabase
       .from("orders")
       .select("*", { count: "exact", head: true })
-      .eq("profissional_id", auth.user.id)
+      .eq("profissional_id", userId)
       .eq("payment_method", "pix")
       .eq("status", "pending_pix");
 
