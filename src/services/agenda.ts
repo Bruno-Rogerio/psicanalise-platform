@@ -236,8 +236,8 @@ export function generateSlotsForDay(params: {
     const windowEnd = new Date(day);
     windowEnd.setHours(eh, em, 0, 0);
 
-    // step: 10min para sensação de “agenda moderna”
-    const stepMin = 10;
+    // step: horários inteiros (a cada 60min)
+    const stepMin = 60;
 
     for (
       let cursor = new Date(windowStart);
@@ -322,7 +322,7 @@ export function generateSlotsForDayWithStatus(params: {
     const windowEnd = new Date(day);
     windowEnd.setHours(eh, em, 0, 0);
 
-    const stepMin = 10;
+    const stepMin = 60;
 
     for (
       let cursor = new Date(windowStart);
