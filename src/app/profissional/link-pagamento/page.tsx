@@ -35,6 +35,7 @@ export default function LinkPagamentoPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Formulário
@@ -100,6 +101,33 @@ export default function LinkPagamentoPage() {
       setError(err.message);
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function cancelLink(link: PaymentLink) {
+    if (!confirm(`Cancelar o link "${link.description}"? O paciente não conseguirá mais pagar por ele.`)) return;
+
+    setCancellingId(link.id);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) throw new Error("Não autenticado");
+
+      const res = await fetch("/api/payments/cancel-payment-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: link.id, profissional_id: auth.user.id }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erro ao cancelar");
+
+      setLinks((prev) =>
+        prev.map((l) => (l.id === link.id ? { ...l, status: "cancelled" } : l)),
+      );
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -254,26 +282,43 @@ export default function LinkPagamentoPage() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => copyLink(link)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
-                    copiedId === link.id
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                      : "border-warm-200 bg-warm-50 text-warm-700 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
-                  }`}
-                >
-                  {copiedId === link.id ? (
-                    <>
-                      <CheckIcon className="h-4 w-4" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <CopyIcon className="h-4 w-4" />
-                      Copiar link
-                    </>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => copyLink(link)}
+                    className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
+                      copiedId === link.id
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-warm-200 bg-warm-50 text-warm-700 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+                    }`}
+                  >
+                    {copiedId === link.id ? (
+                      <>
+                        <CheckIcon className="h-4 w-4" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <CopyIcon className="h-4 w-4" />
+                        Copiar link
+                      </>
+                    )}
+                  </button>
+
+                  {link.status === "active" && (
+                    <button
+                      onClick={() => cancelLink(link)}
+                      disabled={cancellingId === link.id}
+                      className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:opacity-60"
+                    >
+                      {cancellingId === link.id ? (
+                        <SpinnerIcon className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <XIcon className="h-4 w-4" />
+                      )}
+                      Cancelar
+                    </button>
                   )}
-                </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -309,6 +354,14 @@ function CheckIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
