@@ -20,7 +20,7 @@ import { ptBR } from "date-fns/locale";
 type Period = "7d" | "30d" | "90d";
 
 type Pageview = { created_at: string; page_path: string };
-type AnalyticsEvent = { created_at: string; event_name: string; event_category: string; event_label: string };
+type AnalyticsEvent = { created_at: string; event_name: string; event_category: string; event_label: string; page_path: string };
 
 const CORAL = "#E8755A";
 const SAGE = "#4A7C59";
