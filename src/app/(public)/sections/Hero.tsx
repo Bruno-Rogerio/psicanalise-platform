@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/ui/TrackedLink";
 
 export function Hero() {
 
@@ -114,8 +114,9 @@ export function Hero() {
               className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
               style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.72s both" }}
             >
-              <Link
+              <TrackedLink
                 href="/cadastro"
+                eventLabel="hero_comecar_agora"
                 className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl active:scale-[0.99] sm:w-auto"
               >
                 Começar agora
@@ -125,13 +126,14 @@ export function Hero() {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
-              </Link>
-              <Link
+              </TrackedLink>
+              <TrackedLink
                 href="#como-funciona"
+                eventLabel="hero_como_funciona"
                 className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#E8E0DC] bg-white/70 px-8 py-4 text-base font-semibold text-[#1A1614] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A1614]/20 hover:bg-white sm:w-auto"
               >
                 Como funciona
-              </Link>
+              </TrackedLink>
             </div>
 
             {/* Trust row */}

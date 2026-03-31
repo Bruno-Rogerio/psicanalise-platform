@@ -16,7 +16,7 @@ export function Sobre() {
 
           {/* Text */}
           <div>
-            <Reveal direction="up" delay={0}>
+            <Reveal direction="up" delay={0} trackSection="Sobre">
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">Sobre mim</p>
               <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
                 A escuta começa<br />

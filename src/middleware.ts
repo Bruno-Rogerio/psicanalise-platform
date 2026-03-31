@@ -23,6 +23,7 @@ const PUBLIC_PREFIXES = [
   "/_next",
   "/api/auth",
   "/api/public",
+  "/api/analytics",
   "/favicon",
   "/robots",
   "/sitemap",

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrackedLink } from "@/components/ui/TrackedLink";
 
 export function Contato() {
   return (
@@ -12,7 +12,7 @@ export function Contato() {
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
 
         {/* Header */}
-        <Reveal direction="up" delay={0} className="mb-14 max-w-2xl">
+        <Reveal direction="up" delay={0} className="mb-14 max-w-2xl" trackSection="Contato">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">Contato</p>
           <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
             Se quiser, a gente{" "}
@@ -83,21 +83,23 @@ export function Contato() {
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Link
+                <TrackedLink
                   href="/cadastro"
+                  eventLabel="contato_criar_conta"
                   className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-semibold text-[#1A1614] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#F2EDE8] hover:shadow-xl sm:w-auto"
                 >
                   Criar conta
                   <svg className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
-                </Link>
-                <Link
+                </TrackedLink>
+                <TrackedLink
                   href="/login"
+                  eventLabel="contato_login"
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold text-white/80 transition-all duration-300 hover:border-white/25 hover:bg-white/10 sm:w-auto"
                 >
                   Já tenho conta
-                </Link>
+                </TrackedLink>
               </div>
 
               <div className="mt-10 flex flex-wrap items-center gap-6 text-xs text-white/30">

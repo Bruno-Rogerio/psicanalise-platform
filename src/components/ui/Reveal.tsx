@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 interface RevealProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface RevealProps {
   className?: string;
   threshold?: number;
   duration?: number;
+  trackSection?: string; // e.g. "Sobre", "Como Funciona"
 }
 
 export function Reveal({
@@ -18,6 +20,7 @@ export function Reveal({
   className,
   threshold = 0.12,
   duration = 700,
+  trackSection,
 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -30,6 +33,9 @@ export function Reveal({
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisible(true);
+          if (trackSection) {
+            trackEvent("section_view", "section", trackSection);
+          }
           observer.unobserve(el);
         }
       },
@@ -38,7 +44,7 @@ export function Reveal({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [threshold]);
+  }, [threshold, trackSection]);
 
   const hidden: Record<RevealProps["direction"] & string, React.CSSProperties> = {
     up:    { opacity: 0, transform: "translateY(36px)" },

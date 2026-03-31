@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Reveal } from "@/components/ui/Reveal";
+
+function RevealSection() {
+  return <Reveal direction="up" trackSection="Avaliações" className="hidden" />;
+}
 
 type Review = {
   id: string;
@@ -119,6 +124,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
+        <RevealSection />
         <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">

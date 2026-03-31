@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrackedLink } from "@/components/ui/TrackedLink";
 
 const steps = [
   {
@@ -39,7 +39,7 @@ export function ComoFunciona() {
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
 
         {/* Header */}
-        <Reveal direction="up" delay={0} className="mb-16 max-w-2xl">
+        <Reveal direction="up" delay={0} className="mb-16 max-w-2xl" trackSection="Como Funciona">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
             Como funciona
           </p>
@@ -91,8 +91,9 @@ export function ComoFunciona() {
 
         {/* CTA */}
         <Reveal direction="up" delay={100} className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link
+          <TrackedLink
             href="/cadastro"
+            eventLabel="como_funciona_comecar"
             className="group inline-flex items-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl"
           >
             Pronto para começar?
@@ -102,13 +103,14 @@ export function ComoFunciona() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-          </Link>
-          <Link
+          </TrackedLink>
+          <TrackedLink
             href="/login"
+            eventLabel="como_funciona_login"
             className="text-sm font-medium text-[#8B7B72] underline-offset-4 transition-colors hover:text-[#1A1614] hover:underline"
           >
             Já tenho conta
-          </Link>
+          </TrackedLink>
         </Reveal>
       </div>
     </section>
