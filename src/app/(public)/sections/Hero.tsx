@@ -25,9 +25,9 @@ export function Hero() {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
         }
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.94) translateY(20px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes floatDandelion {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-12px) rotate(1.5deg); }
         }
       `}</style>
 
@@ -47,20 +47,30 @@ export function Hero() {
             animation: "floatOrb2 26s ease-in-out infinite",
           }}
         />
-        <div
-          className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-25"
-          style={{
-            background: "radial-gradient(circle, #D4A72C10 0%, transparent 70%)",
-            animation: "floatOrb1 32s ease-in-out infinite reverse",
-          }}
-        />
+      </div>
+
+      {/* Dandelion background */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        style={{ animation: "floatDandelion 18s ease-in-out infinite" }}
+      >
+        <div className="absolute -right-16 top-0 h-full w-[55%] sm:w-[48%]">
+          <Image
+            src="/dandelion.jpeg"
+            alt=""
+            fill
+            className="object-contain object-right-top"
+            style={{ opacity: 0.09 }}
+            priority
+          />
+        </div>
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
-        <div className="grid min-h-[88vh] items-center gap-10 pb-8 pt-6 lg:grid-cols-[1fr_440px] lg:gap-16 lg:py-0 xl:grid-cols-[1fr_520px]">
+        <div className="flex min-h-[88vh] items-center py-16 lg:py-0">
 
-          {/* ===== LEFT — Text ===== */}
-          <div className="relative z-10 py-10 lg:py-24">
+          {/* ===== Text — single column, left aligned ===== */}
+          <div className="relative z-10 max-w-3xl py-10 lg:py-24">
 
             {/* Badge */}
             <div
@@ -74,7 +84,7 @@ export function Hero() {
               O que você sente faz sentido. Vamos olhar para isso com cuidado.
             </div>
 
-            {/* Headline — 3 lines with different weights */}
+            {/* Headline */}
             <h1 className="max-w-2xl space-y-1">
               <span
                 className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
@@ -143,58 +153,10 @@ export function Hero() {
               ))}
             </div>
           </div>
-
-          {/* ===== RIGHT — Photo ===== */}
-          <div
-            className="relative hidden lg:block"
-            style={{ animation: "scaleIn 0.9s ease-out 0.4s both" }}
-          >
-            {/* Decorative rings */}
-            <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-br from-[#E8755A]/15 via-transparent to-[#4A7C59]/15 blur-2xl" />
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#E8755A]/20 blur-3xl" />
-            <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-[#4A7C59]/15 blur-3xl" />
-
-            {/* Photo container */}
-            <div className="relative overflow-hidden rounded-[3rem] shadow-2xl">
-              <Image
-                src="/raizaconvento.jpeg"
-                alt="Raiza Convento — Psicanalista"
-                width={520}
-                height={660}
-                className="h-auto w-full object-cover"
-                priority
-              />
-              {/* Gradient overlay */}
-              <div className="absolute bottom-0 left-0 right-0 h-52 bg-gradient-to-t from-[#1A1614]/70 to-transparent" />
-
-              {/* Floating quote card */}
-              <div className="absolute bottom-6 left-5 right-5 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-                <p className="text-sm italic leading-relaxed text-[#2C2420]">
-                  "Cada história merece ser ouvida com cuidado e sem pressa."
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-px flex-1 bg-[#E8E0DC]" />
-                  <p className="text-xs font-bold text-[#4A7C59]">Raiza Convento</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating accent badge */}
-            <div className="absolute -right-4 top-16 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 shadow-lg">
-              <p className="text-xs font-bold text-[#1A1614] uppercase tracking-wider">Psicanalista</p>
-              <div className="mt-1 flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="h-3 w-3 text-[#D4A72C]" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                  </svg>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* ===== Marquee Strip ===== */}
+      {/* Marquee Strip */}
       <div className="relative overflow-hidden border-y border-[#2C2420]/20 bg-[#1A1614] py-4">
         <div
           className="flex whitespace-nowrap"
