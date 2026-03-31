@@ -1,9 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export function Hero() {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-[#F2EDE8]">
       <style>{`
@@ -25,9 +33,9 @@ export function Hero() {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
         }
-        @keyframes floatDandelion {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(1.5deg); }
+        @keyframes badgePop {
+          from { opacity: 0; transform: translateY(12px) scale(0.95); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
 
@@ -49,33 +57,31 @@ export function Hero() {
         />
       </div>
 
-      {/* Dandelion background */}
-      <div
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-        style={{ animation: "floatDandelion 18s ease-in-out infinite" }}
-      >
-        <div className="absolute -right-16 top-0 h-full w-[55%] sm:w-[48%]">
-          <Image
-            src="/dandelion.jpeg"
-            alt=""
-            fill
-            className="object-contain object-right-top"
-            style={{ opacity: 0.09 }}
-            priority
-          />
-        </div>
+      {/* Dandelion — parallax */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -right-10 top-0 h-[110%] w-[60%] sm:w-[52%]"
+          style={{
+            backgroundImage: "url('/dandelion.jpeg')",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right top",
+            opacity: 0.13,
+            transform: `translateY(${scrollY * 0.12}px)`,
+            transition: "transform 0.1s linear",
+          }}
+        />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         <div className="flex min-h-[88vh] items-center py-16 lg:py-0">
 
-          {/* ===== Text — single column, left aligned ===== */}
           <div className="relative z-10 max-w-3xl py-10 lg:py-24">
 
             {/* Badge */}
             <div
               className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-[#DDD5CE] bg-white/80 px-4 py-2 text-sm font-medium text-[#8B7B72] shadow-sm backdrop-blur-sm"
-              style={{ animation: "fadeUp 0.5s ease-out 0.1s both" }}
+              style={{ animation: "badgePop 0.6s cubic-bezier(.22,.68,0,1.2) 0.1s both" }}
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#4A7C59] opacity-60" />
@@ -88,19 +94,19 @@ export function Hero() {
             <h1 className="max-w-2xl space-y-1">
               <span
                 className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
-                style={{ animation: "fadeUp 0.6s ease-out 0.2s both" }}
+                style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.2s both" }}
               >
                 Um espaço para
               </span>
               <span
                 className="block text-5xl font-black italic leading-[1.08] tracking-tight text-[#E8755A] sm:text-6xl lg:text-[5.5rem]"
-                style={{ animation: "fadeUp 0.6s ease-out 0.32s both" }}
+                style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.35s both" }}
               >
                 falar do que sente
               </span>
               <span
                 className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
-                style={{ animation: "fadeUp 0.6s ease-out 0.44s both" }}
+                style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.5s both" }}
               >
                 com cuidado.
               </span>
@@ -109,7 +115,7 @@ export function Hero() {
             {/* Subtitle */}
             <p
               className="mt-8 max-w-lg text-lg leading-relaxed text-[#8B7B72] sm:text-xl"
-              style={{ animation: "fadeUp 0.6s ease-out 0.54s both" }}
+              style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.6s both" }}
             >
               A psicanálise não é sobre consertar você. É sobre criar um lugar de escuta onde aquilo que pesa ganha nome, sentido e caminho.
             </p>
@@ -117,7 +123,7 @@ export function Hero() {
             {/* CTA Buttons */}
             <div
               className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
-              style={{ animation: "fadeUp 0.6s ease-out 0.64s both" }}
+              style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.72s both" }}
             >
               <Link
                 href="/cadastro"
@@ -131,7 +137,6 @@ export function Hero() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
-
               <Link
                 href="#como-funciona"
                 className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#E8E0DC] bg-white/70 px-8 py-4 text-base font-semibold text-[#1A1614] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A1614]/20 hover:bg-white sm:w-auto"
@@ -143,11 +148,11 @@ export function Hero() {
             {/* Trust row */}
             <div
               className="mt-10 flex flex-wrap items-center gap-6 text-sm text-[#B0A098]"
-              style={{ animation: "fadeUp 0.6s ease-out 0.74s both" }}
+              style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.84s both" }}
             >
               {["Sigilo garantido", "Cancelamento gratuito", "Sem julgamentos"].map((t) => (
                 <span key={t} className="flex items-center gap-2">
-                  <span className="text-[#4A7C59] font-bold">✓</span>
+                  <span className="font-bold text-[#4A7C59]">✓</span>
                   {t}
                 </span>
               ))}

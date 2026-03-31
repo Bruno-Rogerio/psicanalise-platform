@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { Reveal } from "@/components/ui/Reveal";
 
 const steps = [
   {
     number: "01",
     title: "Crie sua conta",
-    description:
-      "Um cadastro rápido e seguro. Em poucos instantes você já consegue seguir para o agendamento.",
+    description: "Um cadastro rápido e seguro. Em poucos instantes você já consegue seguir para o agendamento.",
     icon: UserPlusIcon,
     color: "#E8755A",
     bg: "#E8755A15",
@@ -13,8 +13,7 @@ const steps = [
   {
     number: "02",
     title: "Escolha um horário",
-    description:
-      "Selecione o melhor dia e horário disponível. Tudo claro, sem burocracia.",
+    description: "Selecione o melhor dia e horário disponível. Tudo claro, sem burocracia.",
     icon: CalendarCheckIcon,
     color: "#4A7C59",
     bg: "#4A7C5915",
@@ -22,8 +21,7 @@ const steps = [
   {
     number: "03",
     title: "Realize sua sessão",
-    description:
-      "No horário marcado, você acessa a plataforma e faz sua sessão com tranquilidade.",
+    description: "No horário marcado, você acessa a plataforma e faz sua sessão com tranquilidade.",
     icon: VideoIcon,
     color: "#5B5EA6",
     bg: "#5B5EA615",
@@ -33,7 +31,6 @@ const steps = [
 export function ComoFunciona() {
   return (
     <section id="como-funciona" className="relative overflow-hidden bg-[#F2EDE8] py-20 sm:py-28">
-      {/* Subtle background texture */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-[#E8755A]/5 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-[#4A7C59]/5 blur-3xl" />
@@ -42,7 +39,7 @@ export function ComoFunciona() {
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
 
         {/* Header */}
-        <div className="mb-16 max-w-2xl">
+        <Reveal direction="up" delay={0} className="mb-16 max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
             Como funciona
           </p>
@@ -53,52 +50,47 @@ export function ComoFunciona() {
           <p className="mt-5 text-lg leading-relaxed text-[#8B7B72]">
             Você cuida da sua agenda. A sessão cuida do que precisa ser escutado.
           </p>
-        </div>
+        </Reveal>
 
         {/* Steps */}
         <div className="space-y-5">
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
-              <div
-                key={step.number}
-                className="group flex items-start gap-6 rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:gap-8 sm:p-8"
-              >
-                {/* Numbered circle */}
-                <div
-                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
-                  style={{ backgroundColor: step.color }}
-                >
-                  {step.number}
-                </div>
+              <Reveal key={step.number} direction="left" delay={idx * 120}>
+                <div className="group flex items-start gap-6 rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:gap-8 sm:p-8">
+                  <div
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
+                    style={{ backgroundColor: step.color }}
+                  >
+                    {step.number}
+                  </div>
 
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-xl font-bold text-[#1A1614]">{step.title}</h3>
-                  <p className="mt-2 leading-relaxed text-[#8B7B72]">{step.description}</p>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xl font-bold text-[#1A1614]">{step.title}</h3>
+                    <p className="mt-2 leading-relaxed text-[#8B7B72]">{step.description}</p>
+                  </div>
 
-                {/* Icon */}
-                <div
-                  className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 sm:flex"
-                  style={{ backgroundColor: step.bg }}
-                >
-                  <Icon className="h-6 w-6" style={{ color: step.color }} />
-                </div>
+                  <div
+                    className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 sm:flex"
+                    style={{ backgroundColor: step.bg }}
+                  >
+                    <Icon className="h-6 w-6" style={{ color: step.color }} />
+                  </div>
 
-                {/* Chevron */}
-                <div className="hidden shrink-0 items-center text-[#D0C8C0] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[#B0A098] lg:flex">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <div className="hidden shrink-0 items-center text-[#D0C8C0] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[#B0A098] lg:flex">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             );
           })}
         </div>
 
         {/* CTA */}
-        <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <Reveal direction="up" delay={100} className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/cadastro"
             className="group inline-flex items-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl"
@@ -117,13 +109,12 @@ export function ComoFunciona() {
           >
             Já tenho conta
           </Link>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-// Icons
 function UserPlusIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor">
