@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 
 function RevealSection() {
-  return <Reveal direction="up" trackSection="Avaliações" className="hidden" />;
+  return <Reveal direction="up" trackSection="Avaliações" className="hidden">{null}</Reveal>;
 }
 
 type Review = {
