@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
   let sid = sessionStorage.getItem("_asid");
