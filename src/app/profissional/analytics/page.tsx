@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
   LineChart,
   Line,
@@ -14,7 +13,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { format, subDays, startOfWeek, startOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, subMonths } from "date-fns";
+import { format, subDays, eachDayOfInterval, subMonths, eachMonthOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type Period = "7d" | "30d" | "90d";
@@ -52,24 +51,10 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
-      const from = subDays(new Date(), days).toISOString();
-
-      const [pvRes, evRes] = await Promise.all([
-        supabaseAdmin
-          .from("analytics_pageviews")
-          .select("created_at, page_path")
-          .gte("created_at", from)
-          .order("created_at", { ascending: true }),
-        supabaseAdmin
-          .from("analytics_events")
-          .select("created_at, event_name, event_category, event_label, page_path")
-          .gte("created_at", from)
-          .order("created_at", { ascending: true }),
-      ]);
-
-      setPageviews(pvRes.data || []);
-      setEvents(evRes.data || []);
+      const res = await fetch(`/api/analytics/data?period=${period}`);
+      const json = await res.json();
+      setPageviews(json.pageviews || []);
+      setEvents(json.events || []);
       setLoading(false);
     }
     load();
