@@ -29,20 +29,6 @@ export function Hero() {
         }
       `}</style>
 
-      {/* Dandelion — sem fundo, parallax */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -right-10 top-0 h-[110%] w-[60%] sm:w-[52%]"
-          style={{
-            backgroundImage: "url('/dandelion.png')",
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right top",
-            opacity: 0.18,
-          }}
-        />
-      </div>
-
       {/* Animated background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
