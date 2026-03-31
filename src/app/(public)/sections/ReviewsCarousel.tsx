@@ -110,7 +110,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
   if (!reviews || reviews.length === 0) return null;
 
   return (
-    <section id="avaliacoes" className="relative overflow-hidden bg-[#1A1614] py-20 sm:py-28">
+    <section id="avaliacoes" className="relative overflow-hidden bg-[#FDFAF7] py-20 sm:py-28">
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-[#E8755A]/5 blur-3xl" />
@@ -121,14 +121,14 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
         {/* Header */}
         <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#E8755A]">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
               Avaliações
             </p>
-            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
+            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
               O que dizem sobre{" "}
               <span className="italic text-[#E8755A]">o processo.</span>
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/50">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-[#8B7B72]">
               Cada pessoa vive a psicanálise de um jeito. Aqui, algumas palavras de quem passou por esse caminho.
             </p>
           </div>
@@ -138,7 +138,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
             <div className="hidden items-center gap-3 sm:flex">
               <button
                 onClick={() => { pauseAutoplayTemporarily(); scrollByOne("prev"); }}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/50 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E0DC] bg-white text-[#B0A098] shadow-sm transition-all duration-300 hover:border-[#D0C8C0] hover:bg-[#F2EDE8] hover:text-[#4A3F3A]"
                 aria-label="Anterior"
                 type="button"
               >
@@ -146,7 +146,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
               </button>
               <button
                 onClick={() => { pauseAutoplayTemporarily(); scrollByOne("next"); }}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/50 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E8E0DC] bg-white text-[#B0A098] shadow-sm transition-all duration-300 hover:border-[#D0C8C0] hover:bg-[#F2EDE8] hover:text-[#4A3F3A]"
                 aria-label="Próximo"
                 type="button"
               >
@@ -158,8 +158,8 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
 
         {/* Carousel */}
         <div className="relative">
-          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#1A1614] to-transparent sm:w-16" />
-          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#1A1614] to-transparent sm:w-16" />
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#FDFAF7] to-transparent sm:w-16" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#FDFAF7] to-transparent sm:w-16" />
 
           {!mounted ? (
             <ReviewsSkeleton />
@@ -195,7 +195,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
                 onClick={() => { pauseAutoplayTemporarily(); scrollToIndex(idx); }}
                 className={[
                   "h-1.5 rounded-full transition-all duration-300",
-                  active === idx ? "w-8 bg-[#E8755A]" : "w-1.5 bg-white/20",
+                  active === idx ? "w-8 bg-[#E8755A]" : "w-1.5 bg-[#D0C8C0]",
                 ].join(" ")}
                 aria-label={`Ir para avaliação ${idx + 1}`}
               />
@@ -214,20 +214,20 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
       data-index={index}
       className={[
         "w-[92%] shrink-0 snap-start",
-        "rounded-3xl border border-white/8 bg-white/5 p-7 backdrop-blur-sm",
-        "transition-all duration-300 hover:border-white/15 hover:bg-white/8",
+        "rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm",
+        "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md",
         "sm:w-[440px]",
       ].join(" ")}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8755A]/20 text-base font-bold text-[#E8755A]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8755A]/10 text-base font-bold text-[#E8755A]">
             {review.nome.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-semibold text-white">{review.nome}</p>
-            <p className="text-xs text-white/35">
+            <p className="font-semibold text-[#1A1614]">{review.nome}</p>
+            <p className="text-xs text-[#B0A098]">
               {new Date(review.created_at).toLocaleDateString("pt-BR", {
                 month: "long",
                 year: "numeric",
@@ -241,7 +241,7 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
           {Array.from({ length: 5 }).map((_, i) => (
             <svg
               key={i}
-              className={`h-4 w-4 ${i < review.estrelas ? "text-[#D4A72C]" : "text-white/15"}`}
+              className={`h-4 w-4 ${i < review.estrelas ? "text-[#D4A72C]" : "text-[#E8E0DC]"}`}
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -253,13 +253,13 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
 
       {/* Quote */}
       <div className="mt-6">
-        <svg className="mb-3 h-7 w-7 text-[#E8755A]/30" fill="currentColor" viewBox="0 0 24 24">
+        <svg className="mb-3 h-6 w-6 text-[#E8755A]/25" fill="currentColor" viewBox="0 0 24 24">
           <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
         </svg>
-        <p className="text-sm leading-relaxed text-white/65">{review.comentario}</p>
+        <p className="text-sm leading-relaxed text-[#8B7B72]">{review.comentario}</p>
       </div>
 
-      <div className="mt-6 h-px w-full bg-gradient-to-r from-[#E8755A]/20 via-white/5 to-transparent" />
+      <div className="mt-6 h-px w-full bg-gradient-to-r from-[#E8E0DC] via-[#E8E0DC]/40 to-transparent" />
     </article>
   );
 }
@@ -270,19 +270,19 @@ function ReviewsSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="w-[92%] shrink-0 rounded-3xl border border-white/5 bg-white/5 p-7 sm:w-[440px]"
+          className="w-[92%] shrink-0 rounded-3xl border border-[#E8E0DC]/60 bg-white p-7 sm:w-[440px]"
         >
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 animate-pulse rounded-full bg-white/10" />
+            <div className="h-12 w-12 animate-pulse rounded-full bg-[#E8E0DC]" />
             <div className="space-y-2">
-              <div className="h-4 w-28 animate-pulse rounded-lg bg-white/10" />
-              <div className="h-3 w-16 animate-pulse rounded-lg bg-white/10" />
+              <div className="h-4 w-28 animate-pulse rounded-lg bg-[#E8E0DC]" />
+              <div className="h-3 w-16 animate-pulse rounded-lg bg-[#E8E0DC]" />
             </div>
           </div>
           <div className="mt-6 space-y-2">
-            <div className="h-3 w-full animate-pulse rounded-lg bg-white/10" />
-            <div className="h-3 w-[90%] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-3 w-[75%] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-3 w-full animate-pulse rounded-lg bg-[#E8E0DC]" />
+            <div className="h-3 w-[90%] animate-pulse rounded-lg bg-[#E8E0DC]" />
+            <div className="h-3 w-[75%] animate-pulse rounded-lg bg-[#E8E0DC]" />
           </div>
         </div>
       ))}

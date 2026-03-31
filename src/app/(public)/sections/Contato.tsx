@@ -2,11 +2,11 @@ import Link from "next/link";
 
 export function Contato() {
   return (
-    <section id="contato" className="relative overflow-hidden bg-[#F2EDE8] py-20 sm:py-28">
+    <section id="contato" className="relative overflow-hidden bg-[#FDFAF7] py-20 sm:py-28">
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-40 -top-20 h-96 w-96 rounded-full bg-[#E8755A]/8 blur-3xl" />
-        <div className="absolute -bottom-20 -left-40 h-80 w-80 rounded-full bg-[#4A7C59]/8 blur-3xl" />
+        <div className="absolute -right-40 -top-20 h-96 w-96 rounded-full bg-[#E8755A]/6 blur-3xl" />
+        <div className="absolute -bottom-20 -left-40 h-80 w-80 rounded-full bg-[#4A7C59]/6 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
@@ -28,43 +28,42 @@ export function Contato() {
         {/* Contact cards */}
         <div className="grid gap-5 sm:grid-cols-2">
           {/* Email */}
-          <div className="group relative overflow-hidden rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#E8755A]/10 blur-2xl transition-opacity duration-300 group-hover:opacity-80" />
+          <div className="group relative overflow-hidden rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#E8755A]/8 blur-2xl" />
             <div className="relative flex items-start gap-5">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E8755A]/10">
                 <MailIcon className="h-5 w-5 text-[#E8755A]" />
               </div>
               <div>
                 <p className="font-bold text-[#1A1614]">Email</p>
-                <p className="mt-1 text-base text-[#2C2420]">contato@raizaconvento.com.br</p>
+                <p className="mt-1 text-base text-[#4A3F3A]">contato@raizaconvento.com.br</p>
                 <p className="mt-1 text-xs text-[#B0A098]">Resposta em até 24h</p>
               </div>
             </div>
           </div>
 
           {/* WhatsApp */}
-          <div className="group relative overflow-hidden rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#4A7C59]/10 blur-2xl transition-opacity duration-300 group-hover:opacity-80" />
+          <div className="group relative overflow-hidden rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#4A7C59]/8 blur-2xl" />
             <div className="relative flex items-start gap-5">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#4A7C59]/10">
                 <WhatsAppIcon className="h-5 w-5 text-[#4A7C59]" />
               </div>
               <div>
                 <p className="font-bold text-[#1A1614]">WhatsApp</p>
-                <p className="mt-1 text-base text-[#2C2420]">(11) 91329-9115</p>
+                <p className="mt-1 text-base text-[#4A3F3A]">(11) 91329-9115</p>
                 <p className="mt-1 text-xs text-[#B0A098]">Seg a Sex • 9h às 18h</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CTA Banner */}
-        <div className="relative mt-10 overflow-hidden rounded-3xl bg-[#1A1614] shadow-2xl">
+        {/* CTA Banner — warm dark, not pitch black */}
+        <div className="relative mt-10 overflow-hidden rounded-3xl bg-[#2C2420] shadow-xl">
           {/* Decorative orbs */}
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#E8755A]/10 blur-3xl" />
+            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#E8755A]/12 blur-3xl" />
             <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-[#4A7C59]/10 blur-3xl" />
-            <div className="absolute right-1/3 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[#D4A72C]/5 blur-2xl" />
           </div>
 
           <div className="relative px-8 py-12 sm:px-12 sm:py-16">
@@ -81,7 +80,7 @@ export function Contato() {
             </h3>
 
             {/* Description */}
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/50">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/45">
               Se fizer sentido para você, crie sua conta e escolha um horário.
               A psicanálise começa quando você pode falar com verdade, no seu tempo.
             </p>
@@ -90,7 +89,7 @@ export function Contato() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link
                 href="/cadastro"
-                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-semibold text-[#1A1614] shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#F2EDE8] hover:shadow-2xl sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-semibold text-[#1A1614] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#F2EDE8] hover:shadow-xl sm:w-auto"
               >
                 Criar conta
                 <svg
@@ -102,14 +101,14 @@ export function Contato() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold text-white/80 transition-all duration-300 hover:border-white/25 hover:bg-white/10 sm:w-auto"
               >
                 Já tenho conta
               </Link>
             </div>
 
             {/* Trust badges */}
-            <div className="mt-10 flex flex-wrap items-center gap-6 text-xs text-white/35">
+            <div className="mt-10 flex flex-wrap items-center gap-6 text-xs text-white/30">
               {[
                 { icon: <ShieldCheckIcon className="h-4 w-4" />, label: "Sigilo garantido" },
                 { icon: <LockIcon className="h-4 w-4" />, label: "Dados protegidos" },
