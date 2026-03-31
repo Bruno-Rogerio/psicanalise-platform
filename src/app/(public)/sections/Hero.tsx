@@ -1,16 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 export function Hero() {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <section className="relative overflow-hidden bg-[#F2EDE8]">
@@ -57,21 +47,6 @@ export function Hero() {
         />
       </div>
 
-      {/* Dandelion — parallax */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -right-10 top-0 h-[110%] w-[60%] sm:w-[52%]"
-          style={{
-            backgroundImage: "url('/dandelion.jpeg')",
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right top",
-            opacity: 0.13,
-            transform: `translateY(${scrollY * 0.12}px)`,
-            transition: "transform 0.1s linear",
-          }}
-        />
-      </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         <div className="flex min-h-[88vh] items-center py-16 lg:py-0">
