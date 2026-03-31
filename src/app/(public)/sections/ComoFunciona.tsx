@@ -1,4 +1,4 @@
-import { Section } from "./Section";
+import Link from "next/link";
 
 const steps = [
   {
@@ -7,6 +7,8 @@ const steps = [
     description:
       "Um cadastro rápido e seguro. Em poucos instantes você já consegue seguir para o agendamento.",
     icon: UserPlusIcon,
+    color: "#E8755A",
+    bg: "#E8755A15",
   },
   {
     number: "02",
@@ -14,6 +16,8 @@ const steps = [
     description:
       "Selecione o melhor dia e horário disponível. Tudo claro, sem burocracia.",
     icon: CalendarCheckIcon,
+    color: "#4A7C59",
+    bg: "#4A7C5915",
   },
   {
     number: "03",
@@ -21,143 +25,130 @@ const steps = [
     description:
       "No horário marcado, você acessa a plataforma e faz sua sessão com tranquilidade.",
     icon: VideoIcon,
+    color: "#5B5EA6",
+    bg: "#5B5EA615",
   },
 ];
 
 export function ComoFunciona() {
   return (
-    <Section
-      id="como-funciona"
-      eyebrow="Como funciona"
-      title="Simples por fora, profundo por dentro."
-      subtitle="Você cuida da sua agenda. A sessão cuida do que precisa ser escutado."
-      className="bg-soft-100/30"
-    >
-      {/* Connection line (desktop) */}
-      <div className="relative">
-        <div className="absolute left-0 right-0 top-[72px] hidden h-px bg-gradient-to-r from-transparent via-warm-300/60 to-transparent sm:block" />
+    <section id="como-funciona" className="relative overflow-hidden bg-[#F2EDE8] py-20 sm:py-28">
+      {/* Subtle background texture */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-[#E8755A]/5 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-[#4A7C59]/5 blur-3xl" />
+      </div>
 
-        <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
+      <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
+
+        {/* Header */}
+        <div className="mb-16 max-w-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
+            Como funciona
+          </p>
+          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
+            Simples por fora,{" "}
+            <span className="italic text-[#4A7C59]">profundo por dentro.</span>
+          </h2>
+          <p className="mt-5 text-lg leading-relaxed text-[#8B7B72]">
+            Você cuida da sua agenda. A sessão cuida do que precisa ser escutado.
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-5">
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
-              <div key={step.title} className="group relative">
-                {/* Card */}
-                <div className="relative overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 p-7 shadow-soft backdrop-blur-sm transition-all duration-400 hover:border-warm-400/60 hover:bg-white hover:shadow-soft-lg">
-                  {/* Step number badge */}
-                  <div className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-400/10 to-warm-500/10 text-2xl font-bold text-warm-400/40">
-                    {step.number}
-                  </div>
+              <div
+                key={step.number}
+                className="group flex items-start gap-6 rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:gap-8 sm:p-8"
+              >
+                {/* Numbered circle */}
+                <div
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
+                  style={{ backgroundColor: step.color }}
+                >
+                  {step.number}
+                </div>
 
-                  {/* Icon container */}
-                  <div className="relative z-10 mb-5 inline-flex">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-500/15 to-sage-400/5 ring-1 ring-sage-500/20 transition-all duration-300 group-hover:ring-sage-500/40">
-                      <Icon className="h-6 w-6 text-sage-600" />
-                    </div>
-                    {/* Connector dot */}
-                    <div className="absolute -right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 items-center justify-center sm:flex">
-                      <div className="h-2.5 w-2.5 rounded-full bg-warm-300 ring-4 ring-warm-100 transition-all duration-300 group-hover:bg-sage-500 group-hover:ring-sage-100" />
-                    </div>
-                  </div>
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xl font-bold text-[#1A1614]">{step.title}</h3>
+                  <p className="mt-2 leading-relaxed text-[#8B7B72]">{step.description}</p>
+                </div>
 
-                  {/* Content */}
-                  <h3 className="text-lg font-semibold text-warm-900">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">
-                    {step.description}
-                  </p>
+                {/* Icon */}
+                <div
+                  className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 sm:flex"
+                  style={{ backgroundColor: step.bg }}
+                >
+                  <Icon className="h-6 w-6" style={{ color: step.color }} />
+                </div>
 
-                  {/* Bottom gradient line */}
-                  <div className="mt-6 h-px w-full bg-gradient-to-r from-warm-300/50 via-rose-300/30 to-transparent" />
+                {/* Chevron */}
+                <div className="hidden shrink-0 items-center text-[#D0C8C0] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[#B0A098] lg:flex">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* CTA after steps */}
-      <div className="mt-10 flex justify-center">
-        <a
-          href="/cadastro"
-          className="group inline-flex items-center gap-2 text-sm font-medium text-sage-600 transition-colors duration-300 hover:text-sage-700"
-        >
-          Pronto para começar?
-          <svg
-            className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* CTA */}
+        <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <Link
+            href="/cadastro"
+            className="group inline-flex items-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
-        </a>
+            Pronto para começar?
+            <svg
+              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm font-medium text-[#8B7B72] underline-offset-4 transition-colors hover:text-[#1A1614] hover:underline"
+          >
+            Já tenho conta
+          </Link>
+        </div>
       </div>
-    </Section>
+    </section>
   );
 }
 
 // Icons
-function UserPlusIcon({ className }: { className?: string }) {
+function UserPlusIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
+    <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
       />
     </svg>
   );
 }
 
-function CalendarCheckIcon({ className }: { className?: string }) {
+function CalendarCheckIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
+    <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 14l2 2 4-4"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l2 2 4-4" />
     </svg>
   );
 }
 
-function VideoIcon({ className }: { className?: string }) {
+function VideoIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
+    <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
       />
     </svg>

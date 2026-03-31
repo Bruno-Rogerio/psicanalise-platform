@@ -1,286 +1,219 @@
+"use client";
+
 import Link from "next/link";
-import React from "react";
+import Image from "next/image";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0">
-        {/* Base wash */}
-        <div className="absolute inset-0 bg-gradient-to-b from-warm-100 via-warm-100/90 to-warm-100" />
+    <section className="relative overflow-hidden bg-[#F2EDE8]">
+      <style>{`
+        @keyframes floatOrb1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(40px, -30px) scale(1.06); }
+          66% { transform: translate(-20px, 45px) scale(0.96); }
+        }
+        @keyframes floatOrb2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-55px, 28px) scale(1.04); }
+          66% { transform: translate(35px, -38px) scale(0.97); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes marqueeScroll {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.94) translateY(20px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
 
-        {/* Soft orbs with better placement */}
-        <div className="absolute -top-40 left-[-10%] h-[520px] w-[520px] rounded-full bg-rose-400/10 blur-3xl" />
-        <div className="absolute -bottom-44 right-[-12%] h-[560px] w-[560px] rounded-full bg-soft-400/12 blur-3xl" />
-        <div className="absolute top-[35%] left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-warm-500/8 blur-3xl" />
-
-        {/* Subtle grid dots with mask */}
+      {/* Animated background orbs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute -left-48 -top-24 h-[700px] w-[700px] rounded-full opacity-50"
           style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, var(--accent-primary) 1px, transparent 0)",
-            backgroundSize: "34px 34px",
-            maskImage:
-              "radial-gradient(ellipse at 50% 25%, black 40%, transparent 70%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse at 50% 25%, black 40%, transparent 70%)",
+            background: "radial-gradient(circle, #E8755A18 0%, transparent 70%)",
+            animation: "floatOrb1 20s ease-in-out infinite",
           }}
         />
-
-        {/* Gentle vignette for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-warm-100/90" />
+        <div
+          className="absolute -bottom-32 -right-48 h-[600px] w-[600px] rounded-full opacity-40"
+          style={{
+            background: "radial-gradient(circle, #4A7C5918 0%, transparent 70%)",
+            animation: "floatOrb2 26s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute left-1/2 top-1/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-25"
+          style={{
+            background: "radial-gradient(circle, #D4A72C10 0%, transparent 70%)",
+            animation: "floatOrb1 32s ease-in-out infinite reverse",
+          }}
+        />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
-        <div className="pt-10 pb-12 sm:pt-12 sm:pb-16 md:pt-14 md:pb-18">
-          {/* Badge */}
-          <div className="animate-fade-in inline-flex max-w-full items-center gap-2.5 rounded-full border border-warm-300/60 bg-white/70 px-4 py-2 text-sm text-muted shadow-soft backdrop-blur-sm">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-500 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-sage-500" />
-            </span>
-            <span className="truncate sm:whitespace-nowrap">
+        <div className="grid min-h-[88vh] items-center gap-10 pb-8 pt-6 lg:grid-cols-[1fr_440px] lg:gap-16 lg:py-0 xl:grid-cols-[1fr_520px]">
+
+          {/* ===== LEFT — Text ===== */}
+          <div className="relative z-10 py-10 lg:py-24">
+
+            {/* Badge */}
+            <div
+              className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-[#DDD5CE] bg-white/80 px-4 py-2 text-sm font-medium text-[#8B7B72] shadow-sm backdrop-blur-sm"
+              style={{ animation: "fadeUp 0.5s ease-out 0.1s both" }}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#4A7C59] opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#4A7C59]" />
+              </span>
               O que você sente faz sentido. Vamos olhar para isso com cuidado.
-            </span>
-          </div>
+            </div>
 
-          {/* Heading */}
-          <h1 className="animate-slide-up mt-6 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-warm-900 sm:text-5xl md:text-6xl lg:text-7xl">
-            Um espaço para você{" "}
-            <span className="text-gradient">falar do que sente</span>
-            <br className="hidden sm:block" />
-            <span className="text-warm-700">
-              {" "}
-              sem medo, sem julgamentos e no seu tempo.
-            </span>
-          </h1>
-
-          {/* Subtitle */}
-          <p
-            className="animate-slide-up mt-6 max-w-2xl text-base leading-relaxed text-muted sm:text-lg md:text-xl"
-            style={{ animationDelay: "0.08s" }}
-          >
-            A psicanálise não é sobre "consertar" você. É sobre criar um lugar
-            de escuta onde aquilo que pesa ganha nome, sentido e caminho.
-          </p>
-
-          {/* CTA Buttons */}
-          <div
-            className="animate-slide-up mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
-            style={{ animationDelay: "0.16s" }}
-          >
-            <Link
-              href="/cadastro"
-              className={[
-                "group inline-flex w-full items-center justify-center gap-2 rounded-2xl",
-                "bg-sage-600 px-7 py-4 text-base font-medium text-warm-50 shadow-soft",
-                "transition-all duration-300 hover:bg-sage-700 hover:shadow-soft-lg",
-                "active:scale-[0.99]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
-                "sm:w-auto",
-              ].join(" ")}
-            >
-              Começar agora
-              <svg
-                className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
+            {/* Headline — 3 lines with different weights */}
+            <h1 className="max-w-2xl space-y-1">
+              <span
+                className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
+                style={{ animation: "fadeUp 0.6s ease-out 0.2s both" }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </Link>
+                Um espaço para
+              </span>
+              <span
+                className="block text-5xl font-black italic leading-[1.08] tracking-tight text-[#E8755A] sm:text-6xl lg:text-[5.5rem]"
+                style={{ animation: "fadeUp 0.6s ease-out 0.32s both" }}
+              >
+                falar do que sente
+              </span>
+              <span
+                className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
+                style={{ animation: "fadeUp 0.6s ease-out 0.44s both" }}
+              >
+                com cuidado.
+              </span>
+            </h1>
 
-            <Link
-              href="#como-funciona"
-              className={[
-                "inline-flex w-full items-center justify-center rounded-2xl",
-                "border border-warm-300/80 bg-white/70 px-7 py-4 text-base font-medium text-warm-900",
-                "backdrop-blur-sm shadow-soft",
-                "transition-all duration-300 hover:border-warm-400/80 hover:bg-white/85 hover:shadow-soft-lg",
-                "active:scale-[0.99]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
-                "sm:w-auto",
-              ].join(" ")}
+            {/* Subtitle */}
+            <p
+              className="mt-8 max-w-lg text-lg leading-relaxed text-[#8B7B72] sm:text-xl"
+              style={{ animation: "fadeUp 0.6s ease-out 0.54s both" }}
             >
-              Entender como funciona
-            </Link>
+              A psicanálise não é sobre consertar você. É sobre criar um lugar de escuta onde aquilo que pesa ganha nome, sentido e caminho.
+            </p>
+
+            {/* CTA Buttons */}
+            <div
+              className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
+              style={{ animation: "fadeUp 0.6s ease-out 0.64s both" }}
+            >
+              <Link
+                href="/cadastro"
+                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl active:scale-[0.99] sm:w-auto"
+              >
+                Começar agora
+                <svg
+                  className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+
+              <Link
+                href="#como-funciona"
+                className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#E8E0DC] bg-white/70 px-8 py-4 text-base font-semibold text-[#1A1614] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A1614]/20 hover:bg-white sm:w-auto"
+              >
+                Como funciona
+              </Link>
+            </div>
+
+            {/* Trust row */}
+            <div
+              className="mt-10 flex flex-wrap items-center gap-6 text-sm text-[#B0A098]"
+              style={{ animation: "fadeUp 0.6s ease-out 0.74s both" }}
+            >
+              {["Sigilo garantido", "Cancelamento gratuito", "Sem julgamentos"].map((t) => (
+                <span key={t} className="flex items-center gap-2">
+                  <span className="text-[#4A7C59] font-bold">✓</span>
+                  {t}
+                </span>
+              ))}
+            </div>
           </div>
 
-          {/* Feature Cards */}
+          {/* ===== RIGHT — Photo ===== */}
           <div
-            className="animate-slide-up mt-12 grid gap-4 sm:mt-16 sm:grid-cols-3"
-            style={{ animationDelay: "0.24s" }}
+            className="relative hidden lg:block"
+            style={{ animation: "scaleIn 0.9s ease-out 0.4s both" }}
           >
-            <FeatureCard
-              icon={<HeartIcon />}
-              title="Psicanálise"
-              description="Um lugar para falar do que dói e olhar para isso com cuidado."
-              accent="rose"
-            />
-            <FeatureCard
-              icon={<CalendarIcon />}
-              title="Organização"
-              description="Agendamento simples, tudo no seu tempo, sem ruído e sem correria."
-              accent="sage"
-            />
-            <FeatureCard
-              icon={<ShieldIcon />}
-              title="Sigilo"
-              description="Confidencialidade e ética como base, do início ao fim."
-              accent="soft"
-            />
-          </div>
+            {/* Decorative rings */}
+            <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-br from-[#E8755A]/15 via-transparent to-[#4A7C59]/15 blur-2xl" />
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#E8755A]/20 blur-3xl" />
+            <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-[#4A7C59]/15 blur-3xl" />
 
-          {/* Tiny reassurance line (optional but classy) */}
-          <div
-            className="animate-slide-up mt-8 flex items-center gap-3 text-sm text-muted"
-            style={{ animationDelay: "0.28s" }}
-          >
-            <div className="h-px w-10 bg-gradient-to-r from-warm-300/60 to-transparent" />
-            <span>Atendimento com acolhimento, clareza e presença.</span>
+            {/* Photo container */}
+            <div className="relative overflow-hidden rounded-[3rem] shadow-2xl">
+              <Image
+                src="/raizaconvento.jpeg"
+                alt="Raiza Convento — Psicanalista"
+                width={520}
+                height={660}
+                className="h-auto w-full object-cover"
+                priority
+              />
+              {/* Gradient overlay */}
+              <div className="absolute bottom-0 left-0 right-0 h-52 bg-gradient-to-t from-[#1A1614]/70 to-transparent" />
+
+              {/* Floating quote card */}
+              <div className="absolute bottom-6 left-5 right-5 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+                <p className="text-sm italic leading-relaxed text-[#2C2420]">
+                  "Cada história merece ser ouvida com cuidado e sem pressa."
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-px flex-1 bg-[#E8E0DC]" />
+                  <p className="text-xs font-bold text-[#4A7C59]">Raiza Convento</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating accent badge */}
+            <div className="absolute -right-4 top-16 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 shadow-lg">
+              <p className="text-xs font-bold text-[#1A1614] uppercase tracking-wider">Psicanalista</p>
+              <div className="mt-1 flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="h-3 w-3 text-[#D4A72C]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-warm-100 to-transparent" />
-    </section>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-  accent,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  accent: "rose" | "sage" | "soft";
-}) {
-  const accentOrb = {
-    rose: "from-rose-400/18 to-rose-300/10",
-    sage: "from-sage-400/18 to-sage-300/10",
-    soft: "from-soft-400/18 to-soft-300/10",
-  }[accent];
-
-  const accentRing = {
-    rose: "group-hover:ring-rose-400/15",
-    sage: "group-hover:ring-sage-400/15",
-    soft: "group-hover:ring-soft-400/15",
-  }[accent];
-
-  return (
-    <div
-      className={[
-        "group relative overflow-hidden rounded-3xl border border-warm-300/55 bg-white/70 p-6",
-        "shadow-soft backdrop-blur-sm transition-all duration-300",
-        "hover:border-warm-400/60 hover:bg-white/85 hover:shadow-soft-lg",
-        "hover:-translate-y-0.5",
-        "ring-1 ring-transparent",
-        accentRing,
-      ].join(" ")}
-    >
-      {/* Soft accent glow */}
-      <div
-        className={[
-          "absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br",
-          accentOrb,
-          "opacity-70 blur-2xl transition-opacity duration-300 group-hover:opacity-100",
-        ].join(" ")}
-      />
-
-      {/* Subtle inner highlight */}
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-      </div>
-
-      <div className="relative">
-        {/* Icon */}
+      {/* ===== Marquee Strip ===== */}
+      <div className="relative overflow-hidden border-y border-[#2C2420]/20 bg-[#1A1614] py-4">
         <div
-          className={[
-            "inline-flex h-12 w-12 items-center justify-center rounded-2xl",
-            "bg-white/70 ring-1 ring-warm-300/50 backdrop-blur-sm",
-            "transition-transform duration-300 group-hover:scale-[1.05]",
-          ].join(" ")}
+          className="flex whitespace-nowrap"
+          style={{ animation: "marqueeScroll 22s linear infinite" }}
         >
-          {icon}
+          {[...Array(4)].map((_, i) => (
+            <span key={i} className="flex items-center gap-8 pr-8 text-sm font-medium text-white/30">
+              <span className="text-[#E8755A]">✦</span>Psicanálise
+              <span className="text-[#E8755A]">✦</span>Escuta Clínica
+              <span className="text-[#E8755A]">✦</span>Acolhimento
+              <span className="text-[#E8755A]">✦</span>Autoconhecimento
+              <span className="text-[#E8755A]">✦</span>Presença
+              <span className="text-[#E8755A]">✦</span>Cuidado
+              <span className="text-[#E8755A]">✦</span>Análise
+              <span className="text-[#E8755A]">✦</span>Sigilo&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+          ))}
         </div>
-
-        {/* Content */}
-        <h3 className="mt-5 text-lg font-semibold text-warm-900">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
-
-        {/* Decorative line */}
-        <div className="mt-5 h-px w-full bg-gradient-to-r from-warm-300/60 via-warm-200/25 to-transparent" />
       </div>
-    </div>
-  );
-}
-
-// Icons
-function HeartIcon() {
-  return (
-    <svg
-      className="h-6 w-6 text-rose-500"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-      />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      className="h-6 w-6 text-sage-600"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}
-
-function ShieldIcon() {
-  return (
-    <svg
-      className="h-6 w-6 text-soft-600"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-      />
-    </svg>
+    </section>
   );
 }

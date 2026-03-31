@@ -19,11 +19,12 @@ export default function PublicHeader() {
       className={[
         "sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300",
         scrolled
-          ? "bg-warm-100/95 border-warm-300/60 shadow-soft"
-          : "bg-warm-100/70 border-warm-300/40",
+          ? "border-[#E8E0DC]/60 bg-[#F2EDE8]/95 shadow-sm"
+          : "border-[#E8E0DC]/30 bg-[#F2EDE8]/70",
       ].join(" ")}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
+        {/* Logo */}
         <Link href="/" className="group inline-flex items-center gap-3">
           <Image
             src="/logo.png"
@@ -31,44 +32,29 @@ export default function PublicHeader() {
             width={140}
             height={40}
             priority
-            className="h-16 w-auto transition-opacity duration-300 group-hover:opacity-90"
+            className="h-16 w-auto transition-opacity duration-300 group-hover:opacity-80"
           />
         </Link>
 
-        <nav className="flex items-center gap-3">
+        {/* Nav */}
+        <nav className="flex items-center gap-1">
           <Link
             href="/blog"
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300",
-              "text-warm-900/70 hover:text-warm-900",
-              "hover:bg-warm-300/20",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
-            ].join(" ")}
+            className="rounded-xl px-4 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614]"
           >
             Blog
           </Link>
 
           <Link
             href="/login"
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300",
-              "text-warm-900/70 hover:text-warm-900",
-              "hover:bg-warm-300/20",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
-            ].join(" ")}
+            className="rounded-xl px-4 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614]"
           >
             Entrar
           </Link>
 
           <Link
             href="/cadastro"
-            className={[
-              "rounded-xl px-5 py-2 text-sm font-medium transition-all duration-300",
-              "bg-sage-600 text-warm-50 shadow-soft",
-              "hover:bg-sage-700 hover:shadow-soft-lg",
-              "active:scale-[0.99]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-100",
-            ].join(" ")}
+            className="ml-1 rounded-xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#2C2420] hover:shadow-md active:scale-[0.99]"
           >
             Criar conta
           </Link>

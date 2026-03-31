@@ -44,21 +44,16 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
     setIsInteracting(true);
     clearAutoplay();
     clearResumeTimer();
-
-    resumeTimerRef.current = window.setTimeout(() => {
-      setIsInteracting(false);
-    }, 2200);
+    resumeTimerRef.current = window.setTimeout(() => setIsInteracting(false), 2200);
   }, [clearAutoplay, clearResumeTimer, hasMany]);
 
   const scrollToIndex = useCallback(
     (idx: number, behavior: ScrollBehavior = "smooth") => {
       const el = scrollerRef.current;
       if (!el) return;
-
       const cards = getCards();
       const target = cards[idx];
       if (!target) return;
-
       el.scrollTo({ left: target.offsetLeft, behavior });
     },
     [getCards],
@@ -68,18 +63,15 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
     (dir: "prev" | "next") => {
       const cards = getCards();
       if (cards.length === 0) return;
-
       const next =
         dir === "next"
           ? (active + 1) % cards.length
           : (active - 1 + cards.length) % cards.length;
-
       scrollToIndex(next);
     },
     [active, getCards, scrollToIndex],
   );
 
-  // Track active card without causing vertical scroll
   useEffect(() => {
     if (!mounted) return;
     const el = scrollerRef.current;
@@ -88,17 +80,12 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
     const onScroll = () => {
       const cards = getCards();
       if (cards.length === 0) return;
-
       const left = el.scrollLeft;
       let bestIdx = 0;
       let bestDist = Number.POSITIVE_INFINITY;
-
       for (let i = 0; i < cards.length; i++) {
         const dist = Math.abs(cards[i].offsetLeft - left);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = i;
-        }
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
       }
       setActive(bestIdx);
     };
@@ -108,93 +95,78 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
     return () => el.removeEventListener("scroll", onScroll);
   }, [mounted, getCards, reviews?.length]);
 
-  // Autoplay only moves scrollLeft
   useEffect(() => {
-    if (!mounted) return;
-    if (!hasMany) return;
-    if (isInteracting) return;
-
+    if (!mounted || !hasMany || isInteracting) return;
     clearAutoplay();
-
     autoplayRef.current = window.setInterval(() => {
       const cards = getCards();
       if (cards.length <= 1) return;
-
       const next = (active + 1) % cards.length;
       scrollToIndex(next, "smooth");
     }, 5200);
-
     return () => clearAutoplay();
-  }, [
-    active,
-    mounted,
-    hasMany,
-    isInteracting,
-    clearAutoplay,
-    getCards,
-    scrollToIndex,
-  ]);
+  }, [active, mounted, hasMany, isInteracting, clearAutoplay, getCards, scrollToIndex]);
 
   if (!reviews || reviews.length === 0) return null;
 
   return (
-    <section id="avaliacoes" className="py-10 sm:py-12 md:py-14">
-      <div className="mx-auto max-w-7xl px-5 sm:px-6">
+    <section id="avaliacoes" className="relative overflow-hidden bg-[#1A1614] py-20 sm:py-28">
+      {/* Background orbs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-[#E8755A]/5 blur-3xl" />
+        <div className="absolute -right-40 bottom-0 h-80 w-80 rounded-full bg-[#4A7C59]/5 blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-warm-500">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#E8755A]">
               Avaliações
             </p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl md:text-4xl">
-              O que dizem sobre o processo.
+            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
+              O que dizem sobre{" "}
+              <span className="italic text-[#E8755A]">o processo.</span>
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
-              Cada pessoa vive a psicanálise de um jeito. Aqui, algumas palavras
-              de quem passou por esse caminho.
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/50">
+              Cada pessoa vive a psicanálise de um jeito. Aqui, algumas palavras de quem passou por esse caminho.
             </p>
           </div>
 
-          {/* Controls (desktop only) */}
-          {reviews.length > 1 ? (
+          {/* Controls */}
+          {reviews.length > 1 && (
             <div className="hidden items-center gap-3 sm:flex">
               <button
-                onClick={() => {
-                  pauseAutoplayTemporarily();
-                  scrollByOne("prev");
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
+                onClick={() => { pauseAutoplayTemporarily(); scrollByOne("prev"); }}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/50 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
                 aria-label="Anterior"
                 type="button"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => {
-                  pauseAutoplayTemporarily();
-                  scrollByOne("next");
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 text-warm-700 transition-all duration-300 hover:border-warm-400 hover:bg-white hover:shadow-soft"
+                onClick={() => { pauseAutoplayTemporarily(); scrollByOne("next"); }}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/50 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
                 aria-label="Próximo"
                 type="button"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Carousel */}
         <div className="relative">
-          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-warm-100 to-transparent sm:w-14" />
-          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-warm-100 to-transparent sm:w-14" />
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#1A1614] to-transparent sm:w-16" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#1A1614] to-transparent sm:w-16" />
 
           {!mounted ? (
             <ReviewsSkeleton />
           ) : (
             <div
               ref={scrollerRef}
-              className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-3 sm:gap-5"
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 sm:gap-5"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
@@ -213,32 +185,23 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
           )}
         </div>
 
-        {/* Dots (mobile) */}
-        {reviews.length > 1 ? (
-          <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
+        {/* Dots */}
+        {reviews.length > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
             {reviews.slice(0, 8).map((_, idx) => (
               <button
                 key={idx}
                 type="button"
-                onClick={() => {
-                  pauseAutoplayTemporarily();
-                  scrollToIndex(idx);
-                }}
+                onClick={() => { pauseAutoplayTemporarily(); scrollToIndex(idx); }}
                 className={[
                   "h-1.5 rounded-full transition-all duration-300",
-                  active === idx ? "w-6 bg-sage-500" : "w-1.5 bg-warm-300/70",
+                  active === idx ? "w-8 bg-[#E8755A]" : "w-1.5 bg-white/20",
                 ].join(" ")}
                 aria-label={`Ir para avaliação ${idx + 1}`}
               />
             ))}
           </div>
-        ) : null}
-
-        {reviews.length > 1 ? (
-          <div className="mt-3 flex justify-center sm:hidden">
-            <span className="text-xs text-muted">Deslize para ver mais</span>
-          </div>
-        ) : null}
+        )}
       </div>
     </section>
   );
@@ -251,55 +214,52 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
       data-index={index}
       className={[
         "w-[92%] shrink-0 snap-start",
-        "rounded-3xl border border-warm-300/50 bg-white/80 p-6 shadow-soft backdrop-blur-sm",
-        "transition-all duration-300 hover:border-warm-400/60 hover:bg-white hover:shadow-soft-lg",
-        "sm:w-[420px]",
+        "rounded-3xl border border-white/8 bg-white/5 p-7 backdrop-blur-sm",
+        "transition-all duration-300 hover:border-white/15 hover:bg-white/8",
+        "sm:w-[440px]",
       ].join(" ")}
     >
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-rose-400/20 to-warm-500/15 text-base font-semibold text-warm-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8755A]/20 text-base font-bold text-[#E8755A]">
             {review.nome.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-warm-900">
-              {review.nome}
-            </p>
-            <p className="text-xs text-muted">
+          <div>
+            <p className="font-semibold text-white">{review.nome}</p>
+            <p className="text-xs text-white/35">
               {new Date(review.created_at).toLocaleDateString("pt-BR", {
-                month: "short",
+                month: "long",
                 year: "numeric",
               })}
             </p>
           </div>
         </div>
 
+        {/* Stars */}
         <div className="flex gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <StarIcon
+            <svg
               key={i}
-              filled={i < review.estrelas}
-              className="h-4 w-4"
-            />
+              className={`h-4 w-4 ${i < review.estrelas ? "text-[#D4A72C]" : "text-white/15"}`}
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+            </svg>
           ))}
         </div>
       </div>
 
-      <div className="mt-5">
-        <svg
-          className="mb-2 h-6 w-6 text-warm-300"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
+      {/* Quote */}
+      <div className="mt-6">
+        <svg className="mb-3 h-7 w-7 text-[#E8755A]/30" fill="currentColor" viewBox="0 0 24 24">
           <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
         </svg>
-        <p className="text-sm leading-relaxed text-warm-800/90">
-          {review.comentario}
-        </p>
+        <p className="text-sm leading-relaxed text-white/65">{review.comentario}</p>
       </div>
 
-      <div className="mt-6 h-px w-full bg-gradient-to-r from-rose-300/40 via-warm-300/30 to-transparent" />
+      <div className="mt-6 h-px w-full bg-gradient-to-r from-[#E8755A]/20 via-white/5 to-transparent" />
     </article>
   );
 }
@@ -307,89 +267,41 @@ function ReviewCard({ review, index }: { review: Review; index: number }) {
 function ReviewsSkeleton() {
   return (
     <div className="flex gap-4 overflow-hidden pb-3 sm:gap-5">
-      {Array.from({ length: 2 }).map((_, i) => (
+      {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="w-[92%] shrink-0 rounded-3xl border border-warm-300/30 bg-white/60 p-6 sm:w-[420px]"
+          className="w-[92%] shrink-0 rounded-3xl border border-white/5 bg-white/5 p-7 sm:w-[440px]"
         >
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 animate-pulse rounded-full bg-warm-200" />
+            <div className="h-12 w-12 animate-pulse rounded-full bg-white/10" />
             <div className="space-y-2">
-              <div className="h-4 w-28 animate-pulse rounded bg-warm-200" />
-              <div className="h-3 w-16 animate-pulse rounded bg-warm-200" />
+              <div className="h-4 w-28 animate-pulse rounded-lg bg-white/10" />
+              <div className="h-3 w-16 animate-pulse rounded-lg bg-white/10" />
             </div>
           </div>
-          <div className="mt-5 space-y-2">
-            <div className="h-3 w-full animate-pulse rounded bg-warm-200" />
-            <div className="h-3 w-[92%] animate-pulse rounded bg-warm-200" />
-            <div className="h-3 w-[78%] animate-pulse rounded bg-warm-200" />
+          <div className="mt-6 space-y-2">
+            <div className="h-3 w-full animate-pulse rounded-lg bg-white/10" />
+            <div className="h-3 w-[90%] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-3 w-[75%] animate-pulse rounded-lg bg-white/10" />
           </div>
-          <div className="mt-6 h-px w-full bg-warm-200" />
         </div>
       ))}
     </div>
   );
 }
 
-function StarIcon({
-  filled,
-  className,
-}: {
-  filled: boolean;
-  className?: string;
-}) {
-  return (
-    <svg
-      className={`${className} ${filled ? "text-warm-500" : "text-warm-300"}`}
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-      />
-    </svg>
-  );
-}
-
 function ChevronLeft({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 19l-7-7 7-7"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
     </svg>
   );
 }
 
 function ChevronRight({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 5l7 7-7 7"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
   );
 }
