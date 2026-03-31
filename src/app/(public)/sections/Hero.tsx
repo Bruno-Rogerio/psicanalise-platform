@@ -38,7 +38,7 @@ export function Hero() {
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "right top",
-            opacity: 0.18,
+            opacity: 1,
           }}
         />
       </div>
