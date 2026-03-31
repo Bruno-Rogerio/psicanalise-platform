@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/contexts/ToastContext";
@@ -143,203 +143,241 @@ export default function UsuariosPage() {
     }
   }
 
+  const totalCount = users.length;
+  const activeCount = users.filter((u) => u.status === "active").length;
+  const blockedCount = users.filter((u) => u.status === "blocked").length;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-500 to-sage-600 shadow-lg">
-            <UsersIcon className="h-7 w-7 text-white" />
-          </div>
+    <div className="min-h-screen bg-[#F2EDE8] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-8">
+
+        {/* ── Page Header ── */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-warm-900">Usuarios</h1>
-            <p className="text-sm text-warm-600">
-              {users.length} cliente(s) cadastrados
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">
+              Profissional
+            </p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">
+              Usuários
+            </h1>
+            <p className="mt-1 text-sm text-[#8B7B72]">
+              Gerenciar contas dos clientes
             </p>
           </div>
+          <button
+            onClick={loadUsers}
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-5 py-2.5 text-sm font-semibold text-[#2C2420] shadow-sm transition-colors hover:bg-[#F8F4F1]"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Atualizar
+          </button>
         </div>
-        <button
-          onClick={loadUsers}
-          className="inline-flex items-center gap-2 rounded-xl border border-warm-300 bg-white px-4 py-2.5 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50"
-        >
-          Atualizar
-        </button>
-      </header>
 
-      {/* Search */}
-      <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+        {/* ── Stats Row ── */}
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-[#B0A098]" />
+            <span className="text-sm font-semibold text-[#2C2420]">{totalCount}</span>
+            <span className="text-sm text-[#8B7B72]">total</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-2.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="text-sm font-semibold text-emerald-700">{activeCount}</span>
+            <span className="text-sm text-emerald-600">ativos</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2.5">
+            <span className="h-2 w-2 rounded-full bg-rose-500" />
+            <span className="text-sm font-semibold text-rose-700">{blockedCount}</span>
+            <span className="text-sm text-rose-600">bloqueados</span>
+          </div>
+        </div>
+
+        {/* ── Search ── */}
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-warm-400" />
+          <SearchIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B0A098]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nome, email ou telefone"
-            className="h-11 w-full rounded-xl border border-warm-200 bg-warm-50 pl-10 pr-4 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
+            className="w-full rounded-2xl border border-[#E8E0DC] bg-white pl-11 pr-4 py-3 text-sm text-[#2C2420] shadow-sm outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
           />
         </div>
-      </div>
 
-      {/* Edit Panel */}
-      {editing && (
-        <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-warm-900">Editar usuario</p>
-            <button
-              onClick={cancelEdit}
-              className="text-sm text-warm-500 hover:text-warm-700"
-            >
-              Cancelar
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-semibold text-warm-600">
-                Nome
-              </label>
-              <input
-                className="mt-2 w-full rounded-xl border border-warm-200 bg-warm-50 px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-warm-600">
-                Email
-              </label>
-              <input
-                className="mt-2 w-full rounded-xl border border-warm-200 bg-warm-50 px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-warm-600">
-                Telefone
-              </label>
-              <input
-                className="mt-2 w-full rounded-xl border border-warm-200 bg-warm-50 px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <button
-              onClick={cancelEdit}
-              className="rounded-lg border border-warm-200 bg-white px-4 py-2 text-sm font-semibold text-warm-600 hover:bg-warm-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={saveEdit}
-              disabled={busyId === editing.id}
-              className="rounded-lg bg-[#4A7C59] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3d6649] disabled:opacity-60"
-            >
-              {busyId === editing.id ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* List */}
-      <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
+        {/* ── User List ── */}
         {loading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-warm-100" />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 animate-pulse rounded-3xl bg-[#F5F0ED]" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl bg-warm-50 p-6 text-center text-sm text-warm-600">
-            Nenhum usuario encontrado
+          <div className="rounded-3xl border-2 border-dashed border-[#E8E0DC] py-16 text-center">
+            <UsersIcon className="mx-auto h-12 w-12 text-[#B0A098]" />
+            <h3 className="mt-4 text-lg font-bold text-[#2C2420]">Nenhum usuário encontrado</h3>
+            <p className="mt-2 text-sm text-[#8B7B72]">
+              {searchQuery ? "Tente ajustar o filtro de busca" : "Ainda não há clientes cadastrados"}
+            </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {filtered.map((user) => (
               <div
                 key={user.id}
-                className="flex flex-wrap items-center gap-3 rounded-xl border border-warm-200 bg-warm-50/60 p-3"
+                className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-[0_1px_16px_rgba(44,36,32,0.07)] transition-shadow hover:shadow-[0_4px_24px_rgba(44,36,32,0.10)]"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-100 text-sm font-bold text-sage-700">
-                  {(user.nome || "C").charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-warm-900">
-                    {user.nome || "Sem nome"}
-                  </p>
-                  <p className="truncate text-xs text-warm-500">
-                    {user.email || "Sem email"}
-                  </p>
-                </div>
-                <div className="text-xs text-warm-500">
-                  {user.phone || "Sem telefone"}
-                </div>
-                <StatusBadge status={user.status} />
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    onClick={() => startEdit(user)}
-                    className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-warm-700 hover:bg-warm-100"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => toggleStatus(user)}
-                    disabled={busyId === user.id}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
-                      user.status === "blocked"
-                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                        : "bg-rose-100 text-rose-700 hover:bg-rose-200"
-                    }`}
-                  >
-                    {user.status === "blocked" ? "Ativar" : "Bloquear"}
-                  </button>
-                  <button
-                    onClick={() => deleteUser(user)}
-                    disabled={busyId === user.id}
-                    className="rounded-lg bg-warm-200 px-3 py-1.5 text-xs font-semibold text-warm-700 hover:bg-warm-300 disabled:opacity-60"
-                  >
-                    Excluir
-                  </button>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Avatar + info */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4A7C59]/10 text-sm font-bold text-[#4A7C59]">
+                      {(user.nome || "C").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-[#2C2420] truncate">
+                        {user.nome || "Sem nome"}
+                      </p>
+                      <p className="text-sm text-[#8B7B72] truncate">
+                        {user.email || "Sem email"}
+                      </p>
+                      {user.phone && (
+                        <p className="text-xs text-[#B0A098]">{user.phone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status + actions */}
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <StatusBadge status={user.status} />
+                    <button
+                      onClick={() => startEdit(user)}
+                      className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm font-semibold text-[#2C2420] transition-colors hover:bg-[#F8F4F1]"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => toggleStatus(user)}
+                      disabled={busyId === user.id}
+                      className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                        user.status === "blocked"
+                          ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                      }`}
+                    >
+                      {user.status === "blocked" ? "Ativar" : "Bloquear"}
+                    </button>
+                    <button
+                      onClick={() => deleteUser(user)}
+                      disabled={busyId === user.id}
+                      className="rounded-xl border border-[#E8E0DC] bg-[#F5F0ED] px-3 py-2 text-sm font-semibold text-[#8B7B72] transition-colors hover:bg-[#EDE8E4] disabled:opacity-60"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* ── Edit Modal ── */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#E8E0DC] bg-white shadow-2xl">
+            {/* Modal header */}
+            <div className="border-b border-[#E8E0DC] px-6 py-5">
+              <h2 className="text-lg font-bold text-[#2C2420]">Editar Usuário</h2>
+              <p className="mt-0.5 text-sm text-[#8B7B72]">{editing.email}</p>
+            </div>
+
+            {/* Modal body */}
+            <div className="space-y-4 p-6">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Nome
+                </label>
+                <input
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Email
+                </label>
+                <input
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Telefone
+                </label>
+                <input
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="border-t border-[#E8E0DC] bg-[#FAFAF8] px-6 py-4">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={cancelEdit}
+                  className="rounded-2xl border border-[#E8E0DC] bg-white px-5 py-2.5 text-sm font-semibold text-[#2C2420] transition-colors hover:bg-[#F8F4F1]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={busyId === editing.id}
+                  className="rounded-2xl bg-[#4A7C59] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d6649] disabled:opacity-60"
+                >
+                  {busyId === editing.id ? "Salvando..." : "Salvar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; color: string }> = {
-    active: { label: "Ativo", color: "bg-emerald-100 text-emerald-700" },
-    blocked: { label: "Bloqueado", color: "bg-rose-100 text-rose-700" },
-    pending_email: { label: "Pendente", color: "bg-amber-100 text-amber-700" },
+    active: {
+      label: "Ativo",
+      color: "inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700",
+    },
+    blocked: {
+      label: "Bloqueado",
+      color: "inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700",
+    },
+    pending_email: {
+      label: "Pendente",
+      color: "inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700",
+    },
   };
 
   const cfg = map[status] || {
     label: status,
-    color: "bg-warm-100 text-warm-700",
+    color: "inline-flex items-center rounded-full bg-[#F5F0ED] px-2.5 py-1 text-xs font-semibold text-[#8B7B72]",
   };
 
-  return (
-    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${cfg.color}`}>
-      {cfg.label}
-    </span>
-  );
+  return <span className={cfg.color}>{cfg.label}</span>;
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -352,12 +390,7 @@ function UsersIcon({ className }: { className?: string }) {
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

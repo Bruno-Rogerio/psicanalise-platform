@@ -143,32 +143,34 @@ export default function LinkPagamentoPage() {
     cancelled: "Cancelado",
   };
 
-  const statusColors: Record<PaymentLink["status"], string> = {
-    active: "bg-amber-100 text-amber-800",
-    paid: "bg-emerald-100 text-emerald-800",
-    cancelled: "bg-rose-100 text-rose-800",
+  const statusBadge: Record<PaymentLink["status"], string> = {
+    active: "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700",
+    paid: "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700",
+    cancelled: "rounded-full bg-[#F5F0ED] px-2.5 py-1 text-xs font-semibold text-[#8B7B72]",
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-warm-900">Link de Pagamento</h1>
-        <p className="mt-1 text-sm text-warm-500">
-          Gere um link de pagamento por cartão de crédito e envie para o paciente.
-        </p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Profissional</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">Links de Pagamento</h1>
+          <p className="mt-1 text-sm text-[#8B7B72]">Gere e gerencie cobranças avulsas</p>
+        </div>
       </div>
 
-      {/* Formulário */}
-      <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-warm-900">
-          Novo link
-        </h2>
+      {/* Create Form */}
+      <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+        <div className="border-b border-[#E8E0DC] px-6 py-4">
+          <p className="text-sm font-bold text-[#2C2420]">Novo link de pagamento</p>
+          <p className="text-xs text-[#8B7B72]">Gere um link de pagamento por cartão de crédito e envie para o paciente</p>
+        </div>
 
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleCreate} className="p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-warm-700">
+              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 Descrição
               </label>
               <input
@@ -176,17 +178,17 @@ export default function LinkPagamentoPage() {
                 placeholder="Ex: Sessão avulsa — João"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-2.5 text-sm text-warm-900 placeholder:text-warm-400 focus:border-sage-400 focus:outline-none focus:ring-2 focus:ring-sage-200"
+                className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-warm-700">
+              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 Valor (R$)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-warm-500">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-[#B0A098]">
                   R$
                 </span>
                 <input
@@ -197,7 +199,7 @@ export default function LinkPagamentoPage() {
                   onChange={(e) =>
                     setAmountStr(e.target.value.replace(/[^0-9,.]/g, ""))
                   }
-                  className="w-full rounded-xl border border-warm-200 bg-warm-50 py-2.5 pl-9 pr-4 text-sm text-warm-900 placeholder:text-warm-400 focus:border-sage-400 focus:outline-none focus:ring-2 focus:ring-sage-200"
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white py-3 pl-10 pr-4 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
                   required
                 />
               </div>
@@ -205,16 +207,16 @@ export default function LinkPagamentoPage() {
           </div>
 
           {error && (
-            <p className="rounded-lg bg-rose-50 px-4 py-2.5 text-sm text-rose-700">
+            <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
               {error}
             </p>
           )}
 
-          <div className="flex justify-end">
+          <div className="mt-5 flex justify-end">
             <button
               type="submit"
               disabled={creating}
-              className="flex items-center gap-2 rounded-xl bg-[#4A7C59] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#3d6649] disabled:opacity-60"
+              className="flex items-center gap-2 rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320] disabled:opacity-60"
             >
               {creating ? (
                 <>
@@ -232,96 +234,101 @@ export default function LinkPagamentoPage() {
         </form>
       </div>
 
-      {/* Lista */}
-      <div className="rounded-2xl border border-warm-200 bg-white shadow-sm">
-        <div className="border-b border-warm-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-warm-900">
-            Links gerados
-          </h2>
+      {/* Links History */}
+      <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+        <div className="border-b border-[#E8E0DC] px-6 py-4">
+          <p className="text-sm font-bold text-[#2C2420]">Links gerados</p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <SpinnerIcon className="h-6 w-6 animate-spin text-sage-400" />
+            <SpinnerIcon className="h-6 w-6 animate-spin text-[#C4B8AE]" />
           </div>
         ) : links.length === 0 ? (
-          <div className="py-16 text-center">
-            <LinkIcon className="mx-auto mb-3 h-10 w-10 text-warm-200" />
-            <p className="text-sm text-warm-400">
-              Nenhum link gerado ainda
-            </p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F8F4F1]">
+              <LinkIcon className="h-10 w-10 text-[#C4B8AE]" />
+            </div>
+            <p className="mt-5 text-base font-bold text-[#2C2420]">Nenhum link gerado</p>
+            <p className="mt-1 text-sm text-[#8B7B72]">Crie seu primeiro link de pagamento acima</p>
           </div>
         ) : (
-          <ul className="divide-y divide-warm-100">
-            {links.map((link) => (
-              <li key={link.id} className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-warm-900">
-                      {link.description}
-                    </p>
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[link.status]}`}
-                    >
-                      {statusLabel[link.status]}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-warm-500">
-                    <span className="font-medium text-warm-700">
-                      {fmtBRL(link.amount_cents)}
-                    </span>
-                    <span>Criado em {fmtDate(link.created_at)}</span>
-                    {link.paid_at && (
-                      <span className="text-emerald-600">
-                        Pago em {fmtDate(link.paid_at)}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="border-b border-[#E8E0DC]">
+                  <th className="pb-3 pl-6 pr-4 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#B0A098]">Descrição</th>
+                  <th className="pb-3 pr-4 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#B0A098]">Valor</th>
+                  <th className="pb-3 pr-4 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#B0A098]">Status</th>
+                  <th className="pb-3 pr-4 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider text-[#B0A098]">Data</th>
+                  <th className="pb-3 pr-6 pt-4 text-right text-[11px] font-semibold uppercase tracking-wider text-[#B0A098]">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F5F0ED]">
+                {links.map((link) => (
+                  <tr key={link.id} className="transition-colors hover:bg-[#FAFAF8]">
+                    <td className="py-4 pl-6 pr-4">
+                      <p className="text-sm font-semibold text-[#2C2420]">{link.description}</p>
+                      <p className="mt-0.5 truncate text-xs text-[#B0A098] max-w-[180px]">{link.url}</p>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <span className="text-sm font-bold text-[#2C2420]">{fmtBRL(link.amount_cents)}</span>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <span className={statusBadge[link.status]}>
+                        {statusLabel[link.status]}
                       </span>
-                    )}
-                  </div>
-                  <p className="mt-1 truncate text-xs text-warm-400">
-                    {link.url}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    onClick={() => copyLink(link)}
-                    className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
-                      copiedId === link.id
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : "border-warm-200 bg-warm-50 text-warm-700 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
-                    }`}
-                  >
-                    {copiedId === link.id ? (
-                      <>
-                        <CheckIcon className="h-4 w-4" />
-                        Copiado!
-                      </>
-                    ) : (
-                      <>
-                        <CopyIcon className="h-4 w-4" />
-                        Copiar link
-                      </>
-                    )}
-                  </button>
-
-                  {link.status === "active" && (
-                    <button
-                      onClick={() => cancelLink(link)}
-                      disabled={cancellingId === link.id}
-                      className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:opacity-60"
-                    >
-                      {cancellingId === link.id ? (
-                        <SpinnerIcon className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <XIcon className="h-4 w-4" />
+                    </td>
+                    <td className="py-4 pr-4">
+                      <p className="text-sm text-[#8B7B72]">{fmtDate(link.created_at)}</p>
+                      {link.paid_at && (
+                        <p className="mt-0.5 text-xs text-emerald-600">Pago em {fmtDate(link.paid_at)}</p>
                       )}
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+                    </td>
+                    <td className="py-4 pr-6">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => copyLink(link)}
+                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                            copiedId === link.id
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-[#E8E0DC] bg-white text-[#2C2420] hover:bg-[#F8F4F1]"
+                          }`}
+                        >
+                          {copiedId === link.id ? (
+                            <>
+                              <CheckIcon className="h-3.5 w-3.5" />
+                              Copiado!
+                            </>
+                          ) : (
+                            <>
+                              <CopyIcon className="h-3.5 w-3.5" />
+                              Copiar
+                            </>
+                          )}
+                        </button>
+
+                        {link.status === "active" && (
+                          <button
+                            onClick={() => cancelLink(link)}
+                            disabled={cancellingId === link.id}
+                            className="flex items-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition-all hover:bg-rose-100 disabled:opacity-60"
+                          >
+                            {cancellingId === link.id ? (
+                              <SpinnerIcon className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <XIcon className="h-3.5 w-3.5" />
+                            )}
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -82,16 +82,17 @@ export function BuyCreditsSection({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="h-8 w-48 animate-pulse rounded-lg bg-warm-200" />
-        <div className="h-32 animate-pulse rounded-2xl bg-warm-200" />
+        <div className="h-6 w-44 animate-pulse rounded-lg bg-[#1A1614]/8" />
+        <div className="h-40 animate-pulse rounded-3xl bg-[#1A1614]/6" />
+        <div className="h-40 animate-pulse rounded-3xl bg-[#1A1614]/6" />
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-warm-300 bg-warm-50 p-6 text-center">
-        <p className="text-sm text-warm-600">
+      <div className="rounded-3xl border-2 border-dashed border-[#1A1614]/15 bg-[#F2EDE8]/50 p-8 text-center">
+        <p className="text-sm text-[#1A1614]/50">
           Nenhum pacote disponível no momento
         </p>
       </div>
@@ -100,41 +101,19 @@ export function BuyCreditsSection({
 
   return (
     <div className="space-y-4">
-      {/* Credits Balance */}
-      <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-sage-700">Seus Créditos</p>
-            <p className="mt-1 text-xs text-sage-600">
-              {appointmentType === "video"
-                ? "Sessões de vídeo"
-                : "Sessões de chat"}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-3xl font-bold text-sage-700">{credits}</p>
-            <p className="text-xs text-sage-600">
-              {credits === 1 ? "sessão" : "sessões"}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Section title */}
+      <h3 className="font-bold text-[#1A1614]">Pacotes de Sessões</h3>
 
       {/* Products */}
-      <div>
-        <h3 className="mb-3 font-semibold text-warm-900">
-          Comprar Pacotes de Sessões
-        </h3>
-        <div className="space-y-3">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onBuyWithCard={() => handleBuyWithCard(product)}
-              onBuyWithPix={() => handleBuyWithPix(product)}
-            />
-          ))}
-        </div>
+      <div className="space-y-3">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onBuyWithCard={() => handleBuyWithCard(product)}
+            onBuyWithPix={() => handleBuyWithPix(product)}
+          />
+        ))}
       </div>
 
       {/* Modals */}
@@ -167,70 +146,56 @@ function ProductCard({
   onBuyWithCard: () => void;
   onBuyWithPix: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft transition-all hover:shadow-soft-lg">
-      {/* Header */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 text-left transition-colors hover:bg-warm-50"
-      >
-        <div className="flex items-start justify-between">
+    <div className="overflow-hidden rounded-3xl border-2 border-[#1A1614]/10 bg-white shadow-sm transition-all hover:shadow-md">
+      {/* Top section */}
+      <div className="p-5 bg-gradient-to-br from-white to-[#F2EDE8]/60">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h4 className="font-bold text-warm-900">{product.title}</h4>
+            <h4 className="font-bold text-lg text-[#1A1614]">{product.title}</h4>
             {product.description && (
-              <p className="mt-1 text-sm text-warm-600">
+              <p className="mt-1 text-sm text-[#1A1614]/60">
                 {product.description}
               </p>
             )}
-            <p className="mt-2 text-xs text-warm-500">
+            {/* Sessions count pill */}
+            <div className="mt-2 inline-flex items-center rounded-full bg-[#4A7C59]/10 px-3 py-1 text-sm font-semibold text-[#4A7C59]">
               {product.sessions_count}{" "}
               {product.sessions_count === 1 ? "sessão" : "sessões"}
-            </p>
+            </div>
           </div>
-          <div className="ml-4 text-right">
-            <p className="text-xl font-bold text-warm-900">
+          <div className="text-right shrink-0">
+            <p className="text-3xl font-black text-[#1A1614]">
               {formatCents(product.price_cents)}
             </p>
-            <p className="mt-1 text-xs text-sage-600">
+            <p className="mt-0.5 text-sm text-[#1A1614]/40">
               {formatCents(product.price_cents / product.sessions_count)}/sessão
             </p>
           </div>
         </div>
-      </button>
+      </div>
 
-      {/* Actions (expandable) */}
-      <div
-        className={`overflow-hidden transition-all duration-300 ${
-          expanded ? "max-h-40" : "max-h-0"
-        }`}
-      >
-        <div className="border-t-2 border-warm-200 bg-warm-50/50 p-4">
-          <div className="flex gap-2">
-            <button
-              onClick={onBuyWithCard}
-              className="flex-1 rounded-xl bg-[#111111] px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-[#2a2a2a]"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <CreditCardIcon className="h-4 w-4" />
-                Cartão
-              </span>
-            </button>
-            <button
-              onClick={onBuyWithPix}
-              className="flex-1 rounded-xl border-2 border-warm-300 bg-white px-4 py-3 text-sm font-semibold text-[#111111] transition-all hover:bg-warm-50"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <PixIcon className="h-4 w-4" />
-                PIX
-              </span>
-            </button>
-          </div>
-          <p className="mt-2 text-center text-xs text-warm-500">
-            Créditos liberados após confirmação
-          </p>
+      {/* Bottom section — always visible, no accordion */}
+      <div className="border-t border-[#1A1614]/8 p-4 bg-[#F2EDE8]/30">
+        <div className="flex gap-2">
+          <button
+            onClick={onBuyWithCard}
+            className="flex-1 bg-[#1A1614] text-white rounded-2xl py-3 text-sm font-semibold transition-all hover:bg-[#2a2a2a] flex items-center justify-center gap-2"
+          >
+            <CreditCardIcon className="h-4 w-4" />
+            Cartão
+          </button>
+          <button
+            onClick={onBuyWithPix}
+            className="flex-1 bg-white border-2 border-[#4A7C59] text-[#4A7C59] rounded-2xl py-3 text-sm font-semibold transition-all hover:bg-[#4A7C59]/5 flex items-center justify-center gap-2"
+          >
+            <PixIcon className="h-4 w-4" />
+            PIX
+          </button>
         </div>
+        <p className="mt-2 text-center text-xs text-[#1A1614]/35">
+          Créditos liberados após confirmação
+        </p>
       </div>
     </div>
   );

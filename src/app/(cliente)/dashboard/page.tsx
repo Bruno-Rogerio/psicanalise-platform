@@ -128,225 +128,455 @@ export default function DashboardClientePage() {
     return "Boa noite";
   }, []);
 
+  const firstName = userName ? userName.split(" ")[0] : null;
+
+  // Date label e.g. "SEG, 30 MAR"
+  const dateLabel = useMemo(() => {
+    const now = new Date();
+    return now
+      .toLocaleDateString("pt-BR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
+      .toUpperCase()
+      .replace(/\./g, "");
+  }, []);
+
   return (
-    <div className="space-y-10">
-      {/* Header */}
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl">
-          {greeting}
-          {userName ? `, ${userName.split(" ")[0]}` : ""}.
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Aqui você agenda suas sessões, acompanha a próxima consulta e encontra
-          seu histórico. Tudo com clareza, no seu tempo.
-        </p>
-      </header>
+    <div className="space-y-6">
+      {/* ── 1. Hero greeting card ── */}
+      <div
+        className="relative overflow-hidden rounded-3xl"
+        style={{ background: "#1A1614", minHeight: "160px" }}
+      >
+        {/* Decorative blurred orbs */}
+        <div
+          className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full blur-3xl"
+          style={{ background: "rgba(232,117,90,0.25)" }}
+        />
+        <div
+          className="pointer-events-none absolute top-4 right-24 h-32 w-32 rounded-full blur-2xl"
+          style={{ background: "rgba(74,124,89,0.20)" }}
+        />
 
-      {/* Cards */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Agendar */}
-        <Card className="group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-400/20 to-sage-500/20 transition-transform duration-300 group-hover:scale-105">
-            <CalendarPlusIcon className="h-6 w-6 text-sage-600" />
-          </div>
-          <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted">
-              Agendamento
-            </p>
-            <p className="mt-1 text-lg font-semibold text-warm-900">
-              Agendar nova sessão
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Escolha um horário, tipo de atendimento e finalize seu
-              agendamento.
-            </p>
-          </div>
-          <Link
-            href="/agenda"
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sage-500 px-4 py-3 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
+        <div className="relative z-10 p-8">
+          {loading ? (
+            <div className="space-y-4">
+              <div
+                className="h-3 w-24 animate-pulse rounded-full"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              />
+              <div
+                className="h-10 w-64 animate-pulse rounded-2xl"
+                style={{ background: "rgba(255,255,255,0.10)" }}
+              />
+              <div
+                className="h-4 w-48 animate-pulse rounded-full"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+              />
+            </div>
+          ) : (
+            <>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "rgba(255,255,255,0.40)" }}
+              >
+                {dateLabel}
+              </p>
+              <h1
+                className="mt-2 text-4xl font-black sm:text-5xl"
+                style={{ color: "#FFFFFF" }}
+              >
+                {greeting}
+                {firstName ? `, ${firstName}` : ""}!
+              </h1>
+              <p
+                className="mt-2 text-base"
+                style={{ color: "rgba(255,255,255,0.50)" }}
+              >
+                Bem-vinda à sua área de psicanálise.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── 2. Next Session featured card ── */}
+      <div
+        className="relative overflow-hidden rounded-3xl bg-white shadow-lg"
+        style={{ boxShadow: "0 4px 32px rgba(26,22,20,0.08)" }}
+      >
+        {/* Left colored bar */}
+        <div
+          className="absolute left-0 top-0 h-full w-1 rounded-l-3xl"
+          style={{
+            background:
+              nextSession?.appointment_type === "chat" ? "#5B5EA6" : "#E8755A",
+          }}
+        />
+
+        <div className="p-6 pl-8">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest"
+            style={{ color: "rgba(26,22,20,0.40)" }}
           >
-            <CalendarIcon className="h-4 w-4" />
-            Ver horários disponíveis
-          </Link>
-        </Card>
+            Próxima Sessão
+          </p>
 
-        {/* Próxima sessão */}
-        <Card className="group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-warm-500/20 transition-transform duration-300 group-hover:scale-105">
-            <ClockIcon className="h-6 w-6 text-rose-500" />
-          </div>
-          <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted">
-              Próxima sessão
-            </p>
-
-            {loading ? (
-              <div className="mt-3 space-y-2">
-                <div className="h-5 w-32 animate-pulse rounded-lg bg-warm-200" />
-                <div className="h-4 w-48 animate-pulse rounded-lg bg-warm-200" />
-              </div>
-            ) : nextSession ? (
-              <>
-                <p className="mt-1 text-lg font-semibold text-warm-900">
-                  {nextSession.appointment_type === "video" ? "Vídeo" : "Chat"}{" "}
-                  • {fmtTime(new Date(nextSession.start_at))}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {fmtDate(new Date(nextSession.start_at))}
-                  {nextSession.profissional_nome &&
-                    ` • com ${nextSession.profissional_nome}`}
-                </p>
-
-                <div className="mt-5 flex flex-col gap-2">
-                  {canEnter ? (
-                    <Link
-                      href={`/sessoes/${nextSession.id}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sage-500 px-4 py-3 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
-                    >
-                      <PlayIcon className="h-4 w-4" />
-                      Entrar agora
-                    </Link>
+          {loading ? (
+            <div className="mt-3 space-y-3">
+              <div
+                className="h-6 w-40 animate-pulse rounded-xl"
+                style={{ background: "#F2EDE8" }}
+              />
+              <div
+                className="h-4 w-56 animate-pulse rounded-lg"
+                style={{ background: "#F2EDE8" }}
+              />
+              <div
+                className="mt-4 h-12 w-full animate-pulse rounded-2xl"
+                style={{ background: "#F2EDE8" }}
+              />
+            </div>
+          ) : nextSession ? (
+            <>
+              <div className="mt-3 flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+                  style={{
+                    background:
+                      nextSession.appointment_type === "video"
+                        ? "rgba(232,117,90,0.12)"
+                        : "rgba(91,94,166,0.12)",
+                  }}
+                >
+                  {nextSession.appointment_type === "video" ? (
+                    <VideoIcon
+                      className="h-5 w-5"
+                      style={{
+                        color:
+                          nextSession.appointment_type === "video"
+                            ? "#E8755A"
+                            : "#5B5EA6",
+                      }}
+                    />
                   ) : (
-                    <button
-                      disabled
-                      className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-warm-200 px-4 py-3 text-sm font-medium text-warm-500"
-                    >
-                      <LockIcon className="h-4 w-4" />
-                      Fora do horário
-                    </button>
+                    <ChatIcon className="h-5 w-5" style={{ color: "#5B5EA6" }} />
                   )}
-                  <Link
-                    href="/minhas-sessoes"
-                    className="inline-flex w-full items-center justify-center rounded-xl border border-warm-300/60 bg-white/80 px-4 py-3 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:shadow-soft"
+                </div>
+                <div>
+                  <p
+                    className="text-xl font-bold"
+                    style={{ color: "#1A1614" }}
                   >
-                    Ver detalhes
+                    {fmtTime(new Date(nextSession.start_at))}
+                    <span
+                      className="ml-2 text-sm font-normal"
+                      style={{ color: "rgba(26,22,20,0.50)" }}
+                    >
+                      {nextSession.appointment_type === "video"
+                        ? "Vídeo"
+                        : "Chat"}
+                    </span>
+                  </p>
+                  <p
+                    className="text-sm"
+                    style={{ color: "rgba(26,22,20,0.55)" }}
+                  >
+                    {fmtDate(new Date(nextSession.start_at))}
+                    {nextSession.profissional_nome &&
+                      ` • com ${nextSession.profissional_nome}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                {canEnter ? (
+                  <Link
+                    href={`/sessoes/${nextSession.id}`}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+                    style={{ background: "#4A7C59" }}
+                  >
+                    <PlayIcon className="h-4 w-4" />
+                    Entrar agora
                   </Link>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="mt-1 text-lg font-semibold text-warm-900">
-                  Nenhuma sessão marcada
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Assim que você agendar, sua próxima sessão aparece aqui.
-                </p>
-                <div className="mt-4 rounded-xl border border-warm-300/40 bg-warm-200/30 p-3 text-xs text-muted">
-                  💡 Dica: você pode cancelar com reembolso até 24h antes.
-                </div>
-              </>
-            )}
-          </div>
-        </Card>
+                ) : (
+                  <button
+                    disabled
+                    className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold"
+                    style={{
+                      background: "#F2EDE8",
+                      color: "rgba(26,22,20,0.35)",
+                    }}
+                  >
+                    <LockIcon className="h-4 w-4" />
+                    Fora do horário
+                  </button>
+                )}
+                <Link
+                  href="/minhas-sessoes"
+                  className="inline-flex flex-1 items-center justify-center rounded-2xl border px-5 py-3 text-sm font-semibold transition-all duration-200 hover:bg-[#F2EDE8]"
+                  style={{
+                    borderColor: "rgba(26,22,20,0.12)",
+                    color: "#1A1614",
+                  }}
+                >
+                  Ver detalhes
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p
+                className="mt-3 text-lg font-bold"
+                style={{ color: "#1A1614" }}
+              >
+                Nenhuma sessão marcada
+              </p>
+              <p
+                className="mt-1 text-sm"
+                style={{ color: "rgba(26,22,20,0.50)" }}
+              >
+                Assim que você agendar, sua próxima sessão aparece aqui.
+              </p>
+              <Link
+                href="/agenda"
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+                style={{ background: "#4A7C59" }}
+              >
+                <CalendarPlusIcon className="h-4 w-4" />
+                Agendar sessão
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
 
-        {/* Organização */}
-        <Card className="group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-soft-400/20 to-soft-500/20 transition-transform duration-300 group-hover:scale-105">
-            <ListIcon className="h-6 w-6 text-soft-600" />
-          </div>
-          <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted">
-              Organização
-            </p>
-            <p className="mt-1 text-lg font-semibold text-warm-900">
-              Suas consultas
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Histórico por data, tipo de sessão e status (realizada, futura,
-              reagendada).
-            </p>
-          </div>
-          <Link
-            href="/minhas-sessoes"
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-warm-300/60 bg-white/80 px-4 py-3 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:shadow-soft"
+      {/* ── 3. Action cards ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Agendar */}
+        <Link
+          href="/agenda"
+          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          style={{ borderColor: "rgba(26,22,20,0.08)" }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105"
+            style={{ background: "rgba(232,117,90,0.12)" }}
           >
-            <HistoryIcon className="h-4 w-4" />
-            Ver histórico
-          </Link>
-        </Card>
-      </section>
-
-      {/* Histórico recente */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-warm-900">
-              Histórico recente
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              Suas últimas sessões aparecem aqui.
-            </p>
+            <CalendarPlusIcon className="h-6 w-6" style={{ color: "#E8755A" }} />
           </div>
+          <p
+            className="mt-4 text-base font-bold"
+            style={{ color: "#1A1614" }}
+          >
+            Agendar
+          </p>
+          <p
+            className="mt-1 text-sm leading-relaxed"
+            style={{ color: "rgba(26,22,20,0.50)" }}
+          >
+            Escolha um horário e finalize seu agendamento.
+          </p>
+          <div className="mt-auto pt-4 flex items-center gap-1 text-sm font-semibold" style={{ color: "#E8755A" }}>
+            Ver horários
+            <ArrowRightIcon className="h-4 w-4" />
+          </div>
+        </Link>
+
+        {/* Créditos */}
+        <Link
+          href="/creditos"
+          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          style={{ borderColor: "rgba(26,22,20,0.08)" }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105"
+            style={{ background: "rgba(212,167,44,0.12)" }}
+          >
+            <CreditIcon className="h-6 w-6" style={{ color: "#D4A72C" }} />
+          </div>
+          <p
+            className="mt-4 text-base font-bold"
+            style={{ color: "#1A1614" }}
+          >
+            Créditos
+          </p>
+          <p
+            className="mt-1 text-sm leading-relaxed"
+            style={{ color: "rgba(26,22,20,0.50)" }}
+          >
+            Compre pacotes de sessões e gerencie seu saldo.
+          </p>
+          <div className="mt-auto pt-4 flex items-center gap-1 text-sm font-semibold" style={{ color: "#D4A72C" }}>
+            Ver pacotes
+            <ArrowRightIcon className="h-4 w-4" />
+          </div>
+        </Link>
+
+        {/* Histórico */}
+        <Link
+          href="/minhas-sessoes"
+          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          style={{ borderColor: "rgba(26,22,20,0.08)" }}
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105"
+            style={{ background: "rgba(74,124,89,0.12)" }}
+          >
+            <HistoryIcon className="h-6 w-6" style={{ color: "#4A7C59" }} />
+          </div>
+          <p
+            className="mt-4 text-base font-bold"
+            style={{ color: "#1A1614" }}
+          >
+            Histórico
+          </p>
+          <p
+            className="mt-1 text-sm leading-relaxed"
+            style={{ color: "rgba(26,22,20,0.50)" }}
+          >
+            Veja todas as suas sessões por data e status.
+          </p>
+          <div className="mt-auto pt-4 flex items-center gap-1 text-sm font-semibold" style={{ color: "#4A7C59" }}>
+            Ver histórico
+            <ArrowRightIcon className="h-4 w-4" />
+          </div>
+        </Link>
+      </div>
+
+      {/* ── 4. Recent history ── */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h2
+            className="text-lg font-bold"
+            style={{ color: "#1A1614" }}
+          >
+            Histórico recente
+          </h2>
           <Link
             href="/minhas-sessoes"
-            className="text-sm font-medium text-sage-600 transition-colors hover:text-sage-700"
+            className="text-sm font-semibold transition-opacity hover:opacity-70"
+            style={{ color: "#4A7C59" }}
           >
             Ver tudo →
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 shadow-soft backdrop-blur-sm">
+        <div
+          className="overflow-hidden rounded-3xl border bg-white"
+          style={{
+            borderColor: "rgba(26,22,20,0.08)",
+            boxShadow: "0 2px 16px rgba(26,22,20,0.05)",
+          }}
+        >
           {loading ? (
-            <div className="space-y-3 p-6">
+            <div className="space-y-0 divide-y" style={{ borderColor: "rgba(26,22,20,0.06)" }}>
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-16 animate-pulse rounded-xl bg-warm-200/50"
-                />
+                <div key={i} className="flex items-center gap-4 p-5">
+                  <div
+                    className="h-10 w-10 shrink-0 animate-pulse rounded-2xl"
+                    style={{ background: "#F2EDE8" }}
+                  />
+                  <div className="flex-1 space-y-2">
+                    <div
+                      className="h-4 w-40 animate-pulse rounded-lg"
+                      style={{ background: "#F2EDE8" }}
+                    />
+                    <div
+                      className="h-3 w-28 animate-pulse rounded-lg"
+                      style={{ background: "#F2EDE8" }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           ) : recent.length === 0 ? (
-            <div className="p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warm-200/50">
-                <CalendarIcon className="h-6 w-6 text-warm-400" />
+            <div className="flex flex-col items-center py-12 px-6 text-center">
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-full"
+                style={{ background: "#F2EDE8" }}
+              >
+                <CalendarIcon className="h-7 w-7" style={{ color: "rgba(26,22,20,0.25)" }} />
               </div>
-              <p className="mt-3 text-sm text-muted">
+              <p
+                className="mt-4 text-sm font-medium"
+                style={{ color: "rgba(26,22,20,0.45)" }}
+              >
                 Ainda não há sessões no seu histórico.
               </p>
               <Link
                 href="/agenda"
-                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-sage-600 hover:text-sage-700"
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "#4A7C59" }}
               >
                 Agendar primeira sessão
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-warm-300/30">
+            <div className="divide-y" style={{ borderColor: "rgba(26,22,20,0.06)" }}>
               {recent.map((r) => (
                 <Link
                   key={r.id}
                   href={`/sessoes/${r.id}`}
-                  className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-warm-200/20 sm:p-5"
+                  className="flex items-center justify-between gap-4 p-4 transition-colors sm:p-5"
+                  style={{ ["--tw-bg-opacity" as string]: "1" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#F2EDE8")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                        r.appointment_type === "video"
-                          ? "bg-gradient-to-br from-rose-400/20 to-warm-500/20"
-                          : "bg-gradient-to-br from-soft-400/20 to-soft-500/20"
-                      }`}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+                      style={{
+                        background:
+                          r.appointment_type === "video"
+                            ? "rgba(232,117,90,0.12)"
+                            : "rgba(91,94,166,0.12)",
+                      }}
                     >
                       {r.appointment_type === "video" ? (
-                        <VideoIcon className="h-5 w-5 text-rose-500" />
+                        <VideoIcon
+                          className="h-5 w-5"
+                          style={{ color: "#E8755A" }}
+                        />
                       ) : (
-                        <ChatIcon className="h-5 w-5 text-soft-600" />
+                        <ChatIcon
+                          className="h-5 w-5"
+                          style={{ color: "#5B5EA6" }}
+                        />
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-warm-900">
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: "#1A1614" }}
+                      >
                         {fmtDate(new Date(r.start_at))} •{" "}
                         {fmtTime(new Date(r.start_at))}
                       </p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        {r.appointment_type === "video"
-                          ? "Videochamada"
-                          : "Chat"}{" "}
-                        • {statusLabel(r.status)}
-                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p
+                          className="text-xs"
+                          style={{ color: "rgba(26,22,20,0.45)" }}
+                        >
+                          {r.appointment_type === "video"
+                            ? "Videochamada"
+                            : "Chat"}
+                        </p>
+                        <StatusBadge status={r.status} />
+                      </div>
                     </div>
                   </div>
-                  <ChevronRightIcon className="h-5 w-5 shrink-0 text-warm-400" />
+                  <ChevronRightIcon
+                    className="h-5 w-5 shrink-0"
+                    style={{ color: "rgba(26,22,20,0.25)" }}
+                  />
                 </Link>
               ))}
             </div>
@@ -357,24 +587,49 @@ export default function DashboardClientePage() {
   );
 }
 
-// Card component
-function Card({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+// Status badge
+function StatusBadge({ status }: { status: AppointmentStatus }) {
+  const config: Record<
+    AppointmentStatus,
+    { label: string; bg: string; color: string }
+  > = {
+    scheduled: {
+      label: "Agendada",
+      bg: "rgba(74,124,89,0.10)",
+      color: "#4A7C59",
+    },
+    completed: {
+      label: "Realizada",
+      bg: "rgba(91,94,166,0.10)",
+      color: "#5B5EA6",
+    },
+    cancelled: {
+      label: "Cancelada",
+      bg: "rgba(232,117,90,0.10)",
+      color: "#E8755A",
+    },
+    rescheduled: {
+      label: "Reagendada",
+      bg: "rgba(212,167,44,0.12)",
+      color: "#D4A72C",
+    },
+  };
+  const c = config[status] ?? {
+    label: status,
+    bg: "#F2EDE8",
+    color: "#1A1614",
+  };
   return (
-    <div
-      className={`overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 p-6 shadow-soft backdrop-blur-sm transition-all duration-300 hover:shadow-soft-lg ${className}`}
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ background: c.bg, color: c.color }}
     >
-      {children}
-    </div>
+      {c.label}
+    </span>
   );
 }
 
-// Status label
+// Status label (kept for compatibility)
 function statusLabel(status: AppointmentStatus): string {
   const labels: Record<AppointmentStatus, string> = {
     scheduled: "Agendada",
@@ -386,10 +641,17 @@ function statusLabel(status: AppointmentStatus): string {
 }
 
 // Icons
-function CalendarPlusIcon({ className }: { className?: string }) {
+function CalendarPlusIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -410,10 +672,17 @@ function CalendarPlusIcon({ className }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className }: { className?: string }) {
+function CalendarIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -428,10 +697,17 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-function ClockIcon({ className }: { className?: string }) {
+function ClockIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -446,28 +722,17 @@ function ClockIcon({ className }: { className?: string }) {
   );
 }
 
-function ListIcon({ className }: { className?: string }) {
+function PlayIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-      />
-    </svg>
-  );
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -488,10 +753,17 @@ function PlayIcon({ className }: { className?: string }) {
   );
 }
 
-function LockIcon({ className }: { className?: string }) {
+function LockIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -506,10 +778,17 @@ function LockIcon({ className }: { className?: string }) {
   );
 }
 
-function HistoryIcon({ className }: { className?: string }) {
+function HistoryIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -524,10 +803,42 @@ function HistoryIcon({ className }: { className?: string }) {
   );
 }
 
-function VideoIcon({ className }: { className?: string }) {
+function CreditIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+      />
+    </svg>
+  );
+}
+
+function VideoIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -542,10 +853,17 @@ function VideoIcon({ className }: { className?: string }) {
   );
 }
 
-function ChatIcon({ className }: { className?: string }) {
+function ChatIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -560,10 +878,17 @@ function ChatIcon({ className }: { className?: string }) {
   );
 }
 
-function ChevronRightIcon({ className }: { className?: string }) {
+function ChevronRightIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -578,10 +903,17 @@ function ChevronRightIcon({ className }: { className?: string }) {
   );
 }
 
-function ArrowRightIcon({ className }: { className?: string }) {
+function ArrowRightIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -591,6 +923,31 @@ function ArrowRightIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M14 5l7 7m0 0l-7 7m7-7H3"
+      />
+    </svg>
+  );
+}
+
+function ListIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      className={className}
+      style={style}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
       />
     </svg>
   );

@@ -150,13 +150,10 @@ export default function ProdutosPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 animate-pulse rounded-3xl bg-warm-200" />
+        <div className="h-16 animate-pulse rounded-3xl bg-[#F8F4F1]" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-48 animate-pulse rounded-2xl bg-warm-200"
-            />
+            <div key={i} className="h-48 animate-pulse rounded-3xl bg-[#F8F4F1]" />
           ))}
         </div>
       </div>
@@ -168,54 +165,39 @@ export default function ProdutosPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg">
-            <PackageIcon className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-warm-900 sm:text-3xl">
-              Produtos e Pacotes
-            </h1>
-            <p className="mt-1 text-warm-600">
-              Configure os combos de sessões que seus clientes podem comprar
-            </p>
-          </div>
+      {/* Page Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Profissional</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">Produtos</h1>
+          <p className="mt-1 text-sm text-[#8B7B72]">Pacotes de sessões disponíveis</p>
         </div>
-
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-sage-500 bg-white px-6 py-3 text-sm font-semibold text-sage-600 transition-all hover:bg-sage-50"
+          className="inline-flex items-center gap-2 rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2A2320]"
         >
-          <PlusIcon className="h-5 w-5" />
+          <PlusIcon className="h-4 w-4" />
           Novo Produto
         </button>
-      </header>
+      </div>
 
       {/* Video Products */}
       <section>
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
-            <VideoIcon className="h-5 w-5 text-rose-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50">
+            <VideoIcon className="h-4 w-4 text-rose-600" />
           </div>
           <div>
-            <h2 className="font-bold text-warm-900">Sessões de Vídeo</h2>
-            <p className="text-sm text-warm-600">
-              {videoProducts.length} produto(s)
-            </p>
+            <h2 className="font-bold text-[#2C2420]">Sessões de Vídeo</h2>
+            <p className="text-xs text-[#8B7B72]">{videoProducts.length} produto(s)</p>
           </div>
         </div>
 
         {videoProducts.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-warm-300 bg-warm-50 p-8 text-center">
-            <VideoIcon className="mx-auto h-12 w-12 text-warm-300" />
-            <p className="mt-4 font-semibold text-warm-700">
-              Nenhum produto de vídeo
-            </p>
-            <p className="mt-1 text-sm text-warm-500">
-              Crie um pacote de sessões por videochamada
-            </p>
+          <div className="rounded-3xl border-2 border-dashed border-[#E8E0DC] bg-[#F8F4F1] p-8 text-center">
+            <VideoIcon className="mx-auto h-10 w-10 text-[#B0A098]" />
+            <p className="mt-4 font-semibold text-[#2C2420]">Nenhum produto de vídeo</p>
+            <p className="mt-1 text-sm text-[#8B7B72]">Crie um pacote de sessões por videochamada</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -235,26 +217,20 @@ export default function ProdutosPage() {
       {/* Chat Products */}
       <section>
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100">
-            <ChatIcon className="h-5 w-5 text-indigo-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50">
+            <ChatIcon className="h-4 w-4 text-indigo-600" />
           </div>
           <div>
-            <h2 className="font-bold text-warm-900">Sessões de Chat</h2>
-            <p className="text-sm text-warm-600">
-              {chatProducts.length} produto(s)
-            </p>
+            <h2 className="font-bold text-[#2C2420]">Sessões de Chat</h2>
+            <p className="text-xs text-[#8B7B72]">{chatProducts.length} produto(s)</p>
           </div>
         </div>
 
         {chatProducts.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-warm-300 bg-warm-50 p-8 text-center">
-            <ChatIcon className="mx-auto h-12 w-12 text-warm-300" />
-            <p className="mt-4 font-semibold text-warm-700">
-              Nenhum produto de chat
-            </p>
-            <p className="mt-1 text-sm text-warm-500">
-              Crie um pacote de sessões por chat
-            </p>
+          <div className="rounded-3xl border-2 border-dashed border-[#E8E0DC] bg-[#F8F4F1] p-8 text-center">
+            <ChatIcon className="mx-auto h-10 w-10 text-[#B0A098]" />
+            <p className="mt-4 font-semibold text-[#2C2420]">Nenhum produto de chat</p>
+            <p className="mt-1 text-sm text-[#8B7B72]">Crie um pacote de sessões por chat</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -303,99 +279,85 @@ function ProductCard({
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border-2 bg-white shadow-soft transition-all hover:shadow-soft-lg ${
-        product.is_active ? "border-warm-200" : "border-warm-200 opacity-60"
+      className={`rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)] overflow-hidden transition-opacity ${
+        product.is_active ? "" : "opacity-60"
       }`}
     >
-      {/* Tier badge */}
-      {product.tier === "popular" && (
-        <div className="absolute left-3 top-3">
-          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-            Popular
-          </span>
-        </div>
-      )}
-
-      {/* Status badge */}
-      <div className="absolute right-3 top-3">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-semibold ${
-            product.is_active
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-warm-200 bg-warm-50 text-warm-600"
-          }`}
-        >
-          {product.is_active ? (
-            <>
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Ativo
-            </>
-          ) : (
-            <>
-              <span className="h-2 w-2 rounded-full bg-warm-400" />
-              Inativo
-            </>
-          )}
-        </span>
-      </div>
-
       <div className="p-6">
-        {/* Icon */}
-        <div
-          className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
-            isVideo ? "bg-rose-100" : "bg-indigo-100"
-          }`}
-        >
-          {isVideo ? (
-            <VideoIcon className="h-6 w-6 text-rose-600" />
+        {/* Top row: type + tier badges */}
+        <div className="mb-4 flex items-center gap-2">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+              isVideo
+                ? "bg-rose-50 text-rose-700"
+                : "bg-indigo-50 text-indigo-700"
+            }`}
+          >
+            {isVideo ? "Vídeo" : "Chat"}
+          </span>
+          {product.tier === "popular" ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              Popular
+            </span>
           ) : (
-            <ChatIcon className="h-6 w-6 text-indigo-600" />
+            <span className="rounded-full bg-[#F5F0ED] px-2.5 py-1 text-xs font-semibold text-[#8B7B72]">
+              Padrão
+            </span>
           )}
+          <span
+            className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ${
+              product.is_active
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-[#F5F0ED] text-[#8B7B72]"
+            }`}
+          >
+            {product.is_active ? "Ativo" : "Inativo"}
+          </span>
         </div>
 
         {/* Title */}
-        <h3 className="font-bold text-warm-900">{product.title}</h3>
+        <h3 className="font-bold text-[#2C2420]">{product.title}</h3>
 
         {/* Description */}
         {product.description && (
-          <p className="mt-2 text-sm leading-relaxed text-warm-600">
+          <p className="mt-1.5 text-sm leading-relaxed text-[#8B7B72] line-clamp-2">
             {product.description}
           </p>
         )}
 
-        {/* Info */}
-        <div className="mt-4 flex items-end justify-between border-t border-warm-200 pt-4">
-          <div>
-            <p className="text-2xl font-bold text-warm-900">
-              {formatCents(product.price_cents)}
-            </p>
-            <p className="text-xs text-warm-500">
+        {/* Price + sessions */}
+        <div className="mt-4 border-t border-[#E8E0DC] pt-4">
+          <p className="text-2xl font-bold text-[#2C2420]">
+            {formatCents(product.price_cents)}
+          </p>
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-xs text-[#8B7B72]">
               {product.sessions_count}{" "}
               {product.sessions_count === 1 ? "sessão" : "sessões"}
             </p>
+            <p className="text-xs font-semibold text-[#4A7C59]">
+              {formatCents(product.price_cents / product.sessions_count)}/sessão
+            </p>
           </div>
-          <p className="text-sm font-semibold text-sage-600">
-            {formatCents(product.price_cents / product.sessions_count)}/sessão
-          </p>
         </div>
 
         {/* Actions */}
         <div className="mt-4 flex items-center gap-2">
           <button
             onClick={onEdit}
-            className="flex-1 rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50"
+            className="flex-1 rounded-2xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm font-semibold text-[#2C2420] hover:bg-[#F8F4F1]"
           >
             Editar
           </button>
           <button
             onClick={onToggleActive}
-            className="flex-1 rounded-lg border-2 border-sage-200 bg-sage-50 px-4 py-2 text-sm font-semibold text-sage-700 transition-all hover:bg-sage-100"
+            className="flex-1 rounded-2xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm font-semibold text-[#4A7C59] hover:bg-[#F8F4F1]"
           >
             {product.is_active ? "Desativar" : "Ativar"}
           </button>
           <button
             onClick={onDelete}
-            className="rounded-lg border-2 border-rose-200 bg-rose-50 p-2 text-rose-600 transition-all hover:bg-rose-100"
+            className="rounded-2xl bg-rose-50 p-2 text-rose-600 hover:bg-rose-100"
           >
             <TrashIcon className="h-5 w-5" />
           </button>
@@ -421,199 +383,180 @@ function ProductModal({
   busy: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-lg overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#E8E0DC] bg-white shadow-2xl">
         {/* Header */}
-        <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white p-6">
-          <h2 className="text-xl font-bold text-warm-900">
+        <div className="border-b border-[#E8E0DC] px-6 py-5">
+          <h2 className="text-lg font-bold text-[#2C2420]">
             {product ? "Editar Produto" : "Novo Produto"}
           </h2>
-          <p className="mt-1 text-sm text-warm-600">
-            Configure os detalhes do pacote de sessões
-          </p>
+          <p className="mt-0.5 text-sm text-[#8B7B72]">Configure os detalhes do pacote de sessões</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={onSubmit} className="p-6 space-y-4">
-          {/* Tipo (só no create) */}
-          {!product && (
+        <form onSubmit={onSubmit}>
+          <div className="space-y-4 p-6">
+            {/* Tipo (só no create) */}
+            {!product && (
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Tipo de Sessão
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...formData, appointmentType: "video" })}
+                    className={`rounded-2xl border p-4 text-left transition-all ${
+                      formData.appointmentType === "video"
+                        ? "border-rose-300 bg-rose-50"
+                        : "border-[#E8E0DC] bg-white hover:bg-[#F8F4F1]"
+                    }`}
+                  >
+                    <VideoIcon className="h-5 w-5 text-rose-600" />
+                    <p className="mt-2 text-sm font-semibold text-[#2C2420]">Vídeo</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...formData, appointmentType: "chat" })}
+                    className={`rounded-2xl border p-4 text-left transition-all ${
+                      formData.appointmentType === "chat"
+                        ? "border-indigo-300 bg-indigo-50"
+                        : "border-[#E8E0DC] bg-white hover:bg-[#F8F4F1]"
+                    }`}
+                  >
+                    <ChatIcon className="h-5 w-5 text-indigo-600" />
+                    <p className="mt-2 text-sm font-semibold text-[#2C2420]">Chat</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Title */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
-                Tipo de Sessão
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                Nome do Produto *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => onChange({ ...formData, title: e.target.value })}
+                placeholder="Ex: Pacote 4 Sessões"
+                required
+                className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                Descrição
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => onChange({ ...formData, description: e.target.value })}
+                placeholder="Descrição opcional do produto"
+                rows={3}
+                className="w-full resize-none rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+              />
+            </div>
+
+            {/* Tier */}
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                Público-alvo
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    onChange({ ...formData, appointmentType: "video" })
-                  }
-                  className={`rounded-xl border-2 p-4 text-left transition-all ${
-                    formData.appointmentType === "video"
-                      ? "border-rose-400 bg-rose-50"
-                      : "border-warm-200 bg-white hover:bg-warm-50"
+                  onClick={() => onChange({ ...formData, tier: "standard" })}
+                  className={`rounded-2xl border p-3 text-left transition-all ${
+                    formData.tier === "standard"
+                      ? "border-[#4A7C59] bg-emerald-50"
+                      : "border-[#E8E0DC] bg-white hover:bg-[#F8F4F1]"
                   }`}
                 >
-                  <VideoIcon className="h-5 w-5 text-rose-600" />
-                  <p className="mt-2 text-sm font-semibold text-warm-900">
-                    Vídeo
-                  </p>
+                  <p className="text-sm font-semibold text-[#2C2420]">Padrão</p>
+                  <p className="mt-0.5 text-xs text-[#8B7B72]">Todos os pacientes</p>
                 </button>
-
                 <button
                   type="button"
-                  onClick={() =>
-                    onChange({ ...formData, appointmentType: "chat" })
-                  }
-                  className={`rounded-xl border-2 p-4 text-left transition-all ${
-                    formData.appointmentType === "chat"
-                      ? "border-indigo-400 bg-indigo-50"
-                      : "border-warm-200 bg-white hover:bg-warm-50"
+                  onClick={() => onChange({ ...formData, tier: "popular" })}
+                  className={`rounded-2xl border p-3 text-left transition-all ${
+                    formData.tier === "popular"
+                      ? "border-amber-400 bg-amber-50"
+                      : "border-[#E8E0DC] bg-white hover:bg-[#F8F4F1]"
                   }`}
                 >
-                  <ChatIcon className="h-5 w-5 text-indigo-600" />
-                  <p className="mt-2 text-sm font-semibold text-warm-900">
-                    Chat
-                  </p>
+                  <p className="text-sm font-semibold text-[#2C2420]">Popular</p>
+                  <p className="mt-0.5 text-xs text-[#8B7B72]">Apenas com código promo</p>
                 </button>
               </div>
             </div>
-          )}
 
-          {/* Title */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-warm-700">
-              Nome do Produto *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => onChange({ ...formData, title: e.target.value })}
-              placeholder="Ex: Pacote 4 Sessões"
-              required
-              className="w-full rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-warm-700">
-              Descrição
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                onChange({ ...formData, description: e.target.value })
-              }
-              placeholder="Descrição opcional do produto"
-              rows={3}
-              className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
-            />
-          </div>
-
-          {/* Tier */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-warm-700">
-              Público-alvo
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onChange({ ...formData, tier: "standard" })}
-                className={`rounded-xl border-2 p-3 text-left transition-all ${
-                  formData.tier === "standard"
-                    ? "border-sage-400 bg-sage-50"
-                    : "border-warm-200 bg-white hover:bg-warm-50"
-                }`}
-              >
-                <p className="text-sm font-semibold text-warm-900">Padrão</p>
-                <p className="mt-0.5 text-xs text-warm-500">Todos os pacientes</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => onChange({ ...formData, tier: "popular" })}
-                className={`rounded-xl border-2 p-3 text-left transition-all ${
-                  formData.tier === "popular"
-                    ? "border-amber-400 bg-amber-50"
-                    : "border-warm-200 bg-white hover:bg-warm-50"
-                }`}
-              >
-                <p className="text-sm font-semibold text-warm-900">Popular</p>
-                <p className="mt-0.5 text-xs text-warm-500">Apenas com código promo</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Sessions Count + Price */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
-                Nº de Sessões *
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.sessionsCount}
-                onChange={(e) =>
-                  onChange({
-                    ...formData,
-                    sessionsCount: parseInt(e.target.value) || 1,
-                  })
-                }
-                required
-                className="w-full rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
-              />
+            {/* Sessions Count + Price */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Nº de Sessões *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.sessionsCount}
+                  onChange={(e) =>
+                    onChange({ ...formData, sessionsCount: parseInt(e.target.value) || 1 })
+                  }
+                  required
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[#8B7B72]">
+                  Preço Total (R$) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.priceReais}
+                  onChange={(e) => onChange({ ...formData, priceReais: e.target.value })}
+                  placeholder="0.00"
+                  required
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
-                Preço Total (R$) *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.priceReais}
-                onChange={(e) =>
-                  onChange({ ...formData, priceReais: e.target.value })
-                }
-                placeholder="0.00"
-                required
-                className="w-full rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
-              />
-            </div>
-          </div>
-
-          {/* Info */}
-          {formData.sessionsCount > 0 &&
-            parseFloat(formData.priceReais) > 0 && (
-              <div className="rounded-xl bg-sage-50 p-4">
-                <p className="text-sm text-sage-700">
-                  <span className="font-semibold">Valor por sessão:</span>{" "}
-                  {formatCents(
-                    toCents(parseFloat(formData.priceReais)) /
-                      formData.sessionsCount,
-                  )}
+            {/* Per-session value info */}
+            {formData.sessionsCount > 0 && parseFloat(formData.priceReais) > 0 && (
+              <div className="rounded-2xl bg-[#F8F4F1] px-4 py-3">
+                <p className="text-sm text-[#8B7B72]">
+                  <span className="font-semibold text-[#4A7C59]">Valor por sessão:</span>{" "}
+                  {formatCents(toCents(parseFloat(formData.priceReais)) / formData.sessionsCount)}
                 </p>
               </div>
             )}
+          </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={busy}
-              className="flex-1 rounded-xl border-2 border-warm-300 bg-white px-4 py-3 font-semibold text-warm-700 transition-all hover:bg-warm-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex-1 rounded-xl bg-sage-600 px-4 py-3 font-semibold !text-white shadow-sm transition-all hover:bg-sage-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {busy ? "Salvando..." : product ? "Salvar" : "Criar"}
-            </button>
+          {/* Footer */}
+          <div className="border-t border-[#E8E0DC] bg-[#FAFAF8] px-6 py-4">
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={busy}
+                className="rounded-2xl border border-[#E8E0DC] bg-white px-5 py-2.5 text-sm font-semibold text-[#2C2420] hover:bg-[#F8F4F1] disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-2xl bg-[#4A7C59] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3d6649] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy ? "Salvando..." : product ? "Salvar" : "Criar"}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -625,12 +568,7 @@ function ProductModal({
 
 function PackageIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -643,30 +581,15 @@ function PackageIcon({ className }: { className?: string }) {
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4v16m8-8H4"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   );
 }
 
 function VideoIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -679,12 +602,7 @@ function VideoIcon({ className }: { className?: string }) {
 
 function ChatIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -697,12 +615,7 @@ function ChatIcon({ className }: { className?: string }) {
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -134,14 +134,14 @@ export default function MinhasSessoesPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header com stats */}
+      {/* Header */}
       <header className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-warm-900 sm:text-3xl">
+            <h1 className="text-4xl font-black text-[#1A1614]">
               Minhas Sessões
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#1A1614]/50">
               Acompanhe suas sessões passadas e futuras. Você pode entrar na
               sala apenas durante o horário agendado.
             </p>
@@ -149,7 +149,7 @@ export default function MinhasSessoesPage() {
 
           <Link
             href="/agenda"
-            className="inline-flex items-center gap-2 rounded-xl bg-sage-500 px-5 py-3 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#4A7C59] px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#3d6649] hover:shadow-md"
           >
             <PlusIcon className="h-4 w-4" />
             Agendar nova
@@ -158,25 +158,21 @@ export default function MinhasSessoesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3">
-          <StatsCard
-            icon={<CalendarCheckIcon className="h-5 w-5" />}
-            label="Total"
-            value={stats.total}
-            color="warm"
-          />
-          <StatsCard
-            icon={<ClockIcon className="h-5 w-5" />}
-            label="Próximas"
-            value={stats.upcoming}
-            color="sage"
-            highlight
-          />
-          <StatsCard
-            icon={<CheckCircleIcon className="h-5 w-5" />}
-            label="Realizadas"
-            value={stats.completed}
-            color="soft"
-          />
+          {/* Total */}
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
+            <p className="text-3xl font-black text-[#1A1614]">{stats.total}</p>
+            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Total</p>
+          </div>
+          {/* Upcoming */}
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
+            <p className="text-3xl font-black text-[#4A7C59]">{stats.upcoming}</p>
+            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Próximas</p>
+          </div>
+          {/* Completed */}
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
+            <p className="text-3xl font-black text-[#D4A72C]">{stats.completed}</p>
+            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Realizadas</p>
+          </div>
         </div>
       </header>
 
@@ -194,8 +190,8 @@ export default function MinhasSessoesPage() {
         >
           <span className="flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-sage-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#4A7C59] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#4A7C59]" />
             </span>
             Próximas ({upcoming.length})
           </span>
@@ -210,7 +206,7 @@ export default function MinhasSessoesPage() {
 
       {/* Erro */}
       {errorMsg && (
-        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 backdrop-blur-sm">
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/80 p-4">
           <AlertIcon className="h-5 w-5 shrink-0 text-rose-500" />
           <p className="text-sm text-rose-700">{errorMsg}</p>
         </div>
@@ -238,46 +234,6 @@ export default function MinhasSessoesPage() {
   );
 }
 
-// Stats Card
-function StatsCard({
-  icon,
-  label,
-  value,
-  color,
-  highlight,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  color: "warm" | "sage" | "soft";
-  highlight?: boolean;
-}) {
-  const colorClasses = {
-    warm: "from-rose-400/20 to-warm-500/20 text-rose-600",
-    sage: "from-sage-400/20 to-sage-500/20 text-sage-600",
-    soft: "from-soft-400/20 to-soft-500/20 text-soft-600",
-  };
-
-  return (
-    <div
-      className={`group relative overflow-hidden rounded-2xl border border-warm-300/50 bg-white/80 p-4 backdrop-blur-sm transition-all duration-300 hover:shadow-soft ${
-        highlight ? "ring-2 ring-sage-500/20" : ""
-      }`}
-    >
-      {highlight && (
-        <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-sage-400/10 blur-xl" />
-      )}
-      <div
-        className={`inline-flex rounded-xl bg-gradient-to-br p-2.5 ${colorClasses[color]}`}
-      >
-        {icon}
-      </div>
-      <p className="mt-3 text-2xl font-bold text-warm-900">{value}</p>
-      <p className="text-xs font-medium text-muted">{label}</p>
-    </div>
-  );
-}
-
 // Filter Button
 function FilterButton({
   children,
@@ -291,10 +247,10 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
+      className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active
-          ? "bg-sage-500 text-warm-50 shadow-soft"
-          : "bg-white/80 text-warm-600 hover:bg-white hover:text-warm-900 hover:shadow-soft"
+          ? "bg-[#1A1614] text-white shadow-sm"
+          : "bg-white text-[#1A1614]/70 border border-[#1A1614]/10 hover:bg-white hover:text-[#1A1614]"
       }`}
     >
       {children}
@@ -312,64 +268,75 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
   const isToday =
     new Date(row.start_at).toDateString() === new Date().toDateString();
 
+  const isVideo = row.appointment_type === "video";
+
   return (
     <div
-      className="group relative overflow-hidden rounded-3xl border border-warm-300/50 bg-white/80 p-5 backdrop-blur-sm transition-all duration-500 hover:shadow-soft-lg sm:p-6"
+      className={`group relative overflow-hidden rounded-3xl bg-white border p-5 transition-all duration-300 hover:shadow-md sm:p-6 ${
+        canEnter
+          ? "border-[#4A7C59]/40 shadow-[0_0_0_2px_rgba(74,124,89,0.2)]"
+          : "border-[#1A1614]/10"
+      }`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      {/* Glow effect for active sessions */}
+      {/* Left accent bar */}
+      <div
+        className={`absolute left-0 top-6 bottom-6 w-1 rounded-full ${
+          isVideo ? "bg-[#E8755A]" : "bg-[#5B5EA6]"
+        }`}
+      />
+
+      {/* Active session glow */}
       {canEnter && (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-sage-400/5 via-sage-500/10 to-sage-400/5" />
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#4A7C59]/5 via-[#4A7C59]/10 to-[#4A7C59]/5 pointer-events-none" />
       )}
 
       {/* Today badge */}
       {isToday && !isPast && (
-        <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-500 to-warm-500 px-3 py-1 text-xs font-semibold text-white shadow-soft">
+        <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-[#E8755A] px-3 py-1 text-xs font-semibold text-white">
           <SparklesIcon className="h-3 w-3" />
           Hoje
         </div>
       )}
 
-      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex flex-col gap-5 pl-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left side */}
         <div className="flex items-start gap-4">
           {/* Type icon */}
           <div
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${
-              row.appointment_type === "video"
-                ? "bg-gradient-to-br from-rose-400/20 to-warm-500/20"
-                : "bg-gradient-to-br from-soft-400/20 to-soft-500/20"
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${
+              isVideo
+                ? "bg-[#E8755A]/15"
+                : "bg-[#5B5EA6]/15"
             }`}
           >
-            {row.appointment_type === "video" ? (
-              <VideoIcon className="h-6 w-6 text-rose-500" />
+            {isVideo ? (
+              <VideoIcon className="h-5 w-5 text-[#E8755A]" />
             ) : (
-              <ChatIcon className="h-6 w-6 text-soft-600" />
+              <ChatIcon className="h-5 w-5 text-[#5B5EA6]" />
             )}
           </div>
 
           {/* Info */}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-lg font-semibold text-warm-900">
+              <p className="text-xl font-bold text-[#1A1614]">
                 {fmtTime(start)} – {fmtTime(end)}
               </p>
               <StatusBadge status={row.status} />
             </div>
 
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-sm text-[#1A1614]/50">
               {fmtDate(start)} •{" "}
-              {row.appointment_type === "video"
-                ? "Videochamada"
-                : "Chat por texto"}
+              {isVideo ? "Videochamada" : "Chat por texto"}
             </p>
 
             {row.profissional_nome && (
               <div className="mt-2 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-sage-400/30 to-sage-500/30 text-xs font-medium text-sage-700">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4A7C59]/20 text-xs font-semibold text-[#4A7C59]">
                   {row.profissional_nome.charAt(0)}
                 </div>
-                <span className="text-sm font-medium text-warm-800">
+                <span className="text-sm font-medium text-[#1A1614]/70">
                   {row.profissional_nome}
                 </span>
               </div>
@@ -382,7 +349,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
           {canEnter ? (
             <Link
               href={`/sessoes/${row.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:shadow-soft-lg hover:brightness-105"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#3d6649] hover:shadow-md"
             >
               <PlayIcon className="h-4 w-4" />
               Entrar agora
@@ -394,7 +361,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
           ) : isPast ? (
             <Link
               href={`/sessoes/${row.id}`}
-              className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white/80 px-4 py-2.5 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-white hover:shadow-soft"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#1A1614]/15 bg-white px-4 py-2.5 text-sm font-medium text-[#1A1614]/70 transition-all duration-200 hover:bg-[#F2EDE8] hover:text-[#1A1614]"
             >
               <EyeIcon className="h-4 w-4" />
               Ver detalhes
@@ -402,7 +369,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
           ) : (
             <div className="text-right">
               <CountdownBadge targetDate={start} />
-              <p className="mt-1 text-xs text-muted">até a sessão</p>
+              <p className="mt-1 text-xs text-[#1A1614]/40">até a sessão</p>
             </div>
           )}
         </div>
@@ -416,11 +383,11 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   const config = {
     scheduled: {
       label: "Agendada",
-      className: "bg-sage-100 text-sage-700 border-sage-200",
+      className: "bg-[#4A7C59]/10 text-[#4A7C59] border-[#4A7C59]/20",
     },
     completed: {
       label: "Realizada",
-      className: "bg-soft-100 text-soft-700 border-soft-200",
+      className: "bg-[#D4A72C]/10 text-[#D4A72C] border-[#D4A72C]/20",
     },
     cancelled: {
       label: "Cancelada",
@@ -428,7 +395,7 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
     },
     rescheduled: {
       label: "Reagendada",
-      className: "bg-amber-100 text-amber-700 border-amber-200",
+      className: "bg-[#5B5EA6]/10 text-[#5B5EA6] border-[#5B5EA6]/20",
     },
   };
 
@@ -478,7 +445,7 @@ function CountdownBadge({ targetDate }: { targetDate: Date }) {
   }, [targetDate]);
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sage-100 to-soft-100 px-3 py-1.5 text-sm font-semibold text-sage-700">
+    <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#4A7C59]/10 border border-[#4A7C59]/20 px-3 py-1.5 text-sm font-semibold text-[#4A7C59]">
       <ClockIcon className="h-4 w-4" />
       {timeLeft}
     </span>
@@ -488,15 +455,15 @@ function CountdownBadge({ targetDate }: { targetDate: Date }) {
 // Skeleton
 function SessionCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-3xl border border-warm-300/50 bg-white/80 p-5 sm:p-6">
-      <div className="flex items-start gap-4">
-        <div className="h-14 w-14 rounded-2xl bg-warm-200" />
+    <div className="animate-pulse rounded-3xl border border-[#1A1614]/10 bg-white p-5 sm:p-6">
+      <div className="flex items-start gap-4 pl-4">
+        <div className="h-12 w-12 rounded-2xl bg-[#1A1614]/8" />
         <div className="flex-1 space-y-3">
-          <div className="h-5 w-32 rounded-lg bg-warm-200" />
-          <div className="h-4 w-48 rounded-lg bg-warm-200" />
-          <div className="h-4 w-24 rounded-lg bg-warm-200" />
+          <div className="h-6 w-36 rounded-lg bg-[#1A1614]/8" />
+          <div className="h-4 w-52 rounded-lg bg-[#1A1614]/6" />
+          <div className="h-4 w-28 rounded-lg bg-[#1A1614]/6" />
         </div>
-        <div className="h-10 w-28 rounded-xl bg-warm-200" />
+        <div className="h-10 w-28 rounded-xl bg-[#1A1614]/8" />
       </div>
     </div>
   );
@@ -526,18 +493,18 @@ function EmptyState({ filter }: { filter: "all" | "upcoming" | "past" }) {
   const { title, description, cta } = messages[filter];
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-warm-300/50 bg-white/80 py-16 backdrop-blur-sm">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-warm-200/50 to-warm-300/50">
-        <CalendarIcon className="h-10 w-10 text-warm-400" />
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-[#1A1614]/10 bg-white py-20">
+      <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F2EDE8]">
+        <CalendarIcon className="h-9 w-9 text-[#1A1614]/30" />
       </div>
-      <h3 className="mt-6 text-lg font-semibold text-warm-900">{title}</h3>
-      <p className="mt-2 max-w-sm text-center text-sm text-muted">
+      <h3 className="mt-6 text-xl font-black text-[#1A1614]">{title}</h3>
+      <p className="mt-2 max-w-xs text-center text-sm text-[#1A1614]/50">
         {description}
       </p>
       {cta && (
         <Link
           href="/agenda"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sage-500 px-6 py-3 text-sm font-medium text-warm-50 shadow-soft transition-all duration-300 hover:bg-sage-600 hover:shadow-soft-lg"
+          className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#4A7C59] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#3d6649] hover:shadow-md"
         >
           <PlusIcon className="h-4 w-4" />
           Agendar sessão
@@ -584,30 +551,6 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-function CalendarCheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 14l2 2 4-4"
-      />
-    </svg>
-  );
-}
-
 function ClockIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -621,24 +564,6 @@ function ClockIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function CheckCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );

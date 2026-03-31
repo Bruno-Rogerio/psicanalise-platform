@@ -75,7 +75,7 @@ export default function ConfiguracoesPage() {
 
   const [profissionalId, setProfissionalId] = useState<string | null>(null);
 
-  // ✅ Pausa inline editor
+  // Pausa inline editor
   const [breakEditor, setBreakEditor] = useState<BreakEditorState>(null);
 
   // Load data
@@ -177,20 +177,18 @@ export default function ConfiguracoesPage() {
       return next;
     });
 
-    // se estava editando pausa nessa regra, atualiza limites e limpa erro
     setBreakEditor((cur) => {
       if (!cur || cur.index !== index) return cur;
       return { ...cur, error: undefined };
     });
   }
 
-  // ======= ✅ PAUSA / SPLIT INTELIGENTE =======
+  // PAUSA / SPLIT INTELIGENTE
 
   function openBreakEditor(index: number) {
     const r = rules[index];
     if (!r) return;
 
-    // default: 12:00-13:00 mas ajusta se ficar fora do range
     const defaultStart = clampTime("12:00", r.start_time, r.end_time);
     const defaultEnd = clampTime("13:00", r.start_time, r.end_time);
 
@@ -216,7 +214,6 @@ export default function ConfiguracoesPage() {
     const breakStart = breakEditor.start;
     const breakEnd = breakEditor.end;
 
-    // validações
     if (!isTimeLess(breakStart, breakEnd)) {
       setBreakEditor((cur) =>
         cur
@@ -226,8 +223,6 @@ export default function ConfiguracoesPage() {
       return;
     }
 
-    // break precisa estar dentro do range original
-    // regra: start_time <= breakStart < breakEnd <= end_time
     if (
       isTimeLess(breakStart, r.start_time) ||
       isTimeLess(r.end_time, breakEnd) ||
@@ -246,7 +241,6 @@ export default function ConfiguracoesPage() {
       return;
     }
 
-    // se pausa encosta no início ou no fim, vira apenas 1 segmento
     const parts: AvailabilityRule[] = [];
 
     if (isTimeLess(r.start_time, breakStart)) {
@@ -280,7 +274,6 @@ export default function ConfiguracoesPage() {
       return;
     }
 
-    // aplica split substituindo a regra original
     setRules((prev) => {
       const next = [...prev];
       next.splice(idx, 1, ...parts);
@@ -297,10 +290,8 @@ export default function ConfiguracoesPage() {
     try {
       setSaving(true);
 
-      // fecha editor de pausa (evita estado confuso)
       setBreakEditor(null);
 
-      // validações simples antes de salvar
       for (const r of rules) {
         if (!isTimeLess(r.start_time, r.end_time)) {
           throw new Error(
@@ -309,13 +300,11 @@ export default function ConfiguracoesPage() {
         }
       }
 
-      // Delete existing rules
       await supabase
         .from("availability_rules")
         .delete()
         .eq("profissional_id", profissionalId);
 
-      // Insert new rules
       if (rules.length > 0) {
         const { error } = await supabase.from("availability_rules").insert(
           rules.map((r) => ({
@@ -405,7 +394,6 @@ export default function ConfiguracoesPage() {
       map[r.weekday].push({ rule: r, index });
     });
 
-    // ordena por tipo e start_time (só pra ficar bonito e previsível)
     (Object.keys(map) as unknown as WeekDay[]).forEach((wd) => {
       map[wd].sort((a, b) => {
         if (a.rule.appointment_type !== b.rule.appointment_type) {
@@ -424,29 +412,25 @@ export default function ConfiguracoesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <header className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-warm-500 to-warm-600 shadow-lg">
-          <SettingsIcon className="h-7 w-7 text-white" />
-        </div>
+      {/* Page Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-warm-900">Configurações</h1>
-          <p className="text-sm text-warm-600">
-            Gerencie sua disponibilidade e perfil
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Profissional</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">Configurações</h1>
+          <p className="mt-1 text-sm text-[#8B7B72]">Disponibilidade, perfil e preferências</p>
         </div>
-      </header>
+      </div>
 
       {/* Tabs */}
-      <div className="flex rounded-xl border border-warm-200 bg-warm-50 p-1">
+      <div className="flex rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] p-1">
         {(["availability", "settings", "profile"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
               activeTab === tab
-                ? "bg-[#4A7C59] text-white shadow"
-                : "text-warm-600 hover:text-warm-900"
+                ? "bg-[#1A1614] text-white shadow"
+                : "text-[#8B7B72] hover:text-[#2C2420]"
             }`}
           >
             {tab === "availability"
@@ -460,372 +444,364 @@ export default function ConfiguracoesPage() {
 
       {/* Content */}
       {activeTab === "availability" && (
-        <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between">
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="flex items-center justify-between border-b border-[#E8E0DC] px-6 py-4">
             <div>
-              <h2 className="text-lg font-bold text-warm-900">
-                Horários de Atendimento
-              </h2>
-              <p className="text-sm text-warm-500">
-                Defina o intervalo e adicione pausas dentro dele com um clique
-              </p>
+              <p className="text-sm font-bold text-[#2C2420]">Horários de Atendimento</p>
+              <p className="text-xs text-[#8B7B72]">Defina o intervalo e adicione pausas dentro dele com um clique</p>
             </div>
             <button
               onClick={saveAvailability}
               disabled={saving}
-              className="rounded-xl bg-[#4A7C59] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#3d6649] disabled:opacity-50"
+              className="rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320] disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
 
-          {/* Type selector for new rules */}
-          <div className="mt-4 flex items-center gap-3 rounded-xl bg-warm-50 p-3">
-            <span className="text-sm font-medium text-warm-700">
-              Tipo para novos horários:
-            </span>
-            <div className="flex rounded-lg border border-warm-200 bg-white p-1">
-              <button
-                onClick={() => setNewRuleType("video")}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
-                  newRuleType === "video"
-                    ? "bg-rose-100 text-rose-700"
-                    : "text-warm-600 hover:text-warm-900"
-                }`}
-              >
-                Vídeo
-              </button>
-              <button
-                onClick={() => setNewRuleType("chat")}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
-                  newRuleType === "chat"
-                    ? "bg-indigo-100 text-indigo-700"
-                    : "text-warm-600 hover:text-warm-900"
-                }`}
-              >
-                Chat
-              </button>
-            </div>
-          </div>
-
-          {/* Days */}
-          <div className="mt-6 space-y-4">
-            {([1, 2, 3, 4, 5, 6, 0] as WeekDay[]).map((weekday) => {
-              const dayRules = rulesByWeekday[weekday];
-
-              return (
-                <div
-                  key={weekday}
-                  className="rounded-xl border border-warm-200 bg-warm-50/50 p-4"
+          <div className="p-6">
+            {/* Type selector for new rules */}
+            <div className="mb-6 flex items-center gap-3 rounded-2xl bg-[#F8F4F1] p-3">
+              <span className="text-sm font-semibold text-[#8B7B72]">
+                Tipo para novos horários:
+              </span>
+              <div className="flex rounded-xl border border-[#E8E0DC] bg-white p-1">
+                <button
+                  onClick={() => setNewRuleType("video")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    newRuleType === "video"
+                      ? "bg-rose-50 text-rose-700"
+                      : "text-[#8B7B72] hover:text-[#2C2420]"
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-warm-900">
-                      {weekDayLabels[weekday]}
-                    </p>
-                    <button
-                      onClick={() => addRule(weekday)}
-                      className="text-sm font-medium text-[#4A7C59] hover:underline"
-                    >
-                      + Adicionar intervalo
-                    </button>
-                  </div>
+                  Vídeo
+                </button>
+                <button
+                  onClick={() => setNewRuleType("chat")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    newRuleType === "chat"
+                      ? "bg-[#F5F0ED] text-[#8B7B72]"
+                      : "text-[#8B7B72] hover:text-[#2C2420]"
+                  }`}
+                >
+                  Chat
+                </button>
+              </div>
+            </div>
 
-                  {dayRules.length > 0 ? (
-                    <div className="mt-3 space-y-3">
-                      {dayRules.map(({ rule, index }) => {
-                        const isEditingBreak = breakEditor?.index === index;
+            {/* Days */}
+            <div className="space-y-4">
+              {([1, 2, 3, 4, 5, 6, 0] as WeekDay[]).map((weekday) => {
+                const dayRules = rulesByWeekday[weekday];
 
-                        return (
-                          <div
-                            key={`${weekday}-${index}`}
-                            className="rounded-xl border border-warm-200 bg-white p-3"
-                          >
-                            <div className="flex flex-wrap items-center gap-3">
-                              <select
-                                value={rule.appointment_type}
-                                onChange={(e) =>
-                                  updateRule(
-                                    index,
-                                    "appointment_type",
-                                    e.target.value,
-                                  )
-                                }
-                                className={`rounded-lg border px-2 py-2 text-xs font-semibold outline-none ${
-                                  rule.appointment_type === "video"
-                                    ? "border-rose-200 bg-rose-50 text-rose-700"
-                                    : "border-indigo-200 bg-indigo-50 text-indigo-700"
-                                }`}
-                              >
-                                <option value="video">Vídeo</option>
-                                <option value="chat">Chat</option>
-                              </select>
-
-                              <input
-                                type="time"
-                                value={rule.start_time}
-                                onChange={(e) =>
-                                  updateRule(
-                                    index,
-                                    "start_time",
-                                    e.target.value,
-                                  )
-                                }
-                                className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                              />
-
-                              <span className="text-warm-500">até</span>
-
-                              <input
-                                type="time"
-                                value={rule.end_time}
-                                onChange={(e) =>
-                                  updateRule(index, "end_time", e.target.value)
-                                }
-                                className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                              />
-
-                              {/* ✅ Pausa inteligente */}
-                              <button
-                                onClick={() =>
-                                  isEditingBreak
-                                    ? closeBreakEditor()
-                                    : openBreakEditor(index)
-                                }
-                                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
-                                  isEditingBreak
-                                    ? "bg-warm-200 text-warm-800"
-                                    : "bg-sage-100 text-sage-700 hover:bg-sage-200"
-                                }`}
-                              >
-                                {isEditingBreak ? "Fechar pausa" : "Pausa"}
-                              </button>
-
-                              <button
-                                onClick={() => removeRule(index)}
-                                className="ml-auto rounded-lg bg-rose-100 p-2 text-rose-600 hover:bg-rose-200"
-                                title="Remover intervalo"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            {/* Editor de pausa */}
-                            {isEditingBreak && breakEditor && (
-                              <div className="mt-3 rounded-xl border border-warm-200 bg-warm-50 p-3">
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <span className="text-sm font-semibold text-warm-700">
-                                    Bloquear intervalo:
-                                  </span>
-
-                                  <input
-                                    type="time"
-                                    value={breakEditor.start}
-                                    onChange={(e) =>
-                                      setBreakEditor((cur) =>
-                                        cur
-                                          ? {
-                                              ...cur,
-                                              start: e.target.value,
-                                              error: undefined,
-                                            }
-                                          : cur,
-                                      )
-                                    }
-                                    className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                                  />
-
-                                  <span className="text-warm-500">até</span>
-
-                                  <input
-                                    type="time"
-                                    value={breakEditor.end}
-                                    onChange={(e) =>
-                                      setBreakEditor((cur) =>
-                                        cur
-                                          ? {
-                                              ...cur,
-                                              end: e.target.value,
-                                              error: undefined,
-                                            }
-                                          : cur,
-                                      )
-                                    }
-                                    className="rounded-lg border border-warm-200 bg-white px-3 py-2 text-sm text-warm-900 outline-none focus:border-sage-400"
-                                  />
-
-                                  {/* presets */}
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                      onClick={() =>
-                                        setBreakEditor((cur) =>
-                                          cur
-                                            ? {
-                                                ...cur,
-                                                start: "12:00",
-                                                end: "13:00",
-                                                error: undefined,
-                                              }
-                                            : cur,
-                                        )
-                                      }
-                                      className="rounded-lg bg-white border border-warm-200 px-3 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
-                                    >
-                                      Almoço 12–13
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        setBreakEditor((cur) =>
-                                          cur
-                                            ? {
-                                                ...cur,
-                                                start: "11:00",
-                                                end: "12:00",
-                                                error: undefined,
-                                              }
-                                            : cur,
-                                        )
-                                      }
-                                      className="rounded-lg bg-white border border-warm-200 px-3 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
-                                    >
-                                      11–12
-                                    </button>
-                                  </div>
-
-                                  <div className="ml-auto flex items-center gap-2">
-                                    <button
-                                      onClick={closeBreakEditor}
-                                      className="rounded-lg bg-white border border-warm-200 px-4 py-2 text-sm font-semibold text-warm-700 hover:bg-warm-100"
-                                    >
-                                      Cancelar
-                                    </button>
-                                    <button
-                                      onClick={applyBreakSplit}
-                                      className="rounded-lg bg-[#4A7C59] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3d6649]"
-                                    >
-                                      Aplicar pausa
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {breakEditor.error && (
-                                  <p className="mt-2 text-sm font-semibold text-rose-700">
-                                    {breakEditor.error}
-                                  </p>
-                                )}
-
-                                <p className="mt-2 text-xs text-warm-600">
-                                  Ao aplicar, o sistema divide automaticamente
-                                  seu intervalo em dois blocos.
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                return (
+                  <div
+                    key={weekday}
+                    className="rounded-2xl border border-[#E8E0DC] bg-[#FAFAF8] p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-[#2C2420]">
+                        {weekDayLabels[weekday]}
+                      </p>
+                      <button
+                        onClick={() => addRule(weekday)}
+                        className="text-sm font-semibold text-[#4A7C59] hover:underline"
+                      >
+                        + Adicionar intervalo
+                      </button>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-warm-500">
-                      Sem disponibilidade
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+
+                    {dayRules.length > 0 ? (
+                      <div className="mt-3 space-y-3">
+                        {dayRules.map(({ rule, index }) => {
+                          const isEditingBreak = breakEditor?.index === index;
+
+                          return (
+                            <div
+                              key={`${weekday}-${index}`}
+                              className="rounded-2xl border border-[#E8E0DC] bg-white p-3"
+                            >
+                              <div className="flex flex-wrap items-center gap-3">
+                                <select
+                                  value={rule.appointment_type}
+                                  onChange={(e) =>
+                                    updateRule(
+                                      index,
+                                      "appointment_type",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className={`rounded-xl border px-2 py-2 text-xs font-semibold outline-none ${
+                                    rule.appointment_type === "video"
+                                      ? "border-rose-200 bg-rose-50 text-rose-700"
+                                      : "border-[#E8E0DC] bg-[#F5F0ED] text-[#8B7B72]"
+                                  }`}
+                                >
+                                  <option value="video">Vídeo</option>
+                                  <option value="chat">Chat</option>
+                                </select>
+
+                                <input
+                                  type="time"
+                                  value={rule.start_time}
+                                  onChange={(e) =>
+                                    updateRule(
+                                      index,
+                                      "start_time",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                                />
+
+                                <span className="text-sm text-[#B0A098]">até</span>
+
+                                <input
+                                  type="time"
+                                  value={rule.end_time}
+                                  onChange={(e) =>
+                                    updateRule(index, "end_time", e.target.value)
+                                  }
+                                  className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                                />
+
+                                {/* Pausa inteligente */}
+                                <button
+                                  onClick={() =>
+                                    isEditingBreak
+                                      ? closeBreakEditor()
+                                      : openBreakEditor(index)
+                                  }
+                                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
+                                    isEditingBreak
+                                      ? "bg-[#F5F0ED] text-[#8B7B72]"
+                                      : "bg-[#4A7C59]/10 text-[#4A7C59] hover:bg-[#4A7C59]/20"
+                                  }`}
+                                >
+                                  {isEditingBreak ? "Fechar pausa" : "Pausa"}
+                                </button>
+
+                                <button
+                                  onClick={() => removeRule(index)}
+                                  className="ml-auto rounded-xl bg-rose-50 p-2 text-rose-600 hover:bg-rose-100"
+                                  title="Remover intervalo"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+
+                              {/* Editor de pausa */}
+                              {isEditingBreak && breakEditor && (
+                                <div className="mt-3 rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] p-3">
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    <span className="text-sm font-semibold text-[#2C2420]">
+                                      Bloquear intervalo:
+                                    </span>
+
+                                    <input
+                                      type="time"
+                                      value={breakEditor.start}
+                                      onChange={(e) =>
+                                        setBreakEditor((cur) =>
+                                          cur
+                                            ? {
+                                                ...cur,
+                                                start: e.target.value,
+                                                error: undefined,
+                                              }
+                                            : cur,
+                                        )
+                                      }
+                                      className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                                    />
+
+                                    <span className="text-sm text-[#B0A098]">até</span>
+
+                                    <input
+                                      type="time"
+                                      value={breakEditor.end}
+                                      onChange={(e) =>
+                                        setBreakEditor((cur) =>
+                                          cur
+                                            ? {
+                                                ...cur,
+                                                end: e.target.value,
+                                                error: undefined,
+                                              }
+                                            : cur,
+                                        )
+                                      }
+                                      className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                                    />
+
+                                    {/* presets */}
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <button
+                                        onClick={() =>
+                                          setBreakEditor((cur) =>
+                                            cur
+                                              ? {
+                                                  ...cur,
+                                                  start: "12:00",
+                                                  end: "13:00",
+                                                  error: undefined,
+                                                }
+                                              : cur,
+                                          )
+                                        }
+                                        className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm font-semibold text-[#2C2420] hover:bg-[#F8F4F1]"
+                                      >
+                                        Almoço 12–13
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          setBreakEditor((cur) =>
+                                            cur
+                                              ? {
+                                                  ...cur,
+                                                  start: "11:00",
+                                                  end: "12:00",
+                                                  error: undefined,
+                                                }
+                                              : cur,
+                                          )
+                                        }
+                                        className="rounded-xl border border-[#E8E0DC] bg-white px-3 py-2 text-sm font-semibold text-[#2C2420] hover:bg-[#F8F4F1]"
+                                      >
+                                        11–12
+                                      </button>
+                                    </div>
+
+                                    <div className="ml-auto flex items-center gap-2">
+                                      <button
+                                        onClick={closeBreakEditor}
+                                        className="rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2 text-sm font-semibold text-[#2C2420] transition-all hover:bg-[#F8F4F1]"
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        onClick={applyBreakSplit}
+                                        className="rounded-2xl bg-[#1A1614] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#2A2320]"
+                                      >
+                                        Aplicar pausa
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {breakEditor.error && (
+                                    <p className="mt-2 text-sm font-semibold text-rose-700">
+                                      {breakEditor.error}
+                                    </p>
+                                  )}
+
+                                  <p className="mt-2 text-xs text-[#8B7B72]">
+                                    Ao aplicar, o sistema divide automaticamente
+                                    seu intervalo em dois blocos.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-[#B0A098]">
+                        Sem disponibilidade
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === "settings" && (
-        <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between">
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="flex items-center justify-between border-b border-[#E8E0DC] px-6 py-4">
             <div>
-              <h2 className="text-lg font-bold text-warm-900">
-                Configurações de Sessão
-              </h2>
-              <p className="text-sm text-warm-500">
-                Defina duração e regras gerais
-              </p>
+              <p className="text-sm font-bold text-[#2C2420]">Configurações de Sessão</p>
+              <p className="text-xs text-[#8B7B72]">Defina duração e regras gerais</p>
             </div>
             <button
               onClick={saveSettings}
               disabled={saving}
-              className="rounded-xl bg-[#4A7C59] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#3d6649] disabled:opacity-50"
+              className="rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320] disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
 
-          <div className="mt-6 grid gap-6 sm:grid-cols-2">
-            <SettingField
-              label="Duração da Videochamada"
-              suffix="minutos"
-              value={settings.session_duration_video_min}
-              onChange={(v) =>
-                setSettings({ ...settings, session_duration_video_min: v })
-              }
-            />
-            <SettingField
-              label="Duração do Chat"
-              suffix="minutos"
-              value={settings.session_duration_chat_min}
-              onChange={(v) =>
-                setSettings({ ...settings, session_duration_chat_min: v })
-              }
-            />
-            <SettingField
-              label="Antecedência mínima para cancelar"
-              suffix="horas"
-              value={settings.min_cancel_hours}
-              onChange={(v) =>
-                setSettings({ ...settings, min_cancel_hours: v })
-              }
-            />
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
-                Fuso horário
-              </label>
-              <select
-                value={settings.timezone}
-                onChange={(e) =>
-                  setSettings({ ...settings, timezone: e.target.value })
+          <div className="p-6">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <SettingField
+                label="Duração da Videochamada"
+                suffix="minutos"
+                value={settings.session_duration_video_min}
+                onChange={(v) =>
+                  setSettings({ ...settings, session_duration_video_min: v })
                 }
-                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400"
-              >
-                <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
-                <option value="America/Manaus">Manaus (GMT-4)</option>
-                <option value="America/Recife">Recife (GMT-3)</option>
-                <option value="America/Fortaleza">Fortaleza (GMT-3)</option>
-                <option value="America/Belem">Belém (GMT-3)</option>
-                <option value="America/Cuiaba">Cuiabá (GMT-4)</option>
-              </select>
+              />
+              <SettingField
+                label="Duração do Chat"
+                suffix="minutos"
+                value={settings.session_duration_chat_min}
+                onChange={(v) =>
+                  setSettings({ ...settings, session_duration_chat_min: v })
+                }
+              />
+              <SettingField
+                label="Antecedência mínima para cancelar"
+                suffix="horas"
+                value={settings.min_cancel_hours}
+                onChange={(v) =>
+                  setSettings({ ...settings, min_cancel_hours: v })
+                }
+              />
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
+                  Fuso horário
+                </label>
+                <select
+                  value={settings.timezone}
+                  onChange={(e) =>
+                    setSettings({ ...settings, timezone: e.target.value })
+                  }
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                >
+                  <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
+                  <option value="America/Manaus">Manaus (GMT-4)</option>
+                  <option value="America/Recife">Recife (GMT-3)</option>
+                  <option value="America/Fortaleza">Fortaleza (GMT-3)</option>
+                  <option value="America/Belem">Belém (GMT-3)</option>
+                  <option value="America/Cuiaba">Cuiabá (GMT-4)</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === "profile" && (
-        <div className="rounded-2xl border border-warm-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between">
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="flex items-center justify-between border-b border-[#E8E0DC] px-6 py-4">
             <div>
-              <h2 className="text-lg font-bold text-warm-900">
-                Perfil Profissional
-              </h2>
-              <p className="text-sm text-warm-500">
-                Informações exibidas para pacientes
-              </p>
+              <p className="text-sm font-bold text-[#2C2420]">Perfil Profissional</p>
+              <p className="text-xs text-[#8B7B72]">Informações exibidas para pacientes</p>
             </div>
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="rounded-xl bg-[#4A7C59] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#3d6649] disabled:opacity-50"
+              className="rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320] disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="space-y-5 p-6">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
+              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 Nome completo
               </label>
               <input
@@ -834,27 +810,27 @@ export default function ConfiguracoesPage() {
                 onChange={(e) =>
                   setProfile({ ...profile, nome: e.target.value })
                 }
-                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
+                className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
+              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 E-mail
               </label>
               <input
                 type="email"
                 value={profile.email}
                 disabled
-                className="w-full rounded-xl border border-warm-200 bg-warm-100 px-4 py-3 text-warm-500 outline-none"
+                className="w-full rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] px-4 py-3 text-sm text-[#B0A098] outline-none"
               />
-              <p className="mt-1 text-xs text-warm-500">
+              <p className="mt-1 text-xs text-[#B0A098]">
                 O e-mail não pode ser alterado aqui
               </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-warm-700">
+              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 CRP
               </label>
               <input
@@ -864,7 +840,7 @@ export default function ConfiguracoesPage() {
                   setProfile({ ...profile, crp: e.target.value })
                 }
                 placeholder="Ex: 06/12345"
-                className="w-full rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400 focus:ring-2 focus:ring-sage-100"
+                className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
               />
             </div>
           </div>
@@ -887,7 +863,7 @@ function SettingField({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-warm-700">
+      <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
         {label}
       </label>
       <div className="flex items-center gap-2">
@@ -895,9 +871,9 @@ function SettingField({
           type="number"
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-          className="w-24 rounded-xl border border-warm-200 bg-warm-50 px-4 py-3 text-warm-900 outline-none focus:border-sage-400"
+          className="w-24 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
         />
-        <span className="text-sm text-warm-500">{suffix}</span>
+        <span className="text-sm text-[#8B7B72]">{suffix}</span>
       </div>
     </div>
   );
@@ -906,9 +882,9 @@ function SettingField({
 function PageSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-20 animate-pulse rounded-2xl bg-warm-200" />
-      <div className="h-12 animate-pulse rounded-xl bg-warm-200" />
-      <div className="h-96 animate-pulse rounded-2xl bg-warm-200" />
+      <div className="h-20 animate-pulse rounded-3xl bg-[#F5F0ED]" />
+      <div className="h-12 animate-pulse rounded-2xl bg-[#F5F0ED]" />
+      <div className="h-96 animate-pulse rounded-3xl bg-[#F5F0ED]" />
     </div>
   );
 }
@@ -924,7 +900,6 @@ function toMinutes(t: string) {
   return hh * 60 + mm;
 }
 
-// garante que um time fique dentro do [min, max]
 function clampTime(t: string, min: string, max: string) {
   const x = toMinutes(t);
   const a = toMinutes(min);

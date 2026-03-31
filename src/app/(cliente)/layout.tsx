@@ -21,7 +21,6 @@ export default function ClienteLayout({
 }) {
   const pathname = usePathname();
   const [userName, setUserName] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -43,123 +42,41 @@ export default function ClienteLayout({
 
   return (
     <NotificationProvider>
-    <div className="min-h-screen bg-gradient-to-br from-warm-100 via-warm-100 to-soft-100/30">
-      {/* Decorative background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-rose-400/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-soft-400/5 blur-3xl" />
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-warm-300/40 bg-warm-100/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
-          {/* Brand + Área do Cliente */}
-          <Link
-            href="/dashboard"
-            className="group inline-flex items-center gap-3"
-          >
-            <Image
-              src="/logo.png"
-              alt="Raiza Convento Psicanálise"
-              width={160}
-              height={48}
-              priority
-              className="h-11 w-auto transition-opacity duration-300 group-hover:opacity-85"
-            />
-
-            {/* Label: Área do Cliente (sempre presente, mas discreta) */}
-            <div className="flex flex-col">
-              <span className="inline-flex w-fit items-center rounded-full border border-warm-300/60 bg-white/60 px-3 py-1 text-xs font-semibold tracking-wide text-warm-800 shadow-soft backdrop-blur-sm">
+      <div className="min-h-screen bg-[#F2EDE8]">
+        {/* Header — dark, premium */}
+        <header
+          className="sticky top-0 z-40 backdrop-blur-md"
+          style={{ background: "rgba(26,22,20,0.95)", height: "60px" }}
+        >
+          <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5 sm:px-6">
+            {/* Brand + badge */}
+            <Link
+              href="/dashboard"
+              className="group inline-flex items-center gap-3"
+            >
+              <Image
+                src="/logo.png"
+                alt="Raiza Convento Psicanálise"
+                width={140}
+                height={42}
+                priority
+                className="h-9 w-auto transition-opacity duration-300 group-hover:opacity-80"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
+              <span
+                className="hidden sm:inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold tracking-wide"
+                style={{
+                  background: "rgba(212,167,44,0.15)",
+                  color: "#D4A72C",
+                  borderColor: "rgba(212,167,44,0.30)",
+                }}
+              >
                 Área do Cliente
               </span>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "bg-white text-warm-900 shadow-soft"
-                      : "text-warm-600 hover:bg-white/50 hover:text-warm-900"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            {/* Notifications */}
-            <NotificationBell />
-
-            {/* User menu - Desktop */}
-            <div className="hidden items-center gap-3 md:flex">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-sm font-bold text-sage-700 shadow-sm">
-                  {userInitial}
-                </div>
-                {firstName && (
-                  <span className="text-sm font-medium text-warm-800">
-                    {firstName}
-                  </span>
-                )}
-              </div>
-
-              <div className="h-6 w-px bg-warm-300/50" />
-
-              <Link
-                href="/logout"
-                className="inline-flex items-center gap-2 rounded-xl border border-warm-300/60 bg-white px-4 py-2 text-sm font-medium text-warm-700 transition-all duration-300 hover:bg-warm-50 hover:text-warm-900 hover:shadow-soft"
-              >
-                <LogoutIcon className="h-4 w-4" />
-                Sair
-              </Link>
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-warm-600 transition-colors hover:bg-white/50 hover:text-warm-900 md:hidden"
-              aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
-              type="button"
-            >
-              {menuOpen ? (
-                <XIcon className="h-5 w-5" />
-              ) : (
-                <MenuIcon className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {menuOpen && (
-          <div className="border-t border-warm-300/40 bg-warm-100/95 backdrop-blur-md md:hidden">
-            <nav className="mx-auto max-w-7xl space-y-1 px-5 py-4">
-              {/* Mobile user info */}
-              <div className="mb-4 flex items-center gap-3 border-b border-warm-300/40 pb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-sage-300 bg-gradient-to-br from-sage-100 to-sage-200 text-base font-bold text-sage-700 shadow-sm">
-                  {userInitial}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-warm-900">
-                    {userName || "Usuário"}
-                  </p>
-                  <p className="text-xs text-warm-600">Área do cliente</p>
-                </div>
-              </div>
-
+            {/* Desktop nav */}
+            <nav className="hidden items-center gap-1 md:flex">
               {navItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -169,63 +86,131 @@ export default function ClienteLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-white text-warm-900 shadow-soft"
-                        : "text-warm-600 hover:bg-white/50 hover:text-warm-900"
+                        ? "bg-white/10 text-white"
+                        : "text-white/60 hover:bg-white/8 hover:text-white"
                     }`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                     {item.label}
                   </Link>
                 );
               })}
+            </nav>
 
-              <div className="border-t border-warm-300/40 pt-4">
+            {/* Right side */}
+            <div className="flex items-center gap-3">
+              {/* Notifications */}
+              <div className="text-white/70">
+                <NotificationBell />
+              </div>
+
+              {/* User avatar + name — desktop */}
+              <div className="hidden items-center gap-3 md:flex">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{ background: "#4A7C59" }}
+                  >
+                    {userInitial}
+                  </div>
+                  {firstName && (
+                    <span className="text-sm font-medium text-white">
+                      {firstName}
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  className="h-5 w-px"
+                  style={{ background: "rgba(255,255,255,0.15)" }}
+                />
+
                 <Link
                   href="/logout"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-3 py-1.5 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/40 hover:text-white"
                 >
-                  <LogoutIcon className="h-5 w-5" />
-                  Sair da conta
+                  <LogoutIcon className="h-4 w-4" />
+                  Sair
                 </Link>
               </div>
-            </nav>
+            </div>
           </div>
-        )}
-      </header>
+        </header>
 
-      {/* Main content */}
-      <main className="relative z-10 mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
-        {children}
-      </main>
+        {/* Main content */}
+        <main className="relative z-10 mx-auto max-w-7xl px-5 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-10">
+          {children}
+        </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-warm-300/40 bg-warm-100/60">
-        <div className="mx-auto max-w-7xl px-5 py-6 sm:px-6">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-xs text-warm-500">
-              Seus dados estão protegidos com criptografia e sigilo
-              profissional.
-            </p>
-            <p className="text-xs text-warm-500">
-              © {new Date().getFullYear()} • Raiza Convento - Psicanalista
-            </p>
+        {/* Footer — desktop only */}
+        <footer
+          className="relative z-10 hidden border-t sm:block"
+          style={{ borderColor: "rgba(26,22,20,0.10)", background: "#F2EDE8" }}
+        >
+          <div className="mx-auto max-w-7xl px-5 py-5 sm:px-6">
+            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+              <p className="text-xs" style={{ color: "rgba(26,22,20,0.40)" }}>
+                Seus dados estão protegidos com criptografia e sigilo profissional.
+              </p>
+              <p className="text-xs" style={{ color: "rgba(26,22,20,0.40)" }}>
+                © {new Date().getFullYear()} • Raiza Convento - Psicanalista
+              </p>
+            </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+
+        {/* Bottom nav bar — mobile only */}
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2 pb-safe md:hidden"
+          style={{
+            background: "#1A1614",
+            height: "64px",
+            boxShadow: "0 -1px 0 rgba(255,255,255,0.06)",
+          }}
+        >
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-opacity duration-150"
+              >
+                <Icon
+                  className="h-5 w-5"
+                  style={{ color: isActive ? "#E8755A" : "rgba(255,255,255,0.45)" }}
+                />
+                <span
+                  className="text-[10px] font-medium"
+                  style={{ color: isActive ? "#E8755A" : "rgba(255,255,255,0.45)" }}
+                >
+                  {item.label}
+                </span>
+                {isActive && (
+                  <span
+                    className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full"
+                    style={{ background: "#E8755A" }}
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </NotificationProvider>
   );
 }
 
 // Icons
-function HomeIcon({ className }: { className?: string }) {
+function HomeIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -240,10 +225,11 @@ function HomeIcon({ className }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className }: { className?: string }) {
+function CalendarIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -258,10 +244,11 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-function ClockIcon({ className }: { className?: string }) {
+function ClockIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -289,42 +276,6 @@ function LogoutIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-      />
-    </svg>
-  );
-}
-
-function MenuIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4 6h16M4 12h16M4 18h16"
-      />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M6 18L18 6M6 6l12 12"
       />
     </svg>
   );

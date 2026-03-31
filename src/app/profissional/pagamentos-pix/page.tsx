@@ -72,7 +72,6 @@ export default function PagamentosPixPage() {
 
       console.log("📡 Response status:", response.status);
 
-      // Verifica se a resposta tem conteúdo
       const text = await response.text();
       console.log("📄 Response text:", text);
 
@@ -87,7 +86,6 @@ export default function PagamentosPixPage() {
         throw new Error(errorMessage);
       }
 
-      // Tenta fazer parse do JSON
       let data;
       try {
         data = text ? JSON.parse(text) : {};
@@ -99,7 +97,7 @@ export default function PagamentosPixPage() {
       console.log("✅ Validation successful:", data);
 
       toast("Pagamento validado! Créditos liberados para o cliente.", "success");
-      loadOrders(); // Recarrega lista
+      loadOrders();
     } catch (error: any) {
       console.error("Erro ao validar pagamento:", error);
       toast(error.message || "Erro ao validar pagamento", "error");
@@ -131,13 +129,10 @@ export default function PagamentosPixPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 animate-pulse rounded-3xl bg-warm-200" />
+        <div className="h-24 animate-pulse rounded-3xl bg-[#F5F0ED]" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-2xl bg-warm-200"
-            />
+            <div key={i} className="h-48 animate-pulse rounded-3xl bg-[#F5F0ED]" />
           ))}
         </div>
       </div>
@@ -145,70 +140,64 @@ export default function PagamentosPixPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
-            <PixIcon className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-warm-900 sm:text-3xl">
-              Validação de PIX
-            </h1>
-            <p className="mt-1 text-warm-600">
-              Confirme pagamentos PIX recebidos dos clientes
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Profissional</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">Validar PIX</h1>
+          <p className="mt-1 text-sm text-[#8B7B72]">Pagamentos aguardando confirmação</p>
         </div>
-
         <button
           onClick={loadOrders}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-warm-300 bg-white px-6 py-3 text-sm font-semibold text-warm-700 shadow-soft transition-all hover:bg-warm-50 hover:shadow-soft-lg disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-5 py-2.5 text-sm font-semibold text-[#2C2420] transition-all hover:bg-[#F8F4F1] disabled:opacity-50"
         >
-          <RefreshIcon className="h-5 w-5" />
+          <RefreshIcon className="h-4 w-4" />
           Atualizar
         </button>
-      </header>
+      </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={<ClockIcon className="h-6 w-6" />}
-          iconBg="bg-gradient-to-br from-amber-500 to-amber-600"
-          label="Aguardando Validação"
-          value={orders.length.toString()}
-        />
-        <StatCard
-          icon={<MoneyIcon className="h-6 w-6" />}
-          iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
-          label="Valor Total"
-          value={formatCents(
-            orders.reduce((sum, o) => sum + o.amount_cents, 0),
-          )}
-        />
-        <StatCard
-          icon={<UserIcon className="h-6 w-6" />}
-          iconBg="bg-gradient-to-br from-indigo-500 to-indigo-600"
-          label="Clientes"
-          value={new Set(orders.map((o) => o.user_id)).size.toString()}
-        />
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50">
+            <ClockIcon className="h-5 w-5 text-amber-600" />
+          </div>
+          <p className="text-2xl font-bold text-[#2C2420]">{orders.length}</p>
+          <p className="text-sm text-[#8B7B72]">Aguardando Validação</p>
+        </div>
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50">
+            <MoneyIcon className="h-5 w-5 text-emerald-600" />
+          </div>
+          <p className="text-2xl font-bold text-[#2C2420]">
+            {formatCents(orders.reduce((sum, o) => sum + o.amount_cents, 0))}
+          </p>
+          <p className="text-sm text-[#8B7B72]">Valor Total</p>
+        </div>
+        <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4A7C59]/10">
+            <UserIcon className="h-5 w-5 text-[#4A7C59]" />
+          </div>
+          <p className="text-2xl font-bold text-[#2C2420]">
+            {new Set(orders.map((o) => o.user_id)).size}
+          </p>
+          <p className="text-sm text-[#8B7B72]">Clientes</p>
+        </div>
       </div>
 
       {/* Orders List */}
       <div className="space-y-4">
         {orders.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-warm-300 bg-warm-50 p-12 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-100">
-              <CheckCircleIcon className="h-10 w-10 text-emerald-600" />
+          <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F8F4F1]">
+                <CheckCircleIcon className="h-10 w-10 text-[#C4B8AE]" />
+              </div>
+              <p className="mt-5 text-base font-bold text-[#2C2420]">Tudo em dia!</p>
+              <p className="mt-1 text-sm text-[#8B7B72]">Não há pagamentos PIX pendentes de validação.</p>
             </div>
-            <h3 className="mt-4 text-lg font-bold text-warm-900">
-              Tudo em dia!
-            </h3>
-            <p className="mt-2 text-sm text-warm-600">
-              Não há pagamentos PIX pendentes de validação.
-            </p>
           </div>
         ) : (
           orders.map((order) => (
@@ -228,30 +217,6 @@ export default function PagamentosPixPage() {
 
 // ===== COMPONENTS =====
 
-function StatCard({
-  icon,
-  iconBg,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-warm-200 bg-white p-5 shadow-sm">
-      <div
-        className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} text-white shadow-md`}
-      >
-        {icon}
-      </div>
-      <p className="text-2xl font-bold text-warm-900">{value}</p>
-      <p className="text-sm font-medium text-warm-700">{label}</p>
-    </div>
-  );
-}
-
 function OrderCard({
   order,
   onValidate,
@@ -267,51 +232,53 @@ function OrderCard({
   const user = (order as any).user;
 
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft transition-all hover:shadow-soft-lg">
-      <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white p-5">
+    <div className="overflow-hidden rounded-3xl border border-[#E8E0DC]/80 bg-white shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+      {/* Card Header */}
+      <div className="border-b border-[#E8E0DC] px-6 py-5">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50">
               <PixIcon className="h-6 w-6 text-emerald-600" />
             </div>
             <div>
-              <p className="font-bold text-warm-900">
+              <p className="font-bold text-[#2C2420]">
                 {user?.nome || "Cliente"}
               </p>
-              <p className="text-sm text-warm-600">
+              <p className="text-sm text-[#8B7B72]">
                 ID: {order.user_id.substring(0, 8)}...
               </p>
-              <p className="mt-1 text-xs text-warm-500">
+              <p className="mt-0.5 text-xs text-[#B0A098]">
                 {createdAt.toLocaleString("pt-BR")}
               </p>
             </div>
           </div>
 
           <div className="text-right">
-            <p className="text-2xl font-bold text-warm-900">
+            <p className="text-2xl font-bold text-[#2C2420]">
               {formatCents(order.amount_cents)}
             </p>
-            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-              <ClockIcon className="h-3.5 w-3.5" />
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              <ClockIcon className="h-3 w-3" />
               Pendente
             </span>
           </div>
         </div>
       </div>
 
-      <div className="p-5">
+      {/* Card Body */}
+      <div className="p-6 space-y-4">
         {/* Product info */}
-        <div className="mb-4 rounded-xl border border-warm-200 bg-warm-50/50 p-4">
+        <div className="rounded-2xl border border-[#E8E0DC] bg-[#FAFAF8] p-4">
           {order.items.map((item) => (
             <div key={item.id} className="flex items-start justify-between">
               <div>
-                <p className="font-semibold text-warm-900">{item.title}</p>
-                <p className="text-sm text-warm-600">
+                <p className="font-semibold text-[#2C2420]">{item.title}</p>
+                <p className="text-sm text-[#8B7B72]">
                   {item.sessions_count}{" "}
                   {item.sessions_count === 1 ? "sessão" : "sessões"}
                 </p>
               </div>
-              <p className="font-bold text-warm-900">
+              <p className="font-bold text-[#2C2420]">
                 {formatCents(item.price_cents)}
               </p>
             </div>
@@ -319,19 +286,19 @@ function OrderCard({
         </div>
 
         {/* PIX Reference */}
-        <div className="mb-4 rounded-xl bg-blue-50 p-4">
+        <div className="rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] p-4">
           <div className="flex items-start gap-3">
-            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#4A7C59]" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-900">
+              <p className="text-sm font-bold text-[#2C2420]">
                 Referência PIX
               </p>
-              <p className="mt-1 font-mono text-xs text-blue-700">
+              <p className="mt-1 font-mono text-xs text-[#8B7B72]">
                 {order.pix_reference}
               </p>
-              <p className="mt-2 text-xs text-blue-700">
+              <p className="mt-2 text-xs text-[#8B7B72]">
                 Verifique se recebeu um PIX com esta referência no valor de{" "}
-                <strong>{formatCents(order.amount_cents)}</strong> antes de
+                <strong className="text-[#2C2420]">{formatCents(order.amount_cents)}</strong> antes de
                 validar.
               </p>
             </div>
@@ -343,23 +310,23 @@ function OrderCard({
           <button
             onClick={onReject}
             disabled={validating}
-            className="flex-1 rounded-xl border-2 border-rose-200 bg-rose-50 px-4 py-3 font-semibold text-rose-700 transition-all hover:bg-rose-100 disabled:opacity-50"
+            className="flex-1 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition-all hover:border-rose-200 hover:bg-rose-50 disabled:opacity-50"
           >
             Rejeitar
           </button>
           <button
             onClick={onValidate}
             disabled={validating}
-            className="group relative flex-1 overflow-hidden rounded-xl bg-emerald-500 px-4 py-3 font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-50"
+            className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-700 disabled:opacity-50"
           >
             {validating ? (
               <span className="flex items-center justify-center gap-2">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Validando...
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <CheckCircleIcon className="h-5 w-5" />
+                <CheckCircleIcon className="h-4 w-4" />
                 Confirmar Pagamento
               </span>
             )}

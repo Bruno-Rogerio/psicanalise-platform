@@ -66,171 +66,195 @@ export default function BlogAdminPage() {
   const filteredPosts =
     filter === 'all' ? posts : posts.filter((p) => p.status === filter);
 
-  const statusLabel: Record<PostStatus, { label: string; color: string }> = {
-    draft: { label: 'Rascunho', color: 'bg-warm-200 text-warm-700' },
-    published: { label: 'Publicado', color: 'bg-sage-100 text-sage-700' },
-    archived: { label: 'Arquivado', color: 'bg-rose-100 text-rose-700' },
+  const statusConfig: Record<PostStatus, { label: string; badge: string }> = {
+    draft: {
+      label: 'Rascunho',
+      badge: 'inline-flex items-center rounded-full bg-[#F5F0ED] px-2.5 py-1 text-xs font-semibold text-[#8B7B72]',
+    },
+    published: {
+      label: 'Publicado',
+      badge: 'inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700',
+    },
+    archived: {
+      label: 'Arquivado',
+      badge: 'inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700',
+    },
   };
 
+  const filterTabs: { value: PostStatus | 'all'; label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'published', label: 'Publicados' },
+    { value: 'draft', label: 'Rascunhos' },
+    { value: 'archived', label: 'Arquivados' },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-warm-900">Blog</h1>
-          <p className="mt-1 text-sm text-warm-600">
-            Gerencie seus artigos e publicações
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#F2EDE8] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-8">
 
-        <Link
-          href="/profissional/blog/novo"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-sage-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition-all hover:bg-sage-700 hover:shadow-soft-lg"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Novo post
-        </Link>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex gap-2">
-        {(['all', 'draft', 'published', 'archived'] as const).map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              filter === status
-                ? 'bg-warm-900 text-white'
-                : 'bg-warm-100 text-warm-700 hover:bg-warm-200'
-            }`}
-          >
-            {status === 'all'
-              ? 'Todos'
-              : statusLabel[status as PostStatus].label}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista de posts */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-warm-200 border-t-sage-600" />
-        </div>
-      ) : filteredPosts.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-warm-300 py-16 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-warm-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
-            />
-          </svg>
-          <h3 className="mt-4 text-lg font-semibold text-warm-900">
-            Nenhum post encontrado
-          </h3>
-          <p className="mt-2 text-sm text-warm-600">
-            Comece criando seu primeiro artigo
-          </p>
+        {/* ── Page Header ── */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">
+              Profissional
+            </p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">
+              Blog
+            </h1>
+            <p className="mt-1 text-sm text-[#8B7B72]">
+              Gerencie seus artigos e publicações
+            </p>
+          </div>
           <Link
             href="/profissional/blog/novo"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sage-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sage-700"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#2A2320]"
           >
-            Criar primeiro post
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Novo Post
           </Link>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredPosts.map((post) => (
-            <div
-              key={post.id}
-              className="flex flex-col gap-4 rounded-2xl border border-warm-200 bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <h3 className="truncate text-lg font-semibold text-warm-900">
-                    {post.title}
-                  </h3>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      statusLabel[post.status].color
-                    }`}
-                  >
-                    {statusLabel[post.status].label}
-                  </span>
-                </div>
-                <p className="mt-1 line-clamp-1 text-sm text-warm-600">
-                  {post.excerpt}
-                </p>
-                <div className="mt-2 flex items-center gap-4 text-xs text-warm-500">
-                  <span>
-                    Atualizado em{' '}
-                    {new Date(post.updated_at).toLocaleDateString('pt-BR')}
-                  </span>
-                  {post.views > 0 && <span>{post.views} visualizações</span>}
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                {post.status === 'draft' && (
-                  <button
-                    onClick={() => handlePublish(post.id)}
-                    className="rounded-lg bg-sage-100 px-3 py-2 text-sm font-medium text-sage-700 transition-colors hover:bg-sage-200"
-                  >
-                    Publicar
-                  </button>
-                )}
-                {post.status === 'published' && (
-                  <>
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      target="_blank"
-                      className="rounded-lg bg-warm-100 px-3 py-2 text-sm font-medium text-warm-700 transition-colors hover:bg-warm-200"
-                    >
-                      Ver
-                    </Link>
-                    <button
-                      onClick={() => handleArchive(post.id)}
-                      className="rounded-lg bg-rose-100 px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-200"
-                    >
-                      Arquivar
-                    </button>
-                  </>
-                )}
-                <Link
-                  href={`/profissional/blog/${post.id}/editar`}
-                  className="rounded-lg bg-warm-100 px-3 py-2 text-sm font-medium text-warm-700 transition-colors hover:bg-warm-200"
-                >
-                  Editar
-                </Link>
-                <button
-                  onClick={() => handleDelete(post.id)}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
+        {/* ── Filter Tabs ── */}
+        <div className="inline-flex w-full overflow-x-auto rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] p-1">
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                filter === tab.value
+                  ? 'bg-white text-[#2C2420] shadow-sm'
+                  : 'text-[#8B7B72] hover:text-[#2C2420]'
+              }`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
-      )}
+
+        {/* ── Post List ── */}
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-40 animate-pulse rounded-3xl bg-[#F5F0ED]" />
+            ))}
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="rounded-3xl border-2 border-dashed border-[#E8E0DC] py-20 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5F0ED]">
+              <svg
+                className="h-8 w-8 text-[#B0A098]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                />
+              </svg>
+            </div>
+            <h3 className="mt-5 text-lg font-bold text-[#2C2420]">Nenhum post encontrado</h3>
+            <p className="mt-2 text-sm text-[#8B7B72]">Comece criando seu primeiro artigo</p>
+            <Link
+              href="/profissional/blog/novo"
+              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2A2320]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Criar primeiro post
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-6 shadow-[0_1px_16px_rgba(44,36,32,0.07)] transition-shadow hover:shadow-[0_4px_24px_rgba(44,36,32,0.10)]"
+              >
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                  {/* Left: meta */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className={statusConfig[post.status].badge}>
+                        {statusConfig[post.status].label}
+                      </span>
+                    </div>
+                    <h3 className="mt-2.5 text-lg font-bold leading-snug text-[#2C2420]">
+                      {post.title}
+                    </h3>
+                    {post.excerpt && (
+                      <p className="mt-1.5 line-clamp-2 text-sm text-[#8B7B72]">
+                        {post.excerpt}
+                      </p>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-4">
+                      <span className="text-xs text-[#B0A098]">
+                        Atualizado em{' '}
+                        {new Date(post.updated_at).toLocaleDateString('pt-BR')}
+                      </span>
+                      {post.views > 0 && (
+                        <span className="flex items-center gap-1 text-xs text-[#B0A098]">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          {post.views} visualizações
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: actions */}
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {post.status === 'draft' && (
+                      <button
+                        onClick={() => handlePublish(post.id)}
+                        className="rounded-xl bg-[#4A7C59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3d6649]"
+                      >
+                        Publicar
+                      </button>
+                    )}
+                    {post.status === 'published' && (
+                      <>
+                        <Link
+                          href={`/blog/${post.slug}`}
+                          target="_blank"
+                          className="rounded-xl border border-[#E8E0DC] bg-white px-4 py-2 text-sm font-semibold text-[#2C2420] transition-colors hover:bg-[#F8F4F1]"
+                        >
+                          Ver
+                        </Link>
+                        <button
+                          onClick={() => handleArchive(post.id)}
+                          className="rounded-xl border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50"
+                        >
+                          Arquivar
+                        </button>
+                      </>
+                    )}
+                    <Link
+                      href={`/profissional/blog/${post.id}/editar`}
+                      className="rounded-xl border border-[#E8E0DC] bg-white px-4 py-2 text-sm font-semibold text-[#2C2420] transition-colors hover:bg-[#F8F4F1]"
+                    >
+                      Editar
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="rounded-xl border border-rose-100 px-4 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
