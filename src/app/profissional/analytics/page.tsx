@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
           .order("created_at", { ascending: true }),
         supabaseAdmin
           .from("analytics_events")
-          .select("created_at, event_name, event_category, event_label")
+          .select("created_at, event_name, event_category, event_label, page_path")
           .gte("created_at", from)
           .order("created_at", { ascending: true }),
       ]);
