@@ -47,19 +47,21 @@ const EMPTY_NOTES: SessionNotes = {
   observacoes: "",
 };
 
-const ENTER_EARLY_MIN = 10;
+const ENTER_EARLY_MIN = 5;
 
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
+    timeZone: "America/Sao_Paulo",
   });
 
 const fmtTime = (d: Date) =>
   d.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
 
 function isNowWithinSessionWithMargin(
