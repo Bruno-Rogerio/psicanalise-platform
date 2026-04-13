@@ -1,11 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createHash, randomBytes } from "crypto";
 import { resolveMx } from "dns/promises";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import {
-  sendProfessionalSignupNotification,
-  sendVerificationEmail,
-} from "@/lib/email";
+import { sendProfessionalSignupNotification } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -113,8 +109,8 @@ export async function POST(request: NextRequest) {
         role: "cliente",
         email,
         phone: phone || null,
-        status: "pending_email",
-        email_verified_at: null,
+        status: "active",
+        email_verified_at: new Date().toISOString(),
         deleted_at: null,
         tier: promoCodeData ? "popular" : "standard",
       },
@@ -127,31 +123,6 @@ export async function POST(request: NextRequest) {
         .from("promo_codes")
         .update({ used_by: user.id, used_at: new Date().toISOString() })
         .eq("id", promoCodeData.id);
-    }
-
-    // Create verification token
-    const rawToken = randomBytes(32).toString("hex");
-    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-    await supabaseAdmin.from("email_verifications").insert({
-      user_id: user.id,
-      token_hash: tokenHash,
-      expires_at: expiresAt.toISOString(),
-    });
-
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      request.headers.get("origin") ||
-      new URL(request.url).origin;
-
-    const verifyUrl = `${origin}/verificar-email?token=${rawToken}`;
-
-    let emailSent = true;
-    try {
-      await sendVerificationEmail({ to: email, name: nome, verifyUrl });
-    } catch {
-      emailSent = false;
     }
 
     try {
@@ -168,7 +139,7 @@ export async function POST(request: NextRequest) {
       // notification is best-effort
     }
 
-    return NextResponse.json({ success: true, emailSent });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Internal server error" },

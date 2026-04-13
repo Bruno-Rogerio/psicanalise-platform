@@ -36,7 +36,7 @@ function LoginForm() {
       // Busca role no profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role,status,email_verified_at,deleted_at")
+        .select("role,status,deleted_at")
         .eq("id", data.user.id)
         .single();
 
@@ -45,12 +45,6 @@ function LoginForm() {
       if (profile?.status === "blocked" || profile?.deleted_at) {
         await supabase.auth.signOut();
         setErro("Sua conta está bloqueada. Entre em contato para mais informações.");
-        return;
-      }
-
-      if (!profile?.email_verified_at || profile?.status === "pending_email") {
-        await supabase.auth.signOut();
-        router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
         return;
       }
 

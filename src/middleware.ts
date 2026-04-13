@@ -113,29 +113,13 @@ export async function middleware(req: NextRequest) {
   // Carrega profile uma vez (role, status, etc.)
   const { data: baseProfile } = await supabase
     .from("profiles")
-    .select("role,status,email_verified_at,deleted_at")
+    .select("role,status,deleted_at")
     .eq("id", user.id)
     .single();
 
   // Bloqueado ou deletado
   if (baseProfile?.status === "blocked" || baseProfile?.deleted_at) {
     return NextResponse.redirect(new URL("/acesso-negado", req.url));
-  }
-
-  // Precisa verificar email
-  const needsEmailVerification =
-    !baseProfile?.email_verified_at || baseProfile?.status === "pending_email";
-
-  const isVerificationPath =
-    pathname.startsWith("/verificar-email") ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/logout");
-
-  if (needsEmailVerification && !isVerificationPath) {
-    const url = new URL("/verificar-email", req.url);
-    const email = user.email || "";
-    if (email) url.searchParams.set("email", email);
-    return NextResponse.redirect(url);
   }
 
   // Proteção de rotas por role
