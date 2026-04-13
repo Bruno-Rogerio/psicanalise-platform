@@ -202,20 +202,20 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className={`space-y-4 sm:space-y-6 ${pickedSlot ? "pb-28 lg:pb-6" : "pb-6"}`}>
       {/* ===== PAGE HEADER ===== */}
-      <header className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1A1614] shadow-lg">
-          <CalendarPlusIcon className="h-7 w-7 text-white" />
+      <header className="flex items-center gap-3 sm:gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1A1614] shadow-lg sm:h-14 sm:w-14 sm:rounded-2xl">
+          <CalendarPlusIcon className="h-5 w-5 text-white sm:h-7 sm:w-7" />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-[#1A1614] sm:text-4xl">Agendar Sessão</h1>
-          <p className="mt-0.5 text-[#8B7B72]">Siga os passos para marcar seu horário</p>
+          <h1 className="text-2xl font-black text-[#1A1614] sm:text-3xl sm:text-4xl">Agendar Sessão</h1>
+          <p className="mt-0.5 text-sm text-[#8B7B72]">Siga os passos para marcar seu horário</p>
         </div>
       </header>
 
       {/* ===== PROGRESS BAR ===== */}
-      <div className="rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
+      <div className="rounded-2xl border border-[#E8E0DC]/80 bg-white p-4 shadow-[0_1px_16px_rgba(44,36,32,0.07)] sm:rounded-3xl sm:p-5">
         <div className="flex items-center justify-between">
           <StepBubble
             number={1}
@@ -287,63 +287,67 @@ export default function AgendaPage() {
               </div>
             </div>
           ) : (
-            <div className={`rounded-3xl border-2 bg-white p-6 shadow-[0_1px_16px_rgba(44,36,32,0.07)] transition-all duration-300 ${currentStep === 1 ? "border-[#1A1614]" : "border-[#E8E0DC]/80"}`}>
-              <div className="mb-6 flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-black ${currentStep === 1 ? "bg-[#1A1614] text-white" : "bg-[#F5F0ED] text-[#B0A098]"}`}>1</div>
+            <div className={`rounded-2xl border-2 bg-white p-4 shadow-[0_1px_16px_rgba(44,36,32,0.07)] transition-all duration-300 sm:rounded-3xl sm:p-6 ${currentStep === 1 ? "border-[#1A1614]" : "border-[#E8E0DC]/80"}`}>
+              <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black sm:h-10 sm:w-10 sm:text-base ${currentStep === 1 ? "bg-[#1A1614] text-white" : "bg-[#F5F0ED] text-[#B0A098]"}`}>1</div>
                 <div>
                   <p className="text-xs text-[#B0A098]">Etapa 1</p>
                   <p className="font-bold text-[#1A1614]">Tipo de atendimento</p>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                 {/* Video */}
                 <button
                   onClick={() => selectType("video")}
-                  className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
+                  className={`group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all duration-300 sm:flex-col sm:items-start sm:p-5 ${
                     type === "video"
                       ? "border-[#E8755A] bg-[#E8755A]/5 shadow-lg"
                       : "border-[#E8E0DC] bg-white hover:border-[#E8755A]/40 hover:shadow-md"
                   }`}
                 >
                   {type === "video" && (
-                    <div className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-[#E8755A]">
+                    <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#E8755A] sm:right-4 sm:top-4">
                       <CheckIcon className="h-3.5 w-3.5 text-white" />
                     </div>
                   )}
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-105 ${type === "video" ? "bg-[#E8755A]" : "bg-[#E8755A]/10"}`}>
-                    <VideoIcon className={`h-7 w-7 ${type === "video" ? "text-white" : "text-[#E8755A]"}`} />
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md sm:h-14 sm:w-14 ${type === "video" ? "bg-[#E8755A]" : "bg-[#E8755A]/10"}`}>
+                    <VideoIcon className={`h-6 w-6 sm:h-7 sm:w-7 ${type === "video" ? "text-white" : "text-[#E8755A]"}`} />
                   </div>
-                  <p className="mt-4 text-lg font-bold text-[#1A1614]">Videochamada</p>
-                  <p className="mt-1 text-sm text-[#8B7B72]">Sessão ao vivo com câmera e áudio</p>
-                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#E8755A]/10 px-3 py-1 text-sm font-semibold text-[#E8755A]">
-                    <ClockIcon className="h-3.5 w-3.5" />
-                    {settings?.session_duration_video_min ?? 50} min
+                  <div className="flex-1">
+                    <p className="text-base font-bold text-[#1A1614] sm:mt-3 sm:text-lg">Videochamada</p>
+                    <p className="mt-0.5 text-sm text-[#8B7B72]">Câmera e áudio ao vivo</p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#E8755A]/10 px-2.5 py-1 text-xs font-semibold text-[#E8755A] sm:px-3 sm:text-sm">
+                      <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {settings?.session_duration_video_min ?? 50} min
+                    </div>
                   </div>
                 </button>
 
                 {/* Chat */}
                 <button
                   onClick={() => selectType("chat")}
-                  className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
+                  className={`group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all duration-300 sm:flex-col sm:items-start sm:p-5 ${
                     type === "chat"
                       ? "border-[#5B5EA6] bg-[#5B5EA6]/5 shadow-lg"
                       : "border-[#E8E0DC] bg-white hover:border-[#5B5EA6]/40 hover:shadow-md"
                   }`}
                 >
                   {type === "chat" && (
-                    <div className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-[#5B5EA6]">
+                    <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#5B5EA6] sm:right-4 sm:top-4">
                       <CheckIcon className="h-3.5 w-3.5 text-white" />
                     </div>
                   )}
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-105 ${type === "chat" ? "bg-[#5B5EA6]" : "bg-[#5B5EA6]/10"}`}>
-                    <ChatBubbleIcon className={`h-7 w-7 ${type === "chat" ? "text-white" : "text-[#5B5EA6]"}`} />
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md sm:h-14 sm:w-14 ${type === "chat" ? "bg-[#5B5EA6]" : "bg-[#5B5EA6]/10"}`}>
+                    <ChatBubbleIcon className={`h-6 w-6 sm:h-7 sm:w-7 ${type === "chat" ? "text-white" : "text-[#5B5EA6]"}`} />
                   </div>
-                  <p className="mt-4 text-lg font-bold text-[#1A1614]">Chat por texto</p>
-                  <p className="mt-1 text-sm text-[#8B7B72]">Mensagens em tempo real</p>
-                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#5B5EA6]/10 px-3 py-1 text-sm font-semibold text-[#5B5EA6]">
-                    <ClockIcon className="h-3.5 w-3.5" />
-                    {settings?.session_duration_chat_min ?? 50} min
+                  <div className="flex-1">
+                    <p className="text-base font-bold text-[#1A1614] sm:mt-3 sm:text-lg">Chat por texto</p>
+                    <p className="mt-0.5 text-sm text-[#8B7B72]">Mensagens em tempo real</p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#5B5EA6]/10 px-2.5 py-1 text-xs font-semibold text-[#5B5EA6] sm:px-3 sm:text-sm">
+                      <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {settings?.session_duration_chat_min ?? 50} min
+                    </div>
                   </div>
                 </button>
               </div>
@@ -375,9 +379,9 @@ export default function AgendaPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl border-2 border-[#1A1614] bg-white p-6 shadow-[0_1px_16px_rgba(44,36,32,0.07)]">
-                <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1A1614] text-base font-black text-white">2</div>
+              <div className="rounded-2xl border-2 border-[#1A1614] bg-white p-4 shadow-[0_1px_16px_rgba(44,36,32,0.07)] sm:rounded-3xl sm:p-6">
+                <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A1614] text-sm font-black text-white sm:h-10 sm:w-10 sm:text-base">2</div>
                   <div>
                     <p className="text-xs text-[#B0A098]">Etapa 2</p>
                     <p className="font-bold text-[#1A1614]">Data e horário</p>
@@ -577,6 +581,39 @@ export default function AgendaPage() {
           )}
         </aside>
       </div>
+
+      {/* ===== BARRA FIXA DE CONFIRMAÇÃO (apenas mobile) ===== */}
+      {pickedSlot && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E8E0DC] bg-white/95 px-4 py-3 shadow-2xl backdrop-blur-sm lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-[#8B7B72]">
+                {type === "video" ? "Videochamada" : "Chat"} • {type === "video" ? settings?.session_duration_video_min : settings?.session_duration_chat_min} min
+              </p>
+              <p className="truncate text-sm font-bold text-[#1A1614]">
+                {fmtDateFull(pickedSlot.start)} às {fmtTime(pickedSlot.start)}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={() => resetToStep(2)}
+                className="rounded-xl border-2 border-[#E8E0DC] px-3 py-2.5 text-xs font-semibold text-[#2C2420]"
+              >
+                Alterar
+              </button>
+              <button
+                onClick={onUseCredit}
+                disabled={confirming || needsCredits}
+                className={`rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg disabled:opacity-60 ${
+                  needsCredits ? "bg-[#B0A098]" : "bg-[#4A7C59]"
+                }`}
+              >
+                {confirming ? "Confirmando..." : needsCredits ? "Sem créditos" : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -614,7 +651,7 @@ function StepBubble({
       </div>
       <div className="text-center">
         <p className={`text-xs font-bold ${status === "pending" ? "text-[#B0A098]" : "text-[#1A1614]"}`}>{label}</p>
-        <p className={`text-[10px] ${status === "pending" ? "text-[#D0C8C0]" : "text-[#8B7B72]"}`}>{sublabel}</p>
+        <p className={`hidden text-[10px] sm:block ${status === "pending" ? "text-[#D0C8C0]" : "text-[#8B7B72]"}`}>{sublabel}</p>
       </div>
     </button>
   );
