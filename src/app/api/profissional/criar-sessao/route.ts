@@ -156,18 +156,21 @@ export async function POST(request: NextRequest) {
     }
     const end_at = new Date(start_at.getTime() + duration * 60 * 1000);
 
-    // Verifica se paciente já existe
-    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-    const existingAuthUser = existingUser?.users?.find(
-      (u) => u.email?.toLowerCase() === email,
-    );
+    // Verifica se paciente já existe pelo e-mail no profiles
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, nome")
+      .eq("email", email)
+      .maybeSingle();
 
     let patientId: string;
     let isNewPatient = false;
     let tempPassword: string | null = null;
 
-    if (existingAuthUser) {
-      patientId = existingAuthUser.id;
+    if (existingProfile) {
+      patientId = existingProfile.id;
+
+      // Profile já existe, nada a fazer
     } else {
       // Cria novo paciente
       isNewPatient = true;
@@ -190,7 +193,7 @@ export async function POST(request: NextRequest) {
 
       patientId = created.user.id;
 
-      await supabaseAdmin.from("profiles").upsert(
+      const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
         {
           id: patientId,
           nome,
@@ -202,6 +205,15 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "id" },
       );
+
+      if (profileError) {
+        // Desfaz criação do usuário se o profile falhar
+        await supabaseAdmin.auth.admin.deleteUser(patientId);
+        return NextResponse.json(
+          { error: "Erro ao criar perfil do paciente" },
+          { status: 500 },
+        );
+      }
     }
 
     // Cria o agendamento
