@@ -63,38 +63,38 @@ export function Hero() {
 
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
-        <div className="flex min-h-[88vh] items-center py-16 lg:py-0">
+        <div className="flex min-h-[80vh] items-center py-12 sm:min-h-[88vh] sm:py-16 lg:py-0">
 
-          <div className="relative z-10 max-w-3xl py-10 lg:py-24">
+          <div className="relative z-10 max-w-3xl py-6 sm:py-10 lg:py-24">
 
             {/* Badge */}
             <div
-              className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-[#DDD5CE] bg-white/80 px-4 py-2 text-sm font-medium text-[#8B7B72] shadow-sm backdrop-blur-sm"
+              className="mb-6 inline-flex max-w-xs items-center gap-2 rounded-full border border-[#DDD5CE] bg-white/80 px-3 py-1.5 text-xs font-medium text-[#8B7B72] shadow-sm backdrop-blur-sm sm:mb-8 sm:max-w-none sm:gap-2.5 sm:px-4 sm:py-2 sm:text-sm"
               style={{ animation: "badgePop 0.6s cubic-bezier(.22,.68,0,1.2) 0.1s both" }}
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#4A7C59] opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#4A7C59]" />
               </span>
-              O que você sente faz sentido. Vamos olhar para isso com cuidado.
+              <span className="line-clamp-1">O que você sente faz sentido.</span>
             </div>
 
             {/* Headline */}
-            <h1 className="max-w-2xl space-y-1">
+            <h1 className="max-w-2xl space-y-0.5">
               <span
-                className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
+                className="block text-[2.25rem] font-extralight leading-[1.1] tracking-tight text-[#1A1614] sm:text-5xl sm:leading-[1.08] lg:text-[5.5rem]"
                 style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.2s both" }}
               >
                 Um espaço para
               </span>
               <span
-                className="block text-5xl font-black italic leading-[1.08] tracking-tight text-[#E8755A] sm:text-6xl lg:text-[5.5rem]"
+                className="block text-[2.25rem] font-black italic leading-[1.1] tracking-tight text-[#E8755A] sm:text-5xl sm:leading-[1.08] lg:text-[5.5rem]"
                 style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.35s both" }}
               >
                 falar do que sente
               </span>
               <span
-                className="block text-5xl font-extralight leading-[1.08] tracking-tight text-[#1A1614] sm:text-6xl lg:text-[5.5rem]"
+                className="block text-[2.25rem] font-extralight leading-[1.1] tracking-tight text-[#1A1614] sm:text-5xl sm:leading-[1.08] lg:text-[5.5rem]"
                 style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.5s both" }}
               >
                 com cuidado.
@@ -103,7 +103,7 @@ export function Hero() {
 
             {/* Subtitle */}
             <p
-              className="mt-8 max-w-lg text-lg leading-relaxed text-[#8B7B72] sm:text-xl"
+              className="mt-6 max-w-lg text-base leading-relaxed text-[#8B7B72] sm:mt-8 sm:text-lg lg:text-xl"
               style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.6s both" }}
             >
               A psicanálise não é sobre consertar você. É sobre criar um lugar de escuta onde aquilo que pesa ganha nome, sentido e caminho.
@@ -111,13 +111,13 @@ export function Hero() {
 
             {/* CTA Buttons */}
             <div
-              className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
+              className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4"
               style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.72s both" }}
             >
               <TrackedLink
                 href="/cadastro"
                 eventLabel="hero_comecar_agora"
-                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-4 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl active:scale-[0.99] sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#1A1614] px-8 py-3.5 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2C2420] hover:shadow-2xl active:scale-[0.99] sm:w-auto sm:py-4"
               >
                 Começar agora
                 <svg
@@ -130,7 +130,7 @@ export function Hero() {
               <TrackedLink
                 href="#como-funciona"
                 eventLabel="hero_como_funciona"
-                className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#E8E0DC] bg-white/70 px-8 py-4 text-base font-semibold text-[#1A1614] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A1614]/20 hover:bg-white sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#E8E0DC] bg-white/70 px-8 py-3.5 text-base font-semibold text-[#1A1614] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1A1614]/20 hover:bg-white sm:w-auto sm:py-4"
               >
                 Como funciona
               </TrackedLink>
@@ -138,11 +138,11 @@ export function Hero() {
 
             {/* Trust row */}
             <div
-              className="mt-10 flex flex-wrap items-center gap-6 text-sm text-[#B0A098]"
+              className="mt-8 flex flex-wrap items-center gap-4 text-xs text-[#B0A098] sm:mt-10 sm:gap-6 sm:text-sm"
               style={{ animation: "fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.84s both" }}
             >
               {["Sigilo garantido", "Cancelamento gratuito", "Sem julgamentos"].map((t) => (
-                <span key={t} className="flex items-center gap-2">
+                <span key={t} className="flex items-center gap-1.5 sm:gap-2">
                   <span className="font-bold text-[#4A7C59]">✓</span>
                   {t}
                 </span>

@@ -21,6 +21,7 @@ export default function ClienteLayout({
 }) {
   const pathname = usePathname();
   const [userName, setUserName] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -36,6 +37,9 @@ export default function ClienteLayout({
     }
     loadUser();
   }, []);
+
+  // Fecha o menu ao navegar
+  useEffect(() => { setUserMenuOpen(false); }, [pathname]);
 
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "?";
   const firstName = userName ? userName.split(" ")[0] : null;
@@ -159,6 +163,44 @@ export default function ClienteLayout({
           </div>
         </footer>
 
+        {/* Overlay do menu de conta */}
+        {userMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 md:hidden"
+            onClick={() => setUserMenuOpen(false)}
+          />
+        )}
+
+        {/* Slide-up painel de conta */}
+        <div
+          className={`fixed left-0 right-0 z-50 border-t border-white/10 bg-[#1A1614] transition-all duration-300 md:hidden ${
+            userMenuOpen ? "bottom-16 opacity-100" : "bottom-16 translate-y-full opacity-0 pointer-events-none"
+          }`}
+          style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.4)" }}
+        >
+          <div className="p-4">
+            <div className="mb-3 flex items-center gap-3 rounded-xl px-2 py-2">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{ background: "#4A7C59" }}
+              >
+                {userInitial}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{userName || "Minha conta"}</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Área do Cliente</p>
+              </div>
+            </div>
+            <Link
+              href="/logout"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-rose-400 transition-all hover:bg-white/5"
+            >
+              <LogoutIcon className="h-5 w-5 shrink-0" />
+              Sair da conta
+            </Link>
+          </div>
+        </div>
+
         {/* Bottom nav bar — mobile only */}
         <nav
           className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2 pb-safe md:hidden"
@@ -197,6 +239,34 @@ export default function ClienteLayout({
               </Link>
             );
           })}
+
+          {/* Conta / logout */}
+          <button
+            onClick={() => setUserMenuOpen((v) => !v)}
+            className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-opacity duration-150"
+          >
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
+              style={{
+                background: userMenuOpen ? "#E8755A" : "rgba(255,255,255,0.15)",
+                color: userMenuOpen ? "white" : "rgba(255,255,255,0.6)",
+              }}
+            >
+              {userInitial}
+            </div>
+            <span
+              className="text-[10px] font-medium"
+              style={{ color: userMenuOpen ? "#E8755A" : "rgba(255,255,255,0.45)" }}
+            >
+              Conta
+            </span>
+            {userMenuOpen && (
+              <span
+                className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full"
+                style={{ background: "#E8755A" }}
+              />
+            )}
+          </button>
         </nav>
       </div>
     </NotificationProvider>

@@ -23,38 +23,39 @@ export default function PublicHeader() {
           : "border-[#E8E0DC]/30 bg-[#F2EDE8]/70",
       ].join(" ")}
     >
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-20 sm:px-6">
         {/* Logo */}
         <Link href="/" className="group inline-flex items-center gap-3">
           <SiteLogo
             width={140}
             height={40}
             priority
-            className="h-16 w-auto transition-opacity duration-300 group-hover:opacity-80"
+            className="h-9 w-auto transition-opacity duration-300 group-hover:opacity-80 sm:h-14"
           />
         </Link>
 
         {/* Nav */}
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-0.5 sm:gap-1">
           <Link
             href="/blog"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614]"
+            className="hidden rounded-xl px-4 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614] sm:block"
           >
             Blog
           </Link>
 
           <Link
             href="/login"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614]"
+            className="rounded-xl px-3 py-2 text-sm font-medium text-[#8B7B72] transition-all duration-300 hover:bg-[#1A1614]/5 hover:text-[#1A1614] sm:px-4"
           >
             Entrar
           </Link>
 
           <Link
             href="/cadastro"
-            className="ml-1 rounded-xl bg-[#1A1614] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#2C2420] hover:shadow-md active:scale-[0.99]"
+            className="ml-1 rounded-xl bg-[#1A1614] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#2C2420] hover:shadow-md active:scale-[0.99] sm:px-5 sm:py-2.5"
           >
-            Criar conta
+            <span className="hidden sm:inline">Criar conta</span>
+            <span className="sm:hidden">Começar</span>
           </Link>
         </nav>
       </div>
