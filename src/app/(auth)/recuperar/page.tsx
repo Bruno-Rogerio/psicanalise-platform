@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
 export default function RecuperarSenhaPage() {
@@ -12,15 +12,16 @@ export default function RecuperarSenhaPage() {
     text: string;
   } | null>(null);
 
-  const redirectTo = useMemo(() => {
-    if (typeof window === "undefined") return undefined;
-    return `${window.location.origin}/auth/callback?next=/resetar-senha`;
-  }, []);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
+
+    // Calcula no momento do submit (já no browser, nunca undefined)
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "");
+    const redirectTo = `${origin}/auth/callback?next=/resetar-senha`;
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

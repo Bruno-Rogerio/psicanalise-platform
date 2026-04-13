@@ -517,12 +517,19 @@ function NovaSessionModal({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao criar sessão");
 
-      toast(
-        data.isNewPatient
-          ? "Sessão criada e e-mail com acesso enviado ao paciente!"
-          : "Sessão criada e paciente notificado por e-mail!",
-        "success",
-      );
+      if (data.emailSent === false) {
+        toast(
+          "Sessão criada! Porém o e-mail não foi enviado — informe os dados de acesso manualmente.",
+          "error",
+        );
+      } else {
+        toast(
+          data.isNewPatient
+            ? "Sessão criada e e-mail com acesso enviado ao paciente!"
+            : "Sessão criada e paciente notificado por e-mail!",
+          "success",
+        );
+      }
       onCreated();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao criar sessão";

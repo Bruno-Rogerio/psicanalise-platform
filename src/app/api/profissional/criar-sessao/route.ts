@@ -246,11 +246,14 @@ export async function POST(request: NextRequest) {
     const loginUrl = `${origin}/login`;
     const sessionDate = start_at.toLocaleDateString("pt-BR", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
+      timeZone: "America/Sao_Paulo",
     });
     const sessionTime = start_at.toLocaleTimeString("pt-BR", {
       hour: "2-digit", minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
     });
 
+    let emailSent = false;
     try {
       if (isNewPatient && tempPassword) {
         await sendAccessEmail({
@@ -263,14 +266,16 @@ export async function POST(request: NextRequest) {
           sessionDate, sessionTime, sessionType: type, loginUrl,
         });
       }
-    } catch {
-      // E-mail falhou, mas sessão foi criada — não quebra o fluxo
+      emailSent = true;
+    } catch (emailErr) {
+      console.error("[criar-sessao] Falha ao enviar e-mail:", emailErr);
     }
 
     return NextResponse.json({
       ok: true,
       appointmentId: appointment.id,
       isNewPatient,
+      emailSent,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
