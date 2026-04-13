@@ -481,74 +481,81 @@ export default function SessaoDetailPage() {
     : isVideo ? "lg:grid-cols-2" : "lg:grid-cols-1";
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-4 px-3 py-3 sm:space-y-6 sm:px-6 sm:py-8 lg:px-8">
       {/* HEADER */}
-      <header className="overflow-hidden rounded-3xl border-2 border-warm-200/60 bg-gradient-to-br from-white/90 to-warm-50/60 p-6 shadow-soft-lg backdrop-blur-sm sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
-            <div
-              className={`group flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl shadow-soft-lg transition-transform duration-300 hover:scale-105 ${
-                isVideo
-                  ? "bg-gradient-to-br from-rose-500 to-rose-600"
-                  : "bg-gradient-to-br from-indigo-500 to-indigo-600"
-              }`}
-            >
-              {isVideo ? (
-                <VideoIcon className="h-8 w-8 text-white transition-transform group-hover:scale-110" />
-              ) : (
-                <ChatIcon className="h-8 w-8 text-white transition-transform group-hover:scale-110" />
-              )}
+      <header className="overflow-hidden rounded-2xl border-2 border-warm-200/60 bg-gradient-to-br from-white/90 to-warm-50/60 p-4 shadow-soft-lg backdrop-blur-sm sm:rounded-3xl sm:p-6 lg:p-8">
+        <div className="flex flex-col gap-3 sm:gap-6">
+          {/* Linha superior: ícone + título + badge + voltar */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={`group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-soft-lg sm:h-14 sm:w-14 sm:rounded-2xl ${
+                  isVideo
+                    ? "bg-gradient-to-br from-rose-500 to-rose-600"
+                    : "bg-gradient-to-br from-indigo-500 to-indigo-600"
+                }`}
+              >
+                {isVideo ? (
+                  <VideoIcon className="h-5 w-5 text-white sm:h-7 sm:w-7" />
+                ) : (
+                  <ChatIcon className="h-5 w-5 text-white sm:h-7 sm:w-7" />
+                )}
+              </div>
+
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-warm-900 sm:text-2xl lg:text-3xl">
+                  Sessão de {isVideo ? "Vídeo" : "Chat"}
+                </h1>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-warm-600 sm:text-sm">
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">{fmtDate(startDate)}</span>
+                    <span className="sm:hidden">{startDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" })}</span>
+                  </span>
+                  <span className="text-warm-400">•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <ClockIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    {fmtTime(startDate)}–{fmtTime(endDate)}
+                  </span>
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-warm-900 sm:text-3xl">
-                Sessão de {isVideo ? "Vídeo" : "Chat"}
-              </h1>
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-warm-600">
-                <span className="inline-flex items-center gap-1">
-                  <CalendarIcon className="h-4 w-4" />
-                  {fmtDate(startDate)}
-                </span>
-                <span className="text-warm-400">•</span>
-                <span className="inline-flex items-center gap-1">
-                  <ClockIcon className="h-4 w-4" />
-                  {fmtTime(startDate)}–{fmtTime(endDate)}
-                </span>
-              </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <StatusBadge status={room.status} />
+              <Link
+                href={userRole === "profissional" ? "/profissional/sessoes" : "/minhas-sessoes"}
+                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-warm-300 bg-white/80 px-3 py-2 text-xs font-semibold text-warm-700 shadow-soft backdrop-blur-sm transition-all hover:bg-warm-50 sm:px-4 sm:py-2.5 sm:text-sm"
+              >
+                <ArrowLeftIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Voltar</span>
+              </Link>
+            </div>
+          </div>
 
+          {/* Paciente (só profissional) + botão marcar realizada */}
+          {isProfissional && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
               {room.patient?.nome && (
-                <p className="mt-2 flex items-center gap-2 text-sm text-warm-700">
+                <p className="flex items-center gap-2 text-sm text-warm-700">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-rose-100 to-rose-200 text-xs font-semibold text-rose-700">
                     {room.patient.nome.charAt(0)}
                   </div>
                   <span className="font-medium">{room.patient.nome}</span>
                 </p>
               )}
+              {room.status === "scheduled" && (
+                <button
+                  disabled={statusBusy}
+                  onClick={handleCompleteSession}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 shadow-soft transition-all hover:bg-emerald-100 disabled:opacity-50 sm:py-2.5 sm:text-sm"
+                >
+                  <CheckCircleIcon className="h-4 w-4" />
+                  {statusBusy ? "Salvando..." : "Marcar como realizada"}
+                </button>
+              )}
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge status={room.status} />
-
-            <Link
-              href={userRole === "profissional" ? "/profissional/sessoes" : "/minhas-sessoes"}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-warm-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-warm-700 shadow-soft backdrop-blur-sm transition-all hover:bg-warm-50 hover:shadow-soft-lg"
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-              Voltar
-            </Link>
-
-            {isProfissional && room.status === "scheduled" && (
-              <button
-                disabled={statusBusy}
-                onClick={handleCompleteSession}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-soft transition-all hover:bg-emerald-100 hover:shadow-soft-lg disabled:opacity-50"
-              >
-                <CheckCircleIcon className="h-4 w-4" />
-                {statusBusy ? "Salvando..." : "Marcar como realizada"}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
@@ -560,12 +567,12 @@ export default function SessaoDetailPage() {
         <section className="space-y-6">
           {/* VÍDEO */}
           {isVideo ? (
-            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
-              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
-                <div className="flex items-center justify-between">
+            <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft-lg sm:rounded-3xl">
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
-                      <VideoIcon className="h-5 w-5 text-white" />
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500 shadow-lg sm:h-10 sm:w-10">
+                      <VideoIcon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                       {dailyUrl && (
                         <span className="absolute -right-1 -top-1 flex h-3 w-3">
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -575,12 +582,10 @@ export default function SessaoDetailPage() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-warm-900">
-                        {dailyUrl ? "Sala ativa • Ao vivo" : "Vídeo"}
+                        {dailyUrl ? "Sala ativa • Ao vivo" : "Videochamada"}
                       </p>
                       <p className="text-xs text-warm-600">
-                        {dailyUrl
-                          ? "Conexão segura"
-                          : "Inicie no horário da sessão"}
+                        {dailyUrl ? "Conexão segura" : "Inicie no horário da sessão"}
                       </p>
                     </div>
                   </div>
@@ -589,67 +594,74 @@ export default function SessaoDetailPage() {
                     <button
                       disabled={joinBusy || !canStartVideo}
                       onClick={handleJoinVideo}
-                      className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {joinBusy ? "Preparando..." : "Iniciar"}
+                      {joinBusy ? "Aguarde..." : canStartVideo ? "Entrar" : "Aguardando horário"}
                     </button>
                   ) : (
                     <button
                       onClick={() => setDailyUrl(null)}
-                      className="rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-xs font-semibold text-warm-700 transition-all hover:bg-warm-50"
+                      className="rounded-xl border-2 border-warm-300 bg-white px-4 py-2.5 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50"
                     >
-                      Sair
+                      Encerrar
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="bg-warm-50/30 p-4">
-                {dailyUrl ? (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-warm-900">
-                    <iframe
-                      title="Sessão de vídeo"
-                      src={dailyUrl}
-                      allow="camera; microphone; fullscreen; speaker; display-capture"
-                      className="h-full w-full"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-video w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/60 p-6 text-center">
+              {dailyUrl ? (
+                <div className="relative w-full overflow-hidden bg-warm-900" style={{ minHeight: "56vw", maxHeight: "80vh" }}>
+                  <iframe
+                    title="Sessão de vídeo"
+                    src={dailyUrl}
+                    allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+                    className="h-full w-full"
+                    style={{ position: "absolute", inset: 0, height: "100%", width: "100%" }}
+                  />
+                </div>
+              ) : (
+                <div className="p-3 sm:p-4">
+                  <div className="flex aspect-video w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-warm-300 bg-warm-50/60 p-6 text-center">
+                    <VideoIcon className="mb-3 h-10 w-10 text-warm-300 sm:h-12 sm:w-12" />
                     <p className="text-sm font-semibold text-warm-700">
-                      Vídeo ainda não iniciado
+                      {canStartVideo ? "Sala pronta para entrar" : "Vídeo ainda não disponível"}
                     </p>
                     <p className="mt-1 text-xs text-warm-500">
                       {canStartVideo
-                        ? "Clique em Iniciar para abrir a sala"
-                        : "Disponível apenas no horário da sessão"}
+                        ? "Toque em \"Entrar\" para iniciar a chamada"
+                        : "Disponível 5 minutos antes do horário"}
                     </p>
+                    {canStartVideo && (
+                      <button
+                        disabled={joinBusy}
+                        onClick={handleJoinVideo}
+                        className="mt-4 rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:opacity-50"
+                      >
+                        {joinBusy ? "Aguarde..." : "Entrar na chamada"}
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ) : (
             /* CHAT PRINCIPAL (sessão por chat) */
-            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
-              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+            <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft-lg sm:rounded-3xl">
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg">
-                    <ChatIcon className="h-5 w-5 text-white" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500 shadow-lg sm:h-10 sm:w-10">
+                    <ChatIcon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-warm-900">
-                      Chat da sessão
-                    </p>
-                    <p className="text-xs text-warm-600">
-                      Mensagens com o paciente
-                    </p>
+                    <p className="text-sm font-bold text-warm-900">Chat da sessão</p>
+                    <p className="text-xs text-warm-600">Mensagens em tempo real</p>
                   </div>
                 </div>
               </div>
 
               <div
                 id="chat-messages-container"
-                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
+                className="h-[55vh] max-h-[420px] space-y-3 overflow-y-auto bg-warm-50/30 p-3 sm:h-[500px] sm:max-h-none sm:p-5"
               >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
@@ -675,20 +687,20 @@ export default function SessaoDetailPage() {
                 )}
               </div>
 
-              <div className="border-t-2 border-warm-200 bg-white p-4">
+              <div className="border-t-2 border-warm-200 bg-white p-3 sm:p-4">
                 {!canChatNow ? (
                   <div className="rounded-xl bg-warm-50 p-3 text-center text-xs text-warm-600">
                     Chat disponível apenas durante o horário da sessão.
                   </div>
                 ) : (
-                  <div className="flex items-end gap-3">
+                  <div className="flex items-end gap-2 sm:gap-3">
                     <div className="flex-1">
                       <textarea
                         value={msg}
                         onChange={(e) => setMsg(e.target.value)}
                         placeholder="Digite sua mensagem..."
                         rows={2}
-                        className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100"
+                        className="w-full resize-none rounded-xl border-2 border-warm-200 bg-warm-50 px-3 py-2.5 text-base text-warm-900 outline-none transition-all focus:border-sage-400 focus:bg-white focus:ring-4 focus:ring-sage-100 sm:px-4 sm:py-3 sm:text-sm"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
@@ -700,7 +712,7 @@ export default function SessaoDetailPage() {
                     <button
                       disabled={chatBusy || !msg.trim()}
                       onClick={handleSendMessage}
-                      className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
+                      className="group flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
                     >
                       <SendIcon className="h-5 w-5 text-white transition-transform group-hover:translate-x-0.5" />
                     </button>
@@ -710,8 +722,8 @@ export default function SessaoDetailPage() {
             </div>
           )}
 
-          {/* Informações (opcional) */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft">
+          {/* Informações — só exibe no desktop (no mobile já está no header) */}
+          <div className="hidden overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft sm:block">
             <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
               <InfoIcon className="h-4 w-4" />
               Informações da sessão
@@ -752,27 +764,23 @@ export default function SessaoDetailPage() {
             COLUNA 2 (somente no VÍDEO): CHAT AUX
         ========================= */}
         {isVideo && (
-          <section className="space-y-6">
-            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
-              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+          <section className="space-y-4 sm:space-y-6">
+            <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft-lg sm:rounded-3xl">
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg">
-                    <ChatIcon className="h-5 w-5 text-white" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500 shadow-lg sm:h-10 sm:w-10">
+                    <ChatIcon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-warm-900">
-                      Chat auxiliar
-                    </p>
-                    <p className="text-xs text-warm-600">
-                      Mensagens com o paciente
-                    </p>
+                    <p className="text-sm font-bold text-warm-900">Chat auxiliar</p>
+                    <p className="text-xs text-warm-600">Mensagens durante o vídeo</p>
                   </div>
                 </div>
               </div>
 
               <div
                 id="chat-messages-container"
-                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
+                className="h-[45vh] max-h-[360px] space-y-3 overflow-y-auto bg-warm-50/30 p-3 sm:h-[500px] sm:max-h-none sm:p-5"
               >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
@@ -818,7 +826,7 @@ export default function SessaoDetailPage() {
                   <button
                     disabled={chatBusy || !msg.trim()}
                     onClick={handleSendMessage}
-                    className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
+                    className="group flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sage-500 to-sage-600 shadow-soft transition-all hover:shadow-soft-lg disabled:opacity-50"
                   >
                     <SendIcon className="h-5 w-5 text-white transition-transform group-hover:translate-x-0.5" />
                   </button>
