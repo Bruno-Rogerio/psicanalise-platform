@@ -868,7 +868,9 @@ function LogoUploader({ toast }: { toast: (msg: string, type?: "success" | "erro
       if (!res.ok) throw new Error(data.error || "Erro no upload");
 
       // Adiciona timestamp para forçar reload da imagem no preview
-      setPreview(`${data.url}?v=${Date.now()}`);
+      const version = Date.now().toString();
+      localStorage.setItem("logo_v", version);
+      setPreview(`${data.url}?v=${version}`);
       toast("Logo atualizado com sucesso!", "success");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao fazer upload";
