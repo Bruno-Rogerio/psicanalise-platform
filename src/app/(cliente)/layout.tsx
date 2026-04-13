@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -54,9 +54,7 @@ export default function ClienteLayout({
               href="/dashboard"
               className="group inline-flex items-center gap-3"
             >
-              <Image
-                src="/logo.jpeg"
-                alt="Raiza Convento Psicanálise"
+              <SiteLogo
                 width={140}
                 height={42}
                 priority

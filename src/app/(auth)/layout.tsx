@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 
 export default function AuthLayout({
   children,
@@ -19,9 +19,7 @@ export default function AuthLayout({
       <header className="relative z-10 border-b border-warm-300/40 bg-warm-100/60 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
           <Link href="/" className="group inline-flex items-center">
-            <Image
-              src="/logo.jpeg"
-              alt="Raiza Convento Psicanálise"
+            <SiteLogo
               width={160}
               height={48}
               priority

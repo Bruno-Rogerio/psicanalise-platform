@@ -1,7 +1,8 @@
 // src/app/profissional/configuracoes/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useToast } from "@/contexts/ToastContext";
 import { supabase } from "@/lib/supabase-browser";
 
@@ -800,6 +801,8 @@ export default function ConfiguracoesPage() {
           </div>
 
           <div className="space-y-5 p-6">
+            <LogoUploader toast={toast} />
+
             <div>
               <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
                 Nome completo
@@ -846,6 +849,122 @@ export default function ConfiguracoesPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const STORAGE_LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/site-assets/logo.jpeg`;
+
+function LogoUploader({ toast }: { toast: (msg: string, type?: "success" | "error" | "info") => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast("Formato inválido. Use JPG, PNG ou WebP.", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast("Imagem muito grande. Máximo 5MB.", "error");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/profissional/upload-logo", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro no upload");
+
+      // Adiciona timestamp para forçar reload da imagem no preview
+      setPreview(`${data.url}?v=${Date.now()}`);
+      toast("Logo atualizado com sucesso!", "success");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao fazer upload";
+      toast(message, "error");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
+        Logo da plataforma
+      </label>
+      <p className="mb-4 text-xs text-[#8B7B72]">
+        Exibido no header, footer e páginas de acesso. JPG, PNG ou WebP • Máx. 5MB
+      </p>
+
+      <div className="flex items-center gap-5">
+        {/* Preview */}
+        <div className="flex h-20 w-40 items-center justify-center overflow-hidden rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] px-3">
+          <Image
+            src={preview ?? `${STORAGE_LOGO_URL}?v=init`}
+            alt="Logo atual"
+            width={140}
+            height={40}
+            className="h-14 w-auto object-contain"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/logo.jpeg";
+            }}
+            unoptimized={!!preview}
+          />
+        </div>
+
+        {/* Botão */}
+        <div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm font-semibold text-[#2C2420] transition-all hover:border-[#4A7C59] hover:text-[#4A7C59] disabled:opacity-50"
+          >
+            {uploading ? (
+              <>
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Enviando...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Trocar logo
+              </>
+            )}
+          </button>
+          {preview && (
+            <p className="mt-1.5 text-xs text-[#4A7C59]">Logo atualizado</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 border-t border-[#E8E0DC]" />
     </div>
   );
 }

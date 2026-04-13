@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 
 export default function PublicFooter() {
   return (
@@ -9,9 +9,7 @@ export default function PublicFooter() {
           {/* Brand */}
           <div className="max-w-sm">
             <Link href="/" className="group inline-flex items-center">
-              <Image
-                src="/logo.jpeg"
-                alt="Psicanálise"
+              <SiteLogo
                 width={140}
                 height={40}
                 className="h-16 w-auto transition-opacity duration-300 group-hover:opacity-80"

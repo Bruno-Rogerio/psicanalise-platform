@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
@@ -151,9 +151,7 @@ export default function ProfissionalLayout({
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-5 border-b border-white/5">
             <Link href="/profissional" className="group flex items-center">
-              <Image
-                src="/logo.jpeg"
-                alt="Raiza Convento"
+              <SiteLogo
                 width={140}
                 height={42}
                 priority
