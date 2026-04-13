@@ -47,6 +47,7 @@ export default function ProfissionalAgendaPage() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState<Record<string, SlotWithStatus>>({});
   const [bulkBusy, setBulkBusy] = useState<"block" | "unblock" | null>(null);
+  const [showNewSession, setShowNewSession] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -219,6 +220,17 @@ export default function ProfissionalAgendaPage() {
   const canBlock = Object.values(selectedSlots).some((s) => s.status === "available");
   const canUnblock = Object.values(selectedSlots).some((s) => s.status === "blocked");
 
+  async function refreshAppointments(profId: string) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(`id, user_id, appointment_type, status, start_at, end_at,
+        patient:profiles!appointments_user_id_fkey ( id, nome )`)
+      .eq("profissional_id", profId)
+      .order("start_at", { ascending: true });
+    if (!error && data)
+      setAppointments(data.map((a: any) => ({ ...a, patient: a.patient?.[0] ?? null })));
+  }
+
   return (
     <div className="space-y-6">
       {/* PAGE HEADER */}
@@ -228,13 +240,22 @@ export default function ProfissionalAgendaPage() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#2C2420] sm:text-3xl">Agenda</h1>
           <p className="mt-1 text-sm text-[#8B7B72]">Gerencie sessões e disponibilidade</p>
         </div>
-        <Link
-          href="/profissional/configuracoes"
-          className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm font-semibold text-[#2C2420] transition-all hover:bg-[#F8F4F1]"
-        >
-          <SettingsIcon className="h-4 w-4 text-[#8B7B72]" />
-          Configurar disponibilidade
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewSession(true)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#1A1614] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320]"
+          >
+            <PlusIcon className="h-4 w-4" />
+            Nova Sessão
+          </button>
+          <Link
+            href="/profissional/configuracoes"
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm font-semibold text-[#2C2420] transition-all hover:bg-[#F8F4F1]"
+          >
+            <SettingsIcon className="h-4 w-4 text-[#8B7B72]" />
+            Configurar disponibilidade
+          </Link>
+        </div>
       </div>
 
       {/* MAIN GRID */}
@@ -439,6 +460,225 @@ export default function ProfissionalAgendaPage() {
           </div>
         </div>
       </div>
+
+      {showNewSession && professionalId && (
+        <NovaSessionModal
+          defaultDate={selectedDay}
+          onClose={() => setShowNewSession(false)}
+          onCreated={() => {
+            setShowNewSession(false);
+            refreshAppointments(professionalId);
+          }}
+          toast={toast}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── NOVA SESSION MODAL ─── */
+function NovaSessionModal({
+  defaultDate,
+  onClose,
+  onCreated,
+  toast,
+}: {
+  defaultDate: Date;
+  onClose: () => void;
+  onCreated: () => void;
+  toast: (msg: string, type?: "success" | "error" | "info") => void;
+}) {
+  const toDateValue = (d: Date) => d.toISOString().slice(0, 10);
+
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [date, setDate] = useState(toDateValue(defaultDate));
+  const [time, setTime] = useState("09:00");
+  const [duration, setDuration] = useState(50);
+  const [type, setType] = useState<"video" | "chat">("video");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim() || !email.trim()) {
+      toast("Nome e e-mail são obrigatórios", "error");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch("/api/profissional/criar-sessao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, phone, date, time, duration, type }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao criar sessão");
+
+      toast(
+        data.isNewPatient
+          ? "Sessão criada e e-mail com acesso enviado ao paciente!"
+          : "Sessão criada e paciente notificado por e-mail!",
+        "success",
+      );
+      onCreated();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao criar sessão";
+      toast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#F0EAE6] px-6 py-5">
+          <div>
+            <p className="text-base font-bold text-[#2C2420]">Nova Sessão</p>
+            <p className="text-xs text-[#8B7B72]">O paciente receberá os dados de acesso por e-mail</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#8B7B72] hover:bg-[#F8F4F1] hover:text-[#2C2420]"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 p-6">
+          {/* Seção Paciente */}
+          <div>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Paciente</p>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Nome completo *</label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  placeholder="Nome do paciente"
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">E-mail *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="email@exemplo.com"
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Telefone <span className="font-normal text-[#B0A098]">(opcional)</span></label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(11) 99999-9999"
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[#F0EAE6]" />
+
+          {/* Seção Sessão */}
+          <div>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#B0A098]">Sessão</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Data *</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Horário *</label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  required
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Duração (min) *</label>
+                <input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(parseInt(e.target.value) || 50)}
+                  min={10}
+                  max={480}
+                  required
+                  className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-2.5 text-sm text-[#2C2420] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-[#2C2420]">Tipo *</label>
+                <div className="flex h-[42px] rounded-2xl border border-[#E8E0DC] bg-[#F8F4F1] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setType("video")}
+                    className={`flex-1 rounded-xl text-xs font-semibold transition-all ${
+                      type === "video" ? "bg-[#E8755A] text-white shadow-sm" : "text-[#8B7B72] hover:text-[#2C2420]"
+                    }`}
+                  >
+                    Vídeo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType("chat")}
+                    className={`flex-1 rounded-xl text-xs font-semibold transition-all ${
+                      type === "chat" ? "bg-[#5B5EA6] text-white shadow-sm" : "text-[#8B7B72] hover:text-[#2C2420]"
+                    }`}
+                  >
+                    Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-2xl border border-[#E8E0DC] py-2.5 text-sm font-semibold text-[#8B7B72] transition-all hover:bg-[#F8F4F1]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 rounded-2xl bg-[#1A1614] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#2A2320] disabled:opacity-50"
+            >
+              {saving ? "Criando..." : "Criar Sessão"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -614,4 +854,10 @@ function ChevronLeftIcon({ className }: { className?: string }) {
 }
 function ChevronRightIcon({ className }: { className?: string }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>;
+}
+function PlusIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
+}
+function XIcon({ className }: { className?: string }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
 }
