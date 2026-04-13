@@ -27,7 +27,6 @@ type Settings = {
 type Profile = {
   nome: string;
   email: string;
-  crp: string;
 };
 
 const weekDayLabels: Record<WeekDay, string> = {
@@ -71,7 +70,6 @@ export default function ConfiguracoesPage() {
   const [profile, setProfile] = useState<Profile>({
     nome: "",
     email: "",
-    crp: "",
   });
 
   const [profissionalId, setProfissionalId] = useState<string | null>(null);
@@ -92,7 +90,7 @@ export default function ConfiguracoesPage() {
         // Load profile
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("nome, crp")
+          .select("nome")
           .eq("id", auth.user.id)
           .single();
 
@@ -100,13 +98,11 @@ export default function ConfiguracoesPage() {
           setProfile({
             nome: profileData.nome || "",
             email: auth.user.email || "",
-            crp: profileData.crp || "",
           });
         } else {
           setProfile({
             nome: "",
             email: auth.user.email || "",
-            crp: "",
           });
         }
 
@@ -367,7 +363,6 @@ export default function ConfiguracoesPage() {
         .from("profiles")
         .update({
           nome: profile.nome,
-          crp: profile.crp,
         })
         .eq("id", profissionalId);
 
@@ -832,20 +827,6 @@ export default function ConfiguracoesPage() {
               </p>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-[#2C2420]">
-                CRP
-              </label>
-              <input
-                type="text"
-                value={profile.crp}
-                onChange={(e) =>
-                  setProfile({ ...profile, crp: e.target.value })
-                }
-                placeholder="Ex: 06/12345"
-                className="w-full rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 text-sm text-[#2C2420] outline-none transition-all placeholder:text-[#C4B8AE] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10"
-              />
-            </div>
           </div>
         </div>
       )}
