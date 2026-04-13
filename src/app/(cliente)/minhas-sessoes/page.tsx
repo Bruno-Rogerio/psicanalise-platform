@@ -133,12 +133,12 @@ export default function MinhasSessoesPage() {
   }, [rows, upcoming]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       {/* Header */}
       <header className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-4xl font-black text-[#1A1614]">
+            <h1 className="text-2xl font-black text-[#1A1614] sm:text-4xl">
               Minhas Sessões
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#1A1614]/50">
@@ -157,21 +157,21 @@ export default function MinhasSessoesPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {/* Total */}
-          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
-            <p className="text-3xl font-black text-[#1A1614]">{stats.total}</p>
-            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Total</p>
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-3 sm:p-4">
+            <p className="text-2xl font-black text-[#1A1614] sm:text-3xl">{stats.total}</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Total</p>
           </div>
           {/* Upcoming */}
-          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
-            <p className="text-3xl font-black text-[#4A7C59]">{stats.upcoming}</p>
-            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Próximas</p>
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-3 sm:p-4">
+            <p className="text-2xl font-black text-[#4A7C59] sm:text-3xl">{stats.upcoming}</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Próximas</p>
           </div>
           {/* Completed */}
-          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-4">
-            <p className="text-3xl font-black text-[#D4A72C]">{stats.completed}</p>
-            <p className="mt-1 text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Realizadas</p>
+          <div className="rounded-2xl bg-white border border-[#1A1614]/10 p-3 sm:p-4">
+            <p className="text-2xl font-black text-[#D4A72C] sm:text-3xl">{stats.completed}</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-[#1A1614]/40 uppercase tracking-wide font-medium">Realizadas</p>
           </div>
         </div>
       </header>
@@ -247,7 +247,7 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+      className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
         active
           ? "bg-[#1A1614] text-white shadow-sm"
           : "bg-white text-[#1A1614]/70 border border-[#1A1614]/10 hover:bg-white hover:text-[#1A1614]"
@@ -272,7 +272,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-3xl bg-white border p-5 transition-all duration-300 hover:shadow-md sm:p-6 ${
+      className={`group relative overflow-hidden rounded-3xl bg-white border p-4 transition-all duration-300 hover:shadow-md sm:p-5 ${
         canEnter
           ? "border-[#4A7C59]/40 shadow-[0_0_0_2px_rgba(74,124,89,0.2)]"
           : "border-[#1A1614]/10"
@@ -299,7 +299,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
         </div>
       )}
 
-      <div className="relative flex flex-col gap-5 pl-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex flex-col gap-3 pl-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
         {/* Left side */}
         <div className="flex items-start gap-4">
           {/* Type icon */}
@@ -320,7 +320,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
           {/* Info */}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xl font-bold text-[#1A1614]">
+              <p className="text-lg font-bold text-[#1A1614] sm:text-xl">
                 {fmtTime(start)} – {fmtTime(end)}
               </p>
               <StatusBadge status={row.status} />
@@ -345,11 +345,11 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
         </div>
 
         {/* Right side - Actions */}
-        <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+        <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           {canEnter ? (
             <Link
               href={`/sessoes/${row.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#3d6649] hover:shadow-md"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#3d6649] hover:shadow-md"
             >
               <PlayIcon className="h-4 w-4" />
               Entrar agora
@@ -361,7 +361,7 @@ function SessionCard({ row, index }: { row: Row; index: number }) {
           ) : isPast ? (
             <Link
               href={`/sessoes/${row.id}`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#1A1614]/15 bg-white px-4 py-2.5 text-sm font-medium text-[#1A1614]/70 transition-all duration-200 hover:bg-[#F2EDE8] hover:text-[#1A1614]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#1A1614]/15 bg-white px-4 py-3 text-sm font-medium text-[#1A1614]/70 transition-all duration-200 hover:bg-[#F2EDE8] hover:text-[#1A1614]"
             >
               <EyeIcon className="h-4 w-4" />
               Ver detalhes
@@ -455,7 +455,7 @@ function CountdownBadge({ targetDate }: { targetDate: Date }) {
 // Skeleton
 function SessionCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-3xl border border-[#1A1614]/10 bg-white p-5 sm:p-6">
+    <div className="animate-pulse rounded-3xl border border-[#1A1614]/10 bg-white p-4 sm:p-5">
       <div className="flex items-start gap-4 pl-4">
         <div className="h-12 w-12 rounded-2xl bg-[#1A1614]/8" />
         <div className="flex-1 space-y-3">
@@ -493,7 +493,7 @@ function EmptyState({ filter }: { filter: "all" | "upcoming" | "past" }) {
   const { title, description, cta } = messages[filter];
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-[#1A1614]/10 bg-white py-20">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-[#1A1614]/10 bg-white py-12 sm:py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F2EDE8]">
         <CalendarIcon className="h-9 w-9 text-[#1A1614]/30" />
       </div>

@@ -160,7 +160,7 @@ export default function DashboardClientePage() {
           style={{ background: "rgba(74,124,89,0.20)" }}
         />
 
-        <div className="relative z-10 p-8">
+        <div className="relative z-10 p-5 sm:p-8">
           {loading ? (
             <div className="space-y-4">
               <div
@@ -185,7 +185,7 @@ export default function DashboardClientePage() {
                 {dateLabel}
               </p>
               <h1
-                className="mt-2 text-4xl font-black sm:text-5xl"
+                className="mt-2 text-3xl font-black sm:text-5xl"
                 style={{ color: "#FFFFFF" }}
               >
                 {greeting}
@@ -216,7 +216,7 @@ export default function DashboardClientePage() {
           }}
         />
 
-        <div className="p-6 pl-8">
+        <div className="p-4 pl-6 sm:p-6 sm:pl-8">
           <p
             className="text-xs font-semibold uppercase tracking-widest"
             style={{ color: "rgba(26,22,20,0.40)" }}
@@ -358,7 +358,7 @@ export default function DashboardClientePage() {
         {/* Agendar */}
         <Link
           href="/agenda"
-          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          className="group flex flex-col rounded-3xl border bg-white p-4 sm:p-6 transition-all duration-200 hover:shadow-lg"
           style={{ borderColor: "rgba(26,22,20,0.08)" }}
         >
           <div
@@ -388,7 +388,7 @@ export default function DashboardClientePage() {
         {/* Créditos */}
         <Link
           href="/creditos"
-          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          className="group flex flex-col rounded-3xl border bg-white p-4 sm:p-6 transition-all duration-200 hover:shadow-lg"
           style={{ borderColor: "rgba(26,22,20,0.08)" }}
         >
           <div
@@ -418,7 +418,7 @@ export default function DashboardClientePage() {
         {/* Histórico */}
         <Link
           href="/minhas-sessoes"
-          className="group flex flex-col rounded-3xl border bg-white p-6 transition-all duration-200 hover:shadow-lg"
+          className="group flex flex-col rounded-3xl border bg-white p-4 sm:p-6 transition-all duration-200 hover:shadow-lg"
           style={{ borderColor: "rgba(26,22,20,0.08)" }}
         >
           <div
