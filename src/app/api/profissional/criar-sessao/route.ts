@@ -149,8 +149,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Duração inválida" }, { status: 400 });
     }
 
-    // Monta start_at e end_at
-    const start_at = new Date(`${date}T${time}:00`);
+    // Monta start_at e end_at (hora no fuso de Brasília UTC-3)
+    const start_at = new Date(`${date}T${time}:00-03:00`);
     if (isNaN(start_at.getTime())) {
       return NextResponse.json({ error: "Data/hora inválida" }, { status: 400 });
     }

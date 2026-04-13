@@ -34,6 +34,7 @@ type SessionNotes = {
 type ChatMessage = {
   id: string;
   message: string;
+  sender_id: string;
   sender_role: "cliente" | "profissional";
   created_at: string;
 };
@@ -79,6 +80,8 @@ export default function SessaoDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState<SessionRoom | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<"cliente" | "profissional" | null>(null);
 
   const [notes, setNotes] = useState<SessionNotes>(EMPTY_NOTES);
 
@@ -143,6 +146,20 @@ export default function SessaoDetailPage() {
     (async () => {
       try {
         setLoading(true);
+
+        // Carrega usuário atual e role
+        const { data: authData } = await supabase.auth.getUser();
+        const uid = authData.user?.id ?? null;
+        setCurrentUserId(uid);
+
+        if (uid) {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", uid)
+            .single();
+          setUserRole(profileData?.role ?? null);
+        }
 
         const { data, error } = await supabase
           .from("appointments")
@@ -340,7 +357,7 @@ export default function SessaoDetailPage() {
       const { error } = await supabase.from("chat_messages").insert({
         appointment_id: sessionId,
         sender_id: auth.user.id,
-        sender_role: "profissional",
+        sender_role: userRole ?? "cliente",
         message: msg.trim(),
       });
 
@@ -439,7 +456,7 @@ export default function SessaoDetailPage() {
           Verifique o ID ou volte para suas sessões.
         </p>
         <Link
-          href="/profissional/sessoes"
+          href={userRole === "profissional" ? "/profissional/sessoes" : "/minhas-sessoes"}
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-sage-500 px-6 py-3 text-sm font-semibold text-white shadow-soft-lg transition-all hover:bg-sage-600"
         >
           Ver sessões
@@ -452,9 +469,14 @@ export default function SessaoDetailPage() {
   const endDate = new Date(room.end_at);
 
   // Layout:
-  // - vídeo: 3 colunas [vídeo] [chat aux] [anotações]
-  // - chat: 2 colunas [chat] [anotações]
-  const gridColsLg = isVideo ? "lg:grid-cols-3" : "lg:grid-cols-2";
+  // - profissional+vídeo: 3 colunas [vídeo] [chat aux] [anotações]
+  // - profissional+chat: 2 colunas [chat] [anotações]
+  // - paciente+vídeo: 2 colunas [vídeo] [chat aux]
+  // - paciente+chat: 1 coluna [chat]
+  const isProfissional = userRole === "profissional";
+  const gridColsLg = isProfissional
+    ? isVideo ? "lg:grid-cols-3" : "lg:grid-cols-2"
+    : isVideo ? "lg:grid-cols-2" : "lg:grid-cols-1";
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -507,14 +529,14 @@ export default function SessaoDetailPage() {
             <StatusBadge status={room.status} />
 
             <Link
-              href="/profissional/sessoes"
+              href={userRole === "profissional" ? "/profissional/sessoes" : "/minhas-sessoes"}
               className="inline-flex items-center gap-2 rounded-xl border-2 border-warm-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-warm-700 shadow-soft backdrop-blur-sm transition-all hover:bg-warm-50 hover:shadow-soft-lg"
             >
               <ArrowLeftIcon className="h-4 w-4" />
               Voltar
             </Link>
 
-            {room.status === "scheduled" && (
+            {isProfissional && room.status === "scheduled" && (
               <button
                 disabled={statusBusy}
                 onClick={handleCompleteSession}
@@ -643,7 +665,7 @@ export default function SessaoDetailPage() {
                   messages.map((m) => (
                     <ChatBubble
                       key={m.id}
-                      mine={m.sender_role === "profissional"}
+                      mine={m.sender_id === currentUserId}
                       body={m.message}
                       at={m.created_at}
                     />
@@ -766,7 +788,7 @@ export default function SessaoDetailPage() {
                   messages.map((m) => (
                     <ChatBubble
                       key={m.id}
-                      mine={m.sender_role === "profissional"}
+                      mine={m.sender_id === currentUserId}
                       body={m.message}
                       at={m.created_at}
                     />
@@ -805,11 +827,11 @@ export default function SessaoDetailPage() {
         )}
 
         {/* =========================
-            ÚLTIMA COLUNA: ANOTAÇÕES
+            ÚLTIMA COLUNA: ANOTAÇÕES (apenas profissional)
             - vídeo: é a 3ª coluna
             - chat: é a 2ª coluna
         ========================= */}
-        <section className="space-y-6">
+        {userRole === "profissional" && <section className="space-y-6">
           <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
             <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
               <div className="flex items-center justify-between gap-3">
@@ -890,7 +912,7 @@ export default function SessaoDetailPage() {
               <TipItem text="Salve antes de sair, se fizer grandes alterações" />
             </div>
           </div>
-        </section>
+        </section>}
       </div>
     </div>
   );
