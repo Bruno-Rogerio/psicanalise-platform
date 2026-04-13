@@ -96,6 +96,9 @@ export default function SessaoDetailPage() {
 
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   // Autosave status
   const [autoState, setAutoState] = useState<
@@ -410,6 +413,36 @@ export default function SessaoDetailPage() {
     }
   }
 
+  function handleToggleFullscreen() {
+    const el = videoContainerRef.current;
+    if (!el) return;
+
+    // Tenta API nativa do browser primeiro
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().then(() => {
+        setVideoFullscreen(true);
+      }).catch(() => {
+        // Fallback: modo CSS
+        setVideoFullscreen(true);
+      });
+    } else {
+      document.exitFullscreen?.().then(() => {
+        setVideoFullscreen(false);
+      }).catch(() => {
+        setVideoFullscreen(false);
+      });
+    }
+  }
+
+  // Sincroniza estado quando usuário sai da tela cheia pelo Esc
+  useEffect(() => {
+    function onFullscreenChange() {
+      if (!document.fullscreenElement) setVideoFullscreen(false);
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
   async function handleCompleteSession() {
     if (!sessionId) return;
     if (!confirm("Marcar esta sessão como realizada?")) return;
@@ -610,14 +643,39 @@ export default function SessaoDetailPage() {
               </div>
 
               {dailyUrl ? (
-                <div className="relative w-full overflow-hidden bg-warm-900" style={{ minHeight: "56vw", maxHeight: "80vh" }}>
+                <div
+                  ref={videoContainerRef}
+                  className={`relative w-full overflow-hidden bg-warm-900 ${
+                    videoFullscreen && !document.fullscreenElement
+                      ? "fixed inset-0 z-50"
+                      : ""
+                  }`}
+                  style={
+                    videoFullscreen && !document.fullscreenElement
+                      ? undefined
+                      : { minHeight: "56vw", maxHeight: "80vh" }
+                  }
+                >
                   <iframe
+                    ref={iframeRef}
                     title="Sessão de vídeo"
                     src={dailyUrl}
                     allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
                     className="h-full w-full"
                     style={{ position: "absolute", inset: 0, height: "100%", width: "100%" }}
                   />
+                  {/* Botão tela cheia */}
+                  <button
+                    onClick={handleToggleFullscreen}
+                    title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+                    className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-black/70"
+                  >
+                    {videoFullscreen ? (
+                      <ShrinkIcon className="h-4 w-4" />
+                    ) : (
+                      <ExpandIcon className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               ) : (
                 <div className="p-3 sm:p-4">
@@ -1375,6 +1433,24 @@ function SendIcon({ className }: { className?: string }) {
         strokeWidth={2}
         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
       />
+    </svg>
+  );
+}
+
+function ExpandIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2m8-16h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2" />
+    </svg>
+  );
+}
+
+function ShrinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M9 9V5m0 4H5m10 0h4m-4 0V5M9 15v4m0-4H5m10 4v-4m0 4h4" />
     </svg>
   );
 }
