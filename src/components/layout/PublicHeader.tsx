@@ -27,7 +27,7 @@ export default function PublicHeader() {
         {/* Logo */}
         <Link href="/" className="group inline-flex items-center gap-3">
           <Image
-            src="/logo.png"
+            src="/logo.jpeg"
             alt="Psicanálise"
             width={140}
             height={40}

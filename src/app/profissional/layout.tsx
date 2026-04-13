@@ -152,7 +152,7 @@ export default function ProfissionalLayout({
           <div className="flex h-16 items-center justify-between px-5 border-b border-white/5">
             <Link href="/profissional" className="group flex items-center">
               <Image
-                src="/logo.png"
+                src="/logo.jpeg"
                 alt="Raiza Convento"
                 width={140}
                 height={42}

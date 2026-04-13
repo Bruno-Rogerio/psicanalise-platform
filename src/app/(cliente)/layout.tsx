@@ -55,7 +55,7 @@ export default function ClienteLayout({
               className="group inline-flex items-center gap-3"
             >
               <Image
-                src="/logo.png"
+                src="/logo.jpeg"
                 alt="Raiza Convento Psicanálise"
                 width={140}
                 height={42}

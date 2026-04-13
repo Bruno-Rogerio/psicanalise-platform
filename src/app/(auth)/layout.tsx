@@ -20,7 +20,7 @@ export default function AuthLayout({
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
           <Link href="/" className="group inline-flex items-center">
             <Image
-              src="/logo.png" // ou o nome correto do seu arquivo
+              src="/logo.jpeg"
               alt="Raiza Convento Psicanálise"
               width={160}
               height={48}
