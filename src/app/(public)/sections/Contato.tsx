@@ -12,13 +12,13 @@ export function Contato() {
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
 
         {/* Header */}
-        <Reveal direction="up" delay={0} className="mb-14 max-w-2xl" trackSection="Contato">
+        <Reveal direction="up" delay={0} className="mb-8 max-w-2xl sm:mb-14" trackSection="Contato">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">Contato</p>
-          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
+          <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-4xl lg:text-5xl">
             Se quiser, a gente{" "}
             <span className="italic text-[#E8755A]">começa com calma.</span>
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-[#8B7B72]">
+          <p className="mt-4 text-base leading-relaxed text-[#8B7B72] sm:mt-5 sm:text-lg">
             Dúvidas são normais. Você pode entrar em contato e entender o processo antes de agendar.
           </p>
         </Reveal>
@@ -66,7 +66,7 @@ export function Contato() {
               <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-[#4A7C59]/10 blur-3xl" />
             </div>
 
-            <div className="relative px-8 py-12 sm:px-12 sm:py-16">
+            <div className="relative px-5 py-8 sm:px-12 sm:py-16">
               <p className="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-[0.3em] text-[#E8755A]">
                 <span className="h-px w-6 bg-[#E8755A]" />
                 Comece hoje
@@ -102,7 +102,7 @@ export function Contato() {
                 </TrackedLink>
               </div>
 
-              <div className="mt-10 flex flex-wrap items-center gap-6 text-xs text-white/30">
+              <div className="mt-8 flex flex-wrap items-center gap-4 text-xs text-white/30 sm:mt-10 sm:gap-6">
                 {[
                   { icon: <ShieldCheckIcon className="h-4 w-4" />, label: "Sigilo garantido" },
                   { icon: <LockIcon className="h-4 w-4" />, label: "Dados protegidos" },

@@ -125,16 +125,16 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header */}
         <RevealSection />
-        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
               Avaliações
             </p>
-            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
+            <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-4xl lg:text-5xl">
               O que dizem sobre{" "}
               <span className="italic text-[#E8755A]">o processo.</span>
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-[#8B7B72]">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#8B7B72] sm:mt-4 sm:text-base">
               Cada pessoa vive a psicanálise de um jeito. Aqui, algumas palavras de quem passou por esse caminho.
             </p>
           </div>

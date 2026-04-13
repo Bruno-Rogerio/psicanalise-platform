@@ -12,13 +12,13 @@ export function Sobre() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
-        <div className="grid items-center gap-16 md:grid-cols-2 md:gap-20">
+        <div className="grid items-center gap-10 md:grid-cols-2 md:gap-20">
 
           {/* Text */}
           <div>
             <Reveal direction="up" delay={0} trackSection="Sobre">
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">Sobre mim</p>
-              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
+              <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-4xl lg:text-5xl">
                 A escuta começa<br />
                 <span className="italic text-[#E8755A]">com presença.</span>
               </h2>
@@ -96,7 +96,7 @@ export function Sobre() {
               </div>
             </div>
 
-            <div className="absolute -left-6 top-16 rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 shadow-md">
+            <div className="absolute -left-3 top-12 hidden rounded-2xl border border-[#E8E0DC] bg-white px-4 py-3 shadow-md sm:-left-6 sm:top-16 sm:block">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-[#4A7C59] animate-pulse" />
                 <p className="text-xs font-semibold text-[#8B7B72]">Atendimentos online</p>

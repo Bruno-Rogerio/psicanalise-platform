@@ -39,15 +39,15 @@ export function ComoFunciona() {
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
 
         {/* Header */}
-        <Reveal direction="up" delay={0} className="mb-16 max-w-2xl" trackSection="Como Funciona">
+        <Reveal direction="up" delay={0} className="mb-10 max-w-2xl sm:mb-16" trackSection="Como Funciona">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#B0A098]">
             Como funciona
           </p>
-          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-5xl">
+          <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-[#1A1614] sm:text-4xl lg:text-5xl">
             Simples por fora,{" "}
             <span className="italic text-[#4A7C59]">profundo por dentro.</span>
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-[#8B7B72]">
+          <p className="mt-4 text-base leading-relaxed text-[#8B7B72] sm:mt-5 sm:text-lg">
             Você cuida da sua agenda. A sessão cuida do que precisa ser escutado.
           </p>
         </Reveal>
@@ -58,17 +58,17 @@ export function ComoFunciona() {
             const Icon = step.icon;
             return (
               <Reveal key={step.number} direction="left" delay={idx * 120}>
-                <div className="group flex items-start gap-6 rounded-3xl border border-[#E8E0DC]/80 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:gap-8 sm:p-8">
+                <div className="group flex items-start gap-4 rounded-3xl border border-[#E8E0DC]/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:gap-8 sm:p-8">
                   <div
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105 sm:h-16 sm:w-16 sm:text-2xl"
                     style={{ backgroundColor: step.color }}
                   >
                     {step.number}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-xl font-bold text-[#1A1614]">{step.title}</h3>
-                    <p className="mt-2 leading-relaxed text-[#8B7B72]">{step.description}</p>
+                    <h3 className="text-base font-bold text-[#1A1614] sm:text-xl">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-[#8B7B72] sm:mt-2 sm:text-base">{step.description}</p>
                   </div>
 
                   <div

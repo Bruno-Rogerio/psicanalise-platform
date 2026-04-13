@@ -122,17 +122,17 @@ export default function ProfissionalDashboard() {
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Link
               href="/profissional/agenda"
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#4A7C59] px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-[#3d6649]"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#4A7C59] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#3d6649] sm:px-5 sm:py-3"
             >
               <CalendarIcon className="h-4 w-4" />
               Abrir Agenda
             </Link>
             <Link
               href="/profissional/pacientes"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white/70 transition-all hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/70 transition-all hover:bg-white/10 hover:text-white sm:px-5 sm:py-3"
             >
               <UsersIcon className="h-4 w-4" />
               Pacientes
@@ -142,7 +142,7 @@ export default function ProfissionalDashboard() {
       </div>
 
       {/* ── STATS ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           label="Hoje"
           value={stats.today}
@@ -289,20 +289,20 @@ function StatCard({
   accentBg: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[#D9D0C8]/70 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-[#D9D0C8]/70 bg-white p-3 shadow-sm sm:p-5">
       <div
-        className="mb-3 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold"
+        className="mb-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold sm:mb-3 sm:px-2.5 sm:py-1 sm:text-xs"
         style={{ backgroundColor: accentBg, color: accent }}
       >
         {label}
       </div>
       <p
-        className="text-5xl font-bold tracking-tight"
+        className="text-3xl font-bold tracking-tight sm:text-5xl"
         style={{ color: accent }}
       >
         {value}
       </p>
-      <p className="mt-1 text-xs text-[#A09080]">{sublabel}</p>
+      <p className="mt-0.5 text-[10px] text-[#A09080] sm:mt-1 sm:text-xs">{sublabel}</p>
     </div>
   );
 }
