@@ -1,7 +1,7 @@
 ﻿// src/app/profissional/sessoes/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/contexts/ToastContext";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -66,6 +66,8 @@ export default function SessaoDetailPage() {
   const [statusBusy, setStatusBusy] = useState(false);
   const [dailyUrl, setDailyUrl] = useState<string | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   // ✅ AUTOSAVE
   const [autosaveStatus, setAutosaveStatus] = useState<
@@ -80,6 +82,34 @@ export default function SessaoDetailPage() {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
   };
+
+  // Tela cheia do vídeo
+  const handleToggleFullscreen = useCallback(() => {
+    const el = videoContainerRef.current;
+    if (!el) return;
+
+    if (videoFullscreen) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => setVideoFullscreen(false));
+      } else {
+        setVideoFullscreen(false);
+      }
+    } else {
+      el.requestFullscreen?.().then(() => {
+        setVideoFullscreen(true);
+      }).catch(() => {
+        setVideoFullscreen(true); // Fallback CSS para mobile
+      });
+    }
+  }, [videoFullscreen]);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      if (!document.fullscreenElement) setVideoFullscreen(false);
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
   const canStart = useMemo(() => {
     if (!room) return false;
@@ -534,13 +564,39 @@ export default function SessaoDetailPage() {
                 </button>
               </div>
 
-              <div className="relative aspect-video w-full bg-warm-900">
-                <iframe
-                  title="Sessão de vídeo"
-                  src={dailyUrl}
-                  allow="camera; microphone; fullscreen; speaker; display-capture"
-                  className="h-full w-full"
-                />
+              {/* Wrapper externo — posiciona o botão FORA do container do iframe */}
+              <div className="relative w-full">
+                <div
+                  ref={videoContainerRef}
+                  className={`w-full overflow-hidden bg-black ${
+                    videoFullscreen ? "fixed inset-0 z-[9998] rounded-none" : ""
+                  }`}
+                  style={videoFullscreen ? { height: "100dvh" } : { aspectRatio: "16/9" }}
+                >
+                  <iframe
+                    title="Sessão de vídeo"
+                    src={dailyUrl}
+                    allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full"
+                  />
+                </div>
+                {/* Botão fullscreen FORA do container — sem bloqueio do iframe */}
+                <button
+                  onClick={handleToggleFullscreen}
+                  title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+                  className={
+                    videoFullscreen
+                      ? "fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
+                      : "absolute right-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/80 active:scale-95"
+                  }
+                >
+                  {videoFullscreen ? (
+                    <ShrinkIcon className="h-5 w-5" />
+                  ) : (
+                    <ExpandIcon className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -1219,6 +1275,26 @@ function AlertTriangleIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+  );
+}
+
+function ExpandIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+      />
+    </svg>
+  );
+}
+
+function ShrinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M9 9V4m0 0H4m5 0L3 10m12-1V4m0 0h-5m5 0l-6 6M9 15v5m0 0H4m5 0l-6-6m12 1v5m0 0h-5m5 0l-6-6"
       />
     </svg>
   );

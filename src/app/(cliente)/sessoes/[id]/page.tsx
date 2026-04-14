@@ -417,19 +417,21 @@ export default function SessaoDetailPage() {
     const el = videoContainerRef.current;
     if (!el) return;
 
-    // Tenta API nativa do browser primeiro
-    if (!document.fullscreenElement) {
+    if (videoFullscreen) {
+      // Sair da tela cheia
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => setVideoFullscreen(false));
+      } else {
+        // Modo CSS (fallback mobile)
+        setVideoFullscreen(false);
+      }
+    } else {
+      // Entrar na tela cheia
       el.requestFullscreen?.().then(() => {
         setVideoFullscreen(true);
       }).catch(() => {
-        // Fallback: modo CSS
+        // Fallback CSS para iOS/mobile que não suporta requestFullscreen
         setVideoFullscreen(true);
-      });
-    } else {
-      document.exitFullscreen?.().then(() => {
-        setVideoFullscreen(false);
-      }).catch(() => {
-        setVideoFullscreen(false);
       });
     }
   }
@@ -643,37 +645,38 @@ export default function SessaoDetailPage() {
               </div>
 
               {dailyUrl ? (
-                <div
-                  ref={videoContainerRef}
-                  className={`relative w-full overflow-hidden bg-warm-900 ${
-                    videoFullscreen && !document.fullscreenElement
-                      ? "fixed inset-0 z-50"
-                      : ""
-                  }`}
-                  style={
-                    videoFullscreen && !document.fullscreenElement
-                      ? undefined
-                      : { minHeight: "56vw", maxHeight: "80vh" }
-                  }
-                >
-                  <iframe
-                    ref={iframeRef}
-                    title="Sessão de vídeo"
-                    src={dailyUrl}
-                    allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-                    className="h-full w-full"
-                    style={{ position: "absolute", inset: 0, height: "100%", width: "100%" }}
-                  />
-                  {/* Botão tela cheia */}
+                /* Wrapper externo — posiciona o botão FORA do container do iframe */
+                <div className="relative w-full">
+                  <div
+                    ref={videoContainerRef}
+                    className={`w-full overflow-hidden bg-black ${
+                      videoFullscreen ? "fixed inset-0 z-[9998] rounded-none" : "rounded-2xl"
+                    }`}
+                    style={videoFullscreen ? { height: "100dvh" } : { minHeight: "56vw", maxHeight: "80vh" }}
+                  >
+                    <iframe
+                      ref={iframeRef}
+                      title="Sessão de vídeo"
+                      src={dailyUrl}
+                      allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+                      allowFullScreen
+                      className="absolute inset-0 h-full w-full"
+                    />
+                  </div>
+                  {/* Botão fullscreen FORA do container — sem bloqueio do iframe */}
                   <button
                     onClick={handleToggleFullscreen}
                     title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
-                    className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-black/70"
+                    className={
+                      videoFullscreen
+                        ? "fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
+                        : "absolute right-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/80 active:scale-95"
+                    }
                   >
                     {videoFullscreen ? (
-                      <ShrinkIcon className="h-4 w-4" />
+                      <ShrinkIcon className="h-5 w-5" />
                     ) : (
-                      <ExpandIcon className="h-4 w-4" />
+                      <ExpandIcon className="h-5 w-5" />
                     )}
                   </button>
                 </div>
