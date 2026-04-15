@@ -418,21 +418,23 @@ export default function SessaoDetailPage() {
     if (!el) return;
 
     if (videoFullscreen) {
-      // Sair da tela cheia
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => setVideoFullscreen(false));
       } else {
-        // Modo CSS (fallback mobile)
         setVideoFullscreen(false);
       }
     } else {
-      // Entrar na tela cheia
-      el.requestFullscreen?.().then(() => {
+      if (el.requestFullscreen) {
+        el.requestFullscreen().then(() => {
+          setVideoFullscreen(true);
+        }).catch(() => {
+          // requestFullscreen falhou (ex: iframe bloqueou) — usa fallback CSS
+          setVideoFullscreen(true);
+        });
+      } else {
+        // iOS Safari não suporta requestFullscreen — usa fallback CSS direto
         setVideoFullscreen(true);
-      }).catch(() => {
-        // Fallback CSS para iOS/mobile que não suporta requestFullscreen
-        setVideoFullscreen(true);
-      });
+      }
     }
   }
 
@@ -664,8 +666,8 @@ export default function SessaoDetailPage() {
                 <>
                   <div
                     ref={videoContainerRef}
-                    className={videoFullscreen ? "fixed inset-0 z-[9998]" : ""}
-                    style={videoFullscreen ? { height: "100dvh" } : { minHeight: "56vw", maxHeight: "80vh" }}
+                    className={videoFullscreen ? "fixed inset-0 z-[9998]" : "aspect-video min-h-[220px] w-full bg-warm-900"}
+                    style={videoFullscreen ? { height: "100dvh" } : undefined}
                   >
                     <iframe
                       ref={iframeRef}

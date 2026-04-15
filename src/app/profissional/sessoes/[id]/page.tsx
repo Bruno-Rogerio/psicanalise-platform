@@ -96,11 +96,16 @@ export default function SessaoDetailPage() {
         setVideoFullscreen(false);
       }
     } else {
-      el.requestFullscreen?.().then(() => {
+      if (el.requestFullscreen) {
+        el.requestFullscreen().then(() => {
+          setVideoFullscreen(true);
+        }).catch(() => {
+          setVideoFullscreen(true); // requestFullscreen falhou — usa fallback CSS
+        });
+      } else {
+        // iOS Safari não suporta requestFullscreen — usa fallback CSS direto
         setVideoFullscreen(true);
-      }).catch(() => {
-        setVideoFullscreen(true); // Fallback CSS para mobile
-      });
+      }
     }
   }, [videoFullscreen]);
 
@@ -543,6 +548,61 @@ export default function SessaoDetailPage() {
           📋 ÁREA PRINCIPAL
       ========================================== */}
       <div className="space-y-4 sm:space-y-6">
+
+        {/* 📺 PRÉ-JOIN: card para iniciar vídeo quando ainda não entrou */}
+        {isVideo && !dailyUrl && room.status === "scheduled" && (
+          <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
+            <div className="flex flex-col items-center justify-center gap-5 px-6 py-10 text-center sm:py-14">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-rose-500 shadow-lg">
+                <VideoIcon className="h-10 w-10 text-white" />
+                {canStart && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-4 w-4 rounded-full bg-red-500" />
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-lg font-bold text-warm-900">
+                  {canStart ? "Sala pronta para iniciar" : "Sessão de videochamada"}
+                </p>
+                <p className="mt-1 text-sm text-warm-600">
+                  {canStart
+                    ? "Toque em \"Iniciar\" para abrir a chamada"
+                    : "Disponível 10 minutos antes do horário agendado"}
+                </p>
+              </div>
+              <button
+                disabled={joinBusy || !canStart}
+                onClick={handleJoinVideo}
+                title={canStart ? "Iniciar videochamada" : "Disponível 10 min antes da sessão"}
+                className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-8 py-4 text-base font-semibold text-white shadow-soft-lg transition-all hover:shadow-soft-xl disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {joinBusy ? (
+                    <>
+                      <SpinnerIcon className="h-5 w-5 animate-spin" />
+                      Preparando...
+                    </>
+                  ) : canStart ? (
+                    <>
+                      <VideoIcon className="h-5 w-5" />
+                      Iniciar videochamada
+                    </>
+                  ) : (
+                    <>
+                      <ClockIcon className="h-5 w-5" />
+                      Aguardando horário
+                    </>
+                  )}
+                </span>
+                {canStart && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-600 to-rose-700 opacity-0 transition-opacity group-hover:opacity-100" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 🎥 PLAYER DE VÍDEO — largura total acima do grid */}
         {isVideo && dailyUrl && (
