@@ -68,6 +68,7 @@ export default function SessaoDetailPage() {
   const [joinBusy, setJoinBusy] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<"chat" | "prontuario">("chat");
 
   // ✅ AUTOSAVE
   const [autosaveStatus, setAutosaveStatus] = useState<
@@ -539,70 +540,109 @@ export default function SessaoDetailPage() {
       </header>
 
       {/* ==========================================
-          📋 ÁREA PRINCIPAL - ✅ GRID 2 COLUNAS
+          📋 ÁREA PRINCIPAL
       ========================================== */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* ========== COLUNA 1: VÍDEO/CHAT ========== */}
-        <section className="space-y-6">
-          {/* 🎥 PLAYER DE VÍDEO */}
-          {isVideo && dailyUrl && (
-            <div className="group animate-fade-in overflow-hidden rounded-3xl border-2 border-warm-200 bg-warm-900 shadow-soft-xl">
-              <div className="flex items-center justify-between border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
-                    <VideoIcon className="h-5 w-5 text-white" />
-                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-warm-900">
-                      Sala ativa • Ao vivo
-                    </p>
-                    <p className="text-xs text-warm-600">Conexão segura</p>
-                  </div>
-                </div>
+      <div className="space-y-4 sm:space-y-6">
 
-                <button
-                  onClick={() => setDailyUrl(null)}
-                  className="group/btn rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-xs font-semibold text-warm-700 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
-                >
-                  <span className="flex items-center gap-2">
-                    <XIcon className="h-4 w-4 transition-transform group-hover/btn:rotate-90" />
-                    Sair
+        {/* 🎥 PLAYER DE VÍDEO — largura total acima do grid */}
+        {isVideo && dailyUrl && (
+          <div className="group animate-fade-in overflow-hidden rounded-3xl border-2 border-warm-200 bg-warm-900 shadow-soft-xl">
+            <div className="flex items-center justify-between border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg">
+                  <VideoIcon className="h-5 w-5 text-white" />
+                  <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
                   </span>
-                </button>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-warm-900">
+                    Sala ativa • Ao vivo
+                  </p>
+                  <p className="text-xs text-warm-600">Conexão segura</p>
+                </div>
               </div>
 
-              <div
-                ref={videoContainerRef}
-                className={videoFullscreen ? "fixed inset-0 z-[9998]" : "relative aspect-video w-full bg-warm-900"}
-                style={videoFullscreen ? { height: "100dvh" } : undefined}
+              <button
+                onClick={() => setDailyUrl(null)}
+                className="group/btn rounded-lg border-2 border-warm-300 bg-white px-4 py-2 text-xs font-semibold text-warm-700 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
               >
-                <iframe
-                  title="Sessão de vídeo"
-                  src={dailyUrl}
-                  allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-                  allowFullScreen
-                  className="h-full w-full"
-                />
-              </div>
-              {/* Botão sair da tela cheia — fixed acima de tudo */}
-              {videoFullscreen && (
-                <button
-                  onClick={handleToggleFullscreen}
-                  title="Sair da tela cheia"
-                  className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
-                >
-                  <ShrinkIcon className="h-5 w-5" />
-                </button>
-              )}
+                <span className="flex items-center gap-2">
+                  <XIcon className="h-4 w-4 transition-transform group-hover/btn:rotate-90" />
+                  Sair
+                </span>
+              </button>
             </div>
-          )}
 
-          {/* 💬 ÁREA DE CHAT */}
-          {!dailyUrl && (
+            <div
+              ref={videoContainerRef}
+              className={videoFullscreen ? "fixed inset-0 z-[9998]" : "relative aspect-video w-full bg-warm-900"}
+              style={videoFullscreen ? { height: "100dvh" } : undefined}
+            >
+              <iframe
+                title="Sessão de vídeo"
+                src={dailyUrl}
+                allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            </div>
+            {/* Botão sair da tela cheia — fixed acima de tudo */}
+            {videoFullscreen && (
+              <button
+                onClick={handleToggleFullscreen}
+                title="Sair da tela cheia"
+                className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
+              >
+                <ShrinkIcon className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 📑 TAB BAR MOBILE — visível apenas quando vídeo ativo, oculta em lg+ */}
+        {isVideo && dailyUrl && (
+          <div className="flex overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft lg:hidden">
+            <button
+              type="button"
+              onClick={() => setActiveTab("chat")}
+              className={[
+                "flex flex-1 items-center justify-center gap-2 py-3 text-sm font-semibold transition-all",
+                activeTab === "chat"
+                  ? "bg-indigo-500 text-white"
+                  : "text-warm-600 hover:bg-warm-50",
+              ].join(" ")}
+            >
+              <ChatIcon className="h-4 w-4" />
+              Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("prontuario")}
+              className={[
+                "flex flex-1 items-center justify-center gap-2 py-3 text-sm font-semibold transition-all",
+                activeTab === "prontuario"
+                  ? "bg-amber-500 text-white"
+                  : "text-warm-600 hover:bg-warm-50",
+              ].join(" ")}
+            >
+              <FileTextIcon className="h-4 w-4" />
+              Prontuário
+            </button>
+          </div>
+        )}
+
+        {/* ========== GRID 2 COLUNAS ========== */}
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          {/* ========== COLUNA 1: CHAT ========== */}
+          <section
+            className={[
+              "space-y-4 sm:space-y-6",
+              isVideo && dailyUrl && activeTab === "prontuario" ? "hidden lg:block" : "",
+            ].join(" ")}
+          >
+            {/* 💬 ÁREA DE CHAT — sempre visível */}
             <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
               <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
                 <div className="flex items-center gap-3">
@@ -620,10 +660,9 @@ export default function SessaoDetailPage() {
                 </div>
               </div>
 
-              {/* Mensagens - ✅ ADICIONA ID AQUI */}
               <div
                 id="chat-messages-container"
-                className="h-[500px] space-y-3 overflow-y-auto bg-warm-50/30 p-5"
+                className="h-[400px] space-y-3 overflow-y-auto bg-warm-50/30 p-5 sm:h-[500px]"
               >
                 {messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-300 bg-white/50 p-8 text-center">
@@ -676,177 +715,182 @@ export default function SessaoDetailPage() {
                 </div>
               </div>
             </div>
-          )}
 
-          {/* 📊 INFORMAÇÕES DA SESSÃO (mobile) */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:hidden">
-            <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
-              <InfoIcon className="h-4 w-4" />
-              Informações da sessão
-            </p>
+            {/* 📊 INFORMAÇÕES DA SESSÃO (mobile) */}
+            <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:hidden">
+              <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
+                <InfoIcon className="h-4 w-4" />
+                Informações da sessão
+              </p>
 
-            <div className="space-y-3">
-              <InfoItem
-                icon={<UserIcon className="h-4 w-4" />}
-                label="Paciente"
-                value={room.patient?.nome || "Paciente não identificado"}
-              />
-              <InfoItem
-                icon={<CalendarIcon className="h-4 w-4" />}
-                label="Data"
-                value={fmtDate(startDate)}
-              />
-              <InfoItem
-                icon={<ClockIcon className="h-4 w-4" />}
-                label="Horário"
-                value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
-              />
-              <InfoItem
-                icon={
-                  isVideo ? (
-                    <VideoIcon className="h-4 w-4" />
-                  ) : (
-                    <ChatIcon className="h-4 w-4" />
-                  )
-                }
-                label="Tipo"
-                value={isVideo ? "Videochamada" : "Chat por texto"}
-              />
+              <div className="space-y-3">
+                <InfoItem
+                  icon={<UserIcon className="h-4 w-4" />}
+                  label="Paciente"
+                  value={room.patient?.nome || "Paciente não identificado"}
+                />
+                <InfoItem
+                  icon={<CalendarIcon className="h-4 w-4" />}
+                  label="Data"
+                  value={fmtDate(startDate)}
+                />
+                <InfoItem
+                  icon={<ClockIcon className="h-4 w-4" />}
+                  label="Horário"
+                  value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
+                />
+                <InfoItem
+                  icon={
+                    isVideo ? (
+                      <VideoIcon className="h-4 w-4" />
+                    ) : (
+                      <ChatIcon className="h-4 w-4" />
+                    )
+                  }
+                  label="Tipo"
+                  value={isVideo ? "Videochamada" : "Chat por texto"}
+                />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ========== COLUNA 2: PRONTUÁRIO ========== */}
-        <section className="space-y-6">
-          {/* 📝 PRONTUÁRIO */}
-          <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
-            <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg">
-                    <FileTextIcon className="h-5 w-5 text-white" />
+          {/* ========== COLUNA 2: PRONTUÁRIO ========== */}
+          <section
+            className={[
+              "space-y-4 sm:space-y-6",
+              isVideo && dailyUrl && activeTab === "chat" ? "hidden lg:block" : "",
+            ].join(" ")}
+          >
+            {/* 📝 PRONTUÁRIO */}
+            <div className="overflow-hidden rounded-3xl border-2 border-warm-200 bg-white shadow-soft-lg">
+              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg">
+                      <FileTextIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-warm-900">
+                        Prontuário da Sessão
+                      </p>
+                      <p className="text-xs text-warm-600">
+                        Registro confidencial
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-warm-900">
-                      Prontuário da Sessão
-                    </p>
-                    <p className="text-xs text-warm-600">
-                      Registro confidencial
-                    </p>
+
+                  {/* status autosave + botão salvar */}
+                  <div className="flex items-center gap-3">
+                    <div className="hidden text-right text-xs text-warm-500 sm:block min-w-[150px]">
+                      {autosaveStatus === "saving" && "Salvando..."}
+                      {autosaveStatus === "saved" && "✓ Salvo automaticamente"}
+                      {autosaveStatus === "error" && "Falha ao salvar"}
+                      {autosaveStatus === "idle" && ""}
+                    </div>
+
+                    <button
+                      disabled={notesBusy}
+                      onClick={handleSaveNotes}
+                      className="inline-flex items-center gap-2 rounded-lg bg-sage-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
+                    >
+                      <SaveIcon className="h-4 w-4" />
+                      {notesBusy ? "Salvando..." : "Salvar"}
+                    </button>
                   </div>
                 </div>
+              </div>
 
-                {/* ✅ status autosave + botão salvar */}
-                <div className="flex items-center gap-3">
-                  <div className="min-w-[150px] text-right text-xs text-warm-500">
-                    {autosaveStatus === "saving" && "Salvando..."}
-                    {autosaveStatus === "saved" && "✓ Salvo automaticamente"}
-                    {autosaveStatus === "error" && "Falha ao salvar"}
-                    {autosaveStatus === "idle" && ""}
-                  </div>
-
-                  <button
-                    disabled={notesBusy}
-                    onClick={handleSaveNotes}
-                    className="inline-flex items-center gap-2 rounded-lg bg-sage-500 px-4 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-sage-600 disabled:opacity-50"
-                  >
-                    <SaveIcon className="h-4 w-4" />
-                    {notesBusy ? "Salvando..." : "Salvar"}
-                  </button>
-                </div>
+              <div className="max-h-[600px] space-y-4 overflow-y-auto p-5">
+                <NoteField
+                  label="Queixa"
+                  placeholder="O que o paciente trouxe na sessão..."
+                  value={notes.queixa}
+                  onChange={(v) => setNotes({ ...notes, queixa: v })}
+                  rows={3}
+                />
+                <NoteField
+                  label="Associações"
+                  placeholder="Associações livres, memórias..."
+                  value={notes.associacoes}
+                  onChange={(v) => setNotes({ ...notes, associacoes: v })}
+                  rows={3}
+                />
+                <NoteField
+                  label="Intervenções"
+                  placeholder="Intervenções realizadas..."
+                  value={notes.intervencoes}
+                  onChange={(v) => setNotes({ ...notes, intervencoes: v })}
+                  rows={3}
+                />
+                <NoteField
+                  label="Plano"
+                  placeholder="Plano para próximas sessões..."
+                  value={notes.plano}
+                  onChange={(v) => setNotes({ ...notes, plano: v })}
+                  rows={3}
+                />
+                <NoteField
+                  label="Observações"
+                  placeholder="Outras observações relevantes..."
+                  value={notes.observacoes}
+                  onChange={(v) => setNotes({ ...notes, observacoes: v })}
+                  rows={4}
+                />
               </div>
             </div>
 
-            <div className="max-h-[600px] space-y-4 overflow-y-auto p-5">
-              <NoteField
-                label="Queixa"
-                placeholder="O que o paciente trouxe na sessão..."
-                value={notes.queixa}
-                onChange={(v) => setNotes({ ...notes, queixa: v })}
-                rows={3}
-              />
-              <NoteField
-                label="Associações"
-                placeholder="Associações livres, memórias..."
-                value={notes.associacoes}
-                onChange={(v) => setNotes({ ...notes, associacoes: v })}
-                rows={3}
-              />
-              <NoteField
-                label="Intervenções"
-                placeholder="Intervenções realizadas..."
-                value={notes.intervencoes}
-                onChange={(v) => setNotes({ ...notes, intervencoes: v })}
-                rows={3}
-              />
-              <NoteField
-                label="Plano"
-                placeholder="Plano para próximas sessões..."
-                value={notes.plano}
-                onChange={(v) => setNotes({ ...notes, plano: v })}
-                rows={3}
-              />
-              <NoteField
-                label="Observações"
-                placeholder="Outras observações relevantes..."
-                value={notes.observacoes}
-                onChange={(v) => setNotes({ ...notes, observacoes: v })}
-                rows={4}
-              />
-            </div>
-          </div>
+            {/* 📊 INFORMAÇÕES DA SESSÃO (desktop) */}
+            <div className="hidden overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:block">
+              <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
+                <InfoIcon className="h-4 w-4" />
+                Informações da sessão
+              </p>
 
-          {/* 📊 INFORMAÇÕES DA SESSÃO (desktop) */}
-          <div className="hidden overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-white to-warm-50/30 p-6 shadow-soft lg:block">
-            <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
-              <InfoIcon className="h-4 w-4" />
-              Informações da sessão
-            </p>
-
-            <div className="space-y-3">
-              <InfoItem
-                icon={<UserIcon className="h-4 w-4" />}
-                label="Paciente"
-                value={room.patient?.nome || "Paciente não identificado"}
-              />
-              <InfoItem
-                icon={<CalendarIcon className="h-4 w-4" />}
-                label="Data"
-                value={fmtDate(startDate)}
-              />
-              <InfoItem
-                icon={<ClockIcon className="h-4 w-4" />}
-                label="Horário"
-                value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
-              />
-              <InfoItem
-                icon={
-                  isVideo ? (
-                    <VideoIcon className="h-4 w-4" />
-                  ) : (
-                    <ChatIcon className="h-4 w-4" />
-                  )
-                }
-                label="Tipo"
-                value={isVideo ? "Videochamada" : "Chat por texto"}
-              />
+              <div className="space-y-3">
+                <InfoItem
+                  icon={<UserIcon className="h-4 w-4" />}
+                  label="Paciente"
+                  value={room.patient?.nome || "Paciente não identificado"}
+                />
+                <InfoItem
+                  icon={<CalendarIcon className="h-4 w-4" />}
+                  label="Data"
+                  value={fmtDate(startDate)}
+                />
+                <InfoItem
+                  icon={<ClockIcon className="h-4 w-4" />}
+                  label="Horário"
+                  value={`${fmtTime(startDate)} – ${fmtTime(endDate)}`}
+                />
+                <InfoItem
+                  icon={
+                    isVideo ? (
+                      <VideoIcon className="h-4 w-4" />
+                    ) : (
+                      <ChatIcon className="h-4 w-4" />
+                    )
+                  }
+                  label="Tipo"
+                  value={isVideo ? "Videochamada" : "Chat por texto"}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* 💡 DICAS PROFISSIONAIS */}
-          <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-soft-50 to-warm-50 p-6 shadow-soft">
-            <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
-              <LightbulbIcon className="h-4 w-4" />
-              Lembretes importantes
-            </p>
-            <div className="space-y-3 text-sm text-warm-600">
-              <TipItem text="Mantenha o sigilo profissional" />
-              <TipItem text="Registre pontos-chave no prontuário" />
-              <TipItem text="Atenção à transferência e contratransferência" />
-              <TipItem text="Salve o prontuário antes de sair" />
+            {/* 💡 DICAS PROFISSIONAIS */}
+            <div className="overflow-hidden rounded-2xl border border-warm-300/50 bg-gradient-to-br from-soft-50 to-warm-50 p-6 shadow-soft">
+              <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-warm-700">
+                <LightbulbIcon className="h-4 w-4" />
+                Lembretes importantes
+              </p>
+              <div className="space-y-3 text-sm text-warm-600">
+                <TipItem text="Mantenha o sigilo profissional" />
+                <TipItem text="Registre pontos-chave no prontuário" />
+                <TipItem text="Atenção à transferência e contratransferência" />
+                <TipItem text="Salve o prontuário antes de sair" />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );
