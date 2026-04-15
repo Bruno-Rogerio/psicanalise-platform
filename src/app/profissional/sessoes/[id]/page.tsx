@@ -490,11 +490,12 @@ export default function SessaoDetailPage() {
 
             {room.status === "scheduled" && (
               <>
-                {canStart && isVideo && (
+                {isVideo && !dailyUrl && (
                   <button
-                    disabled={joinBusy}
+                    disabled={joinBusy || !canStart}
                     onClick={handleJoinVideo}
-                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-soft-lg transition-all hover:shadow-soft-xl disabled:opacity-50"
+                    title={canStart ? "Iniciar videochamada" : "Disponível 10 min antes da sessão"}
+                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-soft-lg transition-all hover:shadow-soft-xl disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <span className="relative z-10 flex items-center gap-2">
                       {joinBusy ? (
@@ -505,11 +506,21 @@ export default function SessaoDetailPage() {
                       ) : (
                         <>
                           <VideoIcon className="h-4 w-4" />
-                          Iniciar vídeo
+                          {canStart ? "Iniciar vídeo" : "Aguardando horário"}
                         </>
                       )}
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-rose-600 to-rose-700 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                )}
+
+                {isVideo && dailyUrl && (
+                  <button
+                    onClick={handleToggleFullscreen}
+                    title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-warm-300 bg-white text-warm-700 transition-all hover:bg-warm-50 active:scale-95"
+                  >
+                    {videoFullscreen ? <ShrinkIcon className="h-5 w-5" /> : <ExpandIcon className="h-5 w-5" />}
                   </button>
                 )}
 
@@ -564,40 +575,29 @@ export default function SessaoDetailPage() {
                 </button>
               </div>
 
-              {/* Wrapper externo — posiciona o botão FORA do container do iframe */}
-              <div className="relative w-full">
-                <div
-                  ref={videoContainerRef}
-                  className={`w-full overflow-hidden bg-black ${
-                    videoFullscreen ? "fixed inset-0 z-[9998] rounded-none" : ""
-                  }`}
-                  style={videoFullscreen ? { height: "100dvh" } : { aspectRatio: "16/9" }}
-                >
-                  <iframe
-                    title="Sessão de vídeo"
-                    src={dailyUrl}
-                    allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
-                    allowFullScreen
-                    className="absolute inset-0 h-full w-full"
-                  />
-                </div>
-                {/* Botão fullscreen FORA do container — sem bloqueio do iframe */}
+              <div
+                ref={videoContainerRef}
+                className={videoFullscreen ? "fixed inset-0 z-[9998]" : "relative aspect-video w-full bg-warm-900"}
+                style={videoFullscreen ? { height: "100dvh" } : undefined}
+              >
+                <iframe
+                  title="Sessão de vídeo"
+                  src={dailyUrl}
+                  allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+                  allowFullScreen
+                  className="h-full w-full"
+                />
+              </div>
+              {/* Botão sair da tela cheia — fixed acima de tudo */}
+              {videoFullscreen && (
                 <button
                   onClick={handleToggleFullscreen}
-                  title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
-                  className={
-                    videoFullscreen
-                      ? "fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
-                      : "absolute right-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/80 active:scale-95"
-                  }
+                  title="Sair da tela cheia"
+                  className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
                 >
-                  {videoFullscreen ? (
-                    <ShrinkIcon className="h-5 w-5" />
-                  ) : (
-                    <ExpandIcon className="h-5 w-5" />
-                  )}
+                  <ShrinkIcon className="h-5 w-5" />
                 </button>
-              </div>
+              )}
             </div>
           )}
 

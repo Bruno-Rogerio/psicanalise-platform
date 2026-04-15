@@ -603,55 +603,68 @@ export default function SessaoDetailPage() {
           {/* VÍDEO */}
           {isVideo ? (
             <div className="overflow-hidden rounded-2xl border-2 border-warm-200 bg-white shadow-soft-lg sm:rounded-3xl">
-              <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3 sm:px-5 sm:py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500 shadow-lg sm:h-10 sm:w-10">
-                      <VideoIcon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+              {/* Header — oculto quando em tela cheia */}
+              {!videoFullscreen && (
+                <div className="border-b-2 border-warm-200 bg-gradient-to-r from-warm-50 to-white px-4 py-3 sm:px-5 sm:py-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500 shadow-lg sm:h-10 sm:w-10">
+                        <VideoIcon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+                        {dailyUrl && (
+                          <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                            <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-warm-900">
+                          {dailyUrl ? "Ao vivo" : "Videochamada"}
+                        </p>
+                        <p className="text-xs text-warm-600">
+                          {dailyUrl ? "Conexão segura" : "Inicie no horário da sessão"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Botão tela cheia no HEADER — nunca dentro da área do iframe */}
                       {dailyUrl && (
-                        <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                          <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-                        </span>
+                        <button
+                          onClick={handleToggleFullscreen}
+                          title="Tela cheia"
+                          className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-warm-200 bg-white text-warm-700 transition-all hover:bg-warm-50 active:scale-95"
+                        >
+                          <ExpandIcon className="h-5 w-5" />
+                        </button>
+                      )}
+                      {!dailyUrl ? (
+                        <button
+                          disabled={joinBusy || !canStartVideo}
+                          onClick={handleJoinVideo}
+                          className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 sm:px-5"
+                        >
+                          {joinBusy ? "Aguarde..." : canStartVideo ? "Entrar" : "Aguardando horário"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setDailyUrl(null)}
+                          className="rounded-xl border-2 border-warm-300 bg-white px-4 py-2.5 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50"
+                        >
+                          Encerrar
+                        </button>
                       )}
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-warm-900">
-                        {dailyUrl ? "Sala ativa • Ao vivo" : "Videochamada"}
-                      </p>
-                      <p className="text-xs text-warm-600">
-                        {dailyUrl ? "Conexão segura" : "Inicie no horário da sessão"}
-                      </p>
-                    </div>
                   </div>
-
-                  {!dailyUrl ? (
-                    <button
-                      disabled={joinBusy || !canStartVideo}
-                      onClick={handleJoinVideo}
-                      className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {joinBusy ? "Aguarde..." : canStartVideo ? "Entrar" : "Aguardando horário"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setDailyUrl(null)}
-                      className="rounded-xl border-2 border-warm-300 bg-white px-4 py-2.5 text-sm font-semibold text-warm-700 transition-all hover:bg-warm-50"
-                    >
-                      Encerrar
-                    </button>
-                  )}
                 </div>
-              </div>
+              )}
 
+              {/* Área do vídeo */}
               {dailyUrl ? (
-                /* Wrapper externo — posiciona o botão FORA do container do iframe */
-                <div className="relative w-full">
+                <>
                   <div
                     ref={videoContainerRef}
-                    className={`w-full overflow-hidden bg-black ${
-                      videoFullscreen ? "fixed inset-0 z-[9998] rounded-none" : "rounded-2xl"
-                    }`}
+                    className={videoFullscreen ? "fixed inset-0 z-[9998]" : ""}
                     style={videoFullscreen ? { height: "100dvh" } : { minHeight: "56vw", maxHeight: "80vh" }}
                   >
                     <iframe
@@ -660,26 +673,20 @@ export default function SessaoDetailPage() {
                       src={dailyUrl}
                       allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
                       allowFullScreen
-                      className="absolute inset-0 h-full w-full"
+                      className="h-full w-full"
                     />
                   </div>
-                  {/* Botão fullscreen FORA do container — sem bloqueio do iframe */}
-                  <button
-                    onClick={handleToggleFullscreen}
-                    title={videoFullscreen ? "Sair da tela cheia" : "Tela cheia"}
-                    className={
-                      videoFullscreen
-                        ? "fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
-                        : "absolute right-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-xl bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all hover:bg-black/80 active:scale-95"
-                    }
-                  >
-                    {videoFullscreen ? (
+                  {/* Botão sair da tela cheia — fixed, acima de tudo, nunca bloqueado pelo iframe */}
+                  {videoFullscreen && (
+                    <button
+                      onClick={handleToggleFullscreen}
+                      title="Sair da tela cheia"
+                      className="fixed right-4 top-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-xl transition-all hover:bg-black/90 active:scale-95"
+                    >
                       <ShrinkIcon className="h-5 w-5" />
-                    ) : (
-                      <ExpandIcon className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+                    </button>
+                  )}
+                </>
               ) : (
                 <div className="p-3 sm:p-4">
                   <div className="flex aspect-video w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-warm-300 bg-warm-50/60 p-6 text-center">
